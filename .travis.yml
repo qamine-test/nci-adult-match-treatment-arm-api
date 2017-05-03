@@ -13,7 +13,6 @@ python: 3.6
 before_install:
   - export AUTHOR=`git --no-pager show -s --format='%an <%ae>'`
   - export DATE=`TZ=America/New_York date "+%m-%d-%y-%H%M"`
-  - export DOCKER_IMAGE="matchbox/nci-adult-match-treatment-arm-api"
   - export DATE_TM=`TZ=America/New_York date "+%m-%d-%y %H:%M"`  
   - export DOCKER_IMAGE="fnlcr/nci-adult-match-treatment-arm-api"
   - echo "{\"buildNumber\":\"build "$TRAVIS_BUILD_NUMBER"\", \"buildTime\":\""$DATE_TM"\", \"buildId\":\""$TRAVIS_BUILD_ID"\", \"docker\":\""$$DOCKER_IMAGE:$DATE"\"}" > build-info.json
