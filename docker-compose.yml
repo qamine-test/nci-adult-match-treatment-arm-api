@@ -1,0 +1,19 @@
+version: "3"
+services:
+  treatment-arm-api:
+    build: .
+    command: python app.py
+    image: "fnlcr/nci-adult-match-treatment-arm-api"
+    ports:
+      - "5010:5010"
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+  mongo:
+    image: mongo:3.4.0
+    volumes:
+      - ./data_setup/match:/backup
+    ports:
+      - "27017:27017"

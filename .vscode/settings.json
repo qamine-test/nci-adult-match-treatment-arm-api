@@ -1,0 +1,5 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+    "python.pythonPath": "$HOME/.virtualenvs/nci-adult-match-treatment-arm-api/bin/python",
+    "python.linting.pep8Enabled": true
+}
