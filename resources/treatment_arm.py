@@ -17,7 +17,7 @@ class TreatmentArms(Resource):
         Gets the TreatmentArm resource
         """
 
-        return TreatmentArmAccessor().find({}, None)
+        return TreatmentArmAccessor().find({}, {"name": 1, "version": 1})
 
 
 class TreatmentArm(Resource):
