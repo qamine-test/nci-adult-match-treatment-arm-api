@@ -43,12 +43,14 @@ class MongoDbAccessor(object):
     def put_treatment_arms_documents(self, doc):
         return self.database.treatmentArms.insert_one(doc).inserted_id
 
+    def clear_treatment_arms(self):
+        self.database.treatmentArms.remove({})
+
 
 def ta_to_new_ta(ta_doc):
     """Converts a document from the treatment collection to a document 
        for the treatmentArms collection.
     """
-
     new_ta_doc = dict(ta_doc)
     del new_ta_doc['_id']
     new_ta_doc['treatmentId'] = ta_doc['_id']
@@ -60,7 +62,6 @@ def tah_to_new_ta(tah_doc):
     """Converts a document from the treatmentArmHistory collection to a 
        document for the treatmentArms collection.
     """
-
     new_ta_doc = dict(tah_doc['treatmentArm'])
     del new_ta_doc['_id']
     new_ta_doc['_class'] = 'gov.match.model.TreatmentArm'
@@ -69,26 +70,38 @@ def tah_to_new_ta(tah_doc):
     return new_ta_doc
 
 
+def prepare_treatment_arms_collection(db_accessor):
+    """It is necessary to remove any existing documents from treatmentArms prior
+       to adding the items from the other source tables.
+    """
+    trtmt_arms_cnt = db_accessor.get_documents('treatmentArms').count()
+    if trtmt_arms_cnt:
+        LOGGER.info('treatmentArms must be empty!; %d documents will be removed before continuing.',
+                    trtmt_arms_cnt)
+        db_accessor.clear_treatment_arms()
+        trtmt_arms_cnt = db_accessor.get_documents('treatmentArms').count()
+        LOGGER.info("treatmentArms now contains %d documents", trtmt_arms_cnt)
+
+
+def convert_to_treatment_arms(db_accessor, src_collection, convert_document):
+    """Using the db_accessor, get all of the documents from src_collection, convert
+       them to the required format using the convert_document function, and insert
+       them into the treatmentArms collection.
+    """
+    LOGGER.info("Converting documents from %s into documents for treatmentArms", src_collection)
+    for doc in db_accessor.get_documents(src_collection):
+        new_doc = convert_document(doc)
+        new_id = db_accessor.put_treatment_arms_documents(new_doc)
+        log_msg = "TreamentArms document %s created from %s.%s"
+        LOGGER.debug(log_msg, new_id, src_collection, doc['_id'])
+
+
 def main():
     try:
         db_accessor = MongoDbAccessor()
-
-        LOGGER.info("Converting documents from treatmentArm into documents for treatmentArms")
-#        for doc in db_accessor.get_treatment_arm_documents():
-
-        for doc in db_accessor.get_documents('treatmentArm'):
-            new_doc = ta_to_new_ta(doc)
-            new_id = db_accessor.put_treatment_arms_documents(new_doc)
-            log_msg = "TreamentArms document %s created from %s.%s"
-            LOGGER.debug(log_msg, new_id, 'treatmentArm', doc['_id'])
-
-        LOGGER.info("Converting documents from treatmentArmHistory into documents for treatmentArms")
-        # for doc in db_accessor.get_treatment_arm_history_documents():
-        for doc in db_accessor.get_documents('treatmentArmHistory'):
-            new_doc = tah_to_new_ta(doc)
-            new_id = db_accessor.put_treatment_arms_documents(new_doc)
-            log_msg = "TreamentArms document %s created from %s.%s"
-            LOGGER.debug(log_msg, new_id, 'treatmentArmHistory', doc['_id'])
+        prepare_treatment_arms_collection(db_accessor)
+        convert_to_treatment_arms(db_accessor, 'treatmentArm',        ta_to_new_ta)
+        convert_to_treatment_arms(db_accessor, 'treatmentArmHistory', tah_to_new_ta)
 
     except:
         print("Unexpected error:", sys.exc_info()[0])
