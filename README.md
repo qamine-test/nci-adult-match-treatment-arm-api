@@ -96,3 +96,11 @@ To kill a service on a specific port
 ```#!/bin/bash
 kill -9 $(lsof -n -i4TCP:5000)
 ```
+
+## Scripts
+
+To merge the treatmentArm and treatmentArm collections in MongoDB Match database into single treatmentArms collection:
+
+```#!/bin/bash
+python3 scripts/consolidateTAcollections/cons_ta_colls.py
+```
