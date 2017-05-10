@@ -36,6 +36,7 @@ class Configuration(metaclass=MetaFlaskEnv):
 # Logging functionality
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
+LOGGER.addHandler(logging.StreamHandler())
 
 APP = Flask(__name__)
 APP.config.from_object(Configuration)
