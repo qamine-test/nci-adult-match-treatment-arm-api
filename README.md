@@ -102,5 +102,5 @@ kill -9 $(lsof -n -i4TCP:5000)
 To merge the treatmentArm and treatmentArm collections in MongoDB Match database into single treatmentArms collection:
 
 ```#!/bin/bash
-python3 scripts/consolidateTAcollections/cons_ta_colls.py
+MONGO_HOST=localhost MONGO_PORT=27017 python3 scripts/consolidate_treatment_arm_collections/consolidate_treatment_arm_collections.py
 ```
