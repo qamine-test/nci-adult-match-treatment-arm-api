@@ -1,8 +1,9 @@
 import unittest
 from ddt import ddt, data, unpack
+from mock import patch
 import datetime, sys
 sys.path.append("..")
-from consolidateTAcollections import cons_ta_colls
+from consolidate_treatment_arm_collections import consolidate_treatment_arm_collections
 
 @ddt
 class TestConsTAColls(unittest.TestCase):
@@ -48,7 +49,7 @@ class TestConsTAColls(unittest.TestCase):
     @unpack
     def test_TAConverter_convert(self, ta_doc, exp_result):
         try:
-            ret_doc = cons_ta_colls.TAConverter().convert(ta_doc)
+            ret_doc = consolidate_treatment_arm_collections.TAConverter().convert(ta_doc)
             assert ret_doc == exp_result
         except Exception as e:
             assert str(e) == exp_result
@@ -172,18 +173,22 @@ class TestConsTAColls(unittest.TestCase):
     @unpack
     def test_TAHConverter_convert(self, tah_doc, exp_result):
         try:
-            ret_doc = cons_ta_colls.TAHConverter().convert(tah_doc)
+            ret_doc = consolidate_treatment_arm_collections.TAHConverter().convert(tah_doc)
             assert ret_doc == exp_result
         except Exception as e:
             assert str(e) == exp_result
 
 
-    def test_TAConverter_coll_name(self):
-        assert cons_ta_colls.TAConverter().get_collection_name() == "treatmentArm"
+    def test_TAConverter_collection_name(self):
+        assert consolidate_treatment_arm_collections.TAConverter().get_collection_name() == "treatmentArm"
 
 
-    def test_TAHConverter_coll_name(self):
-        assert cons_ta_colls.TAHConverter().get_collection_name() == "treatmentArmHistory"
+    def test_TAHConverter_collection_name(self):
+        assert consolidate_treatment_arm_collections.TAHConverter().get_collection_name() == "treatmentArmHistory"
+
+    #@
+    def test_convert_to_treatment_arms(self):
+        pass
 
 
 if __name__ == '__main__':
