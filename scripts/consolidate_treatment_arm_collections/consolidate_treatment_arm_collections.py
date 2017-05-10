@@ -1,12 +1,23 @@
 """
 Consolidate collections treatmentArm and treatmentArmHistory into a single 
 treatmentArms collection.
-Notes:
+
+The new treatmentArms collection will look much like the old treatmentArm collection 
+with the following changes/additions:
 *  treatmentArm._id currently contains the unique identifier for each 
    treatment arm; because it functions as a primary key, it needs to be 
-   renamed treatmentId
-*  mongoDB will auto generate a new unique _id
-*  active arm will be identified by dateArchived IS NULL
+   renamed treatmentId.
+   - For documents from treatmentArmHistory, treatmentId will originate from _id of 
+     the treatmentArm subcollection.
+*  mongoDB will auto-generate a new unique _id
+*  add dateArchived key; active arm will be identified by dateArchived IS NULL and archived
+   arms will get this value from treatmentArmHistory.
+*  add 'stateToken' key with UUID.
+*  _class will be 'gov.match.model.TreatmentArm' for all documents.
+
+Note:  In production, this script will need to be run only once.  To simplify 
+development/testing efforts, it will first remove all documents from the
+treatmentArms collection if they exist.
 """
 import logging
 import os
