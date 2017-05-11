@@ -18,10 +18,13 @@ with the following changes/additions:
 Note:  In production, this script will need to be run only once.  To simplify 
 development/testing efforts, it will first remove all documents from the
 treatmentArms collection if they exist.
+
+Returns 0 if successful; otherwise -1.
 """
 import logging
 import os
 import pymongo
+import uuid
 
 # Logging functionality
 LOGGER = logging.getLogger(__name__)
@@ -35,7 +38,7 @@ class MongoDbAccessor(object):
 
         host = os.environ.get('MONGO_HOST', 'localhost')
         port = os.environ.get('MONGO_PORT', 27017)
-        db = 'Match'
+        db = 'match'
         uri = f"mongodb://{host}:{port}/{db}"
 
         mongo_client = pymongo.MongoClient(uri)
@@ -43,6 +46,9 @@ class MongoDbAccessor(object):
 
     def get_documents(self, coll_name):
         return self.database[coll_name].find()
+
+    def get_document_count(self, coll_name):
+        return self.database[coll_name].find().count()
 
     def put_treatment_arms_documents(self, doc):
         return self.database.treatmentArms.insert_one(doc).inserted_id
@@ -83,6 +89,8 @@ class TAConverter(ConverterBase):
 
         new_ta_doc = dict(ta_doc)
         del new_ta_doc['_id']
+        new_ta_doc['_class'] = 'gov.match.model.TreatmentArm'
+        new_ta_doc['stateToken'] = uuid.uuid4()
         new_ta_doc['treatmentId'] = ta_doc['_id']
         new_ta_doc['dateArchived'] = None
         return new_ta_doc
@@ -111,6 +119,7 @@ class TAHConverter(ConverterBase):
         new_ta_doc = dict(tah_doc['treatmentArm'])
         del new_ta_doc['_id']
         new_ta_doc['_class'] = 'gov.match.model.TreatmentArm'
+        new_ta_doc['stateToken'] = uuid.uuid4()
         new_ta_doc['treatmentId'] = tah_doc['treatmentArm']['_id']
         new_ta_doc['dateArchived'] = tah_doc['dateArchived']
         return new_ta_doc
@@ -120,41 +129,48 @@ def prepare_treatment_arms_collection(db_accessor):
     """It is necessary to remove any existing documents from treatmentArms prior
        to adding the items from the other source tables.
     """
-    trtmt_arms_cnt = db_accessor.get_documents('treatmentArms').count()
+    trtmt_arms_cnt = db_accessor.get_document_count('treatmentArms')
     if trtmt_arms_cnt:
-        LOGGER.info('treatmentArms must be empty!; %d documents will be removed before continuing.',
+        LOGGER.info('treatmentArms must be empty; %d documents will be removed before continuing.',
                     trtmt_arms_cnt)
 
         db_accessor.clear_treatment_arms()
-        trtmt_arms_cnt = db_accessor.get_documents('treatmentArms').count()
+        trtmt_arms_cnt = db_accessor.get_document_count('treatmentArms')
 
         LOGGER.info("treatmentArms now contains %d documents", trtmt_arms_cnt)
 
+    return trtmt_arms_cnt  # should always return 0; used for unit-testing
+
 
 def convert_to_treatment_arms(db_accessor, converter):
-    """Using the db_accessor, get all of the documents from src_collection, convert
-       them to the required format using the convert_document function, and insert
+    """Using the db_accessor, get all of the documents from collection named in converter, 
+       convert them to the required format using the converter.convert function, and insert
        them into the treatmentArms collection.
+       Return the number of documents converted.
     """
-    LOGGER.info("\nConverting documents from %s into documents for treatmentArms...", converter.get_collection_name())
+    LOGGER.info("\nConverting documents from %s into documents for treatmentArms...",
+                converter.get_collection_name())
+
     cnt = 0
     for doc in db_accessor.get_documents(converter.get_collection_name()):
         new_doc = converter.convert(doc)
         new_id = db_accessor.put_treatment_arms_documents(new_doc)
+        cnt += 1
 
         log_msg = "  TreamentArms document %s created from %s.%s"
         LOGGER.debug(log_msg, new_id, converter.get_collection_name(), doc['_id'])
-        cnt += 1
 
     LOGGER.info("%d documents inserted into treatmentArms from %s", cnt, converter.get_collection_name())
+    return cnt
 
 
-def main():
+def main(db_accessor):
     try:
-        db_accessor = MongoDbAccessor()
         prepare_treatment_arms_collection(db_accessor)
-        convert_to_treatment_arms(db_accessor, TAConverter())
-        convert_to_treatment_arms(db_accessor, TAHConverter())
+        doc_cnt = convert_to_treatment_arms(db_accessor, TAConverter())
+        doc_cnt += convert_to_treatment_arms(db_accessor, TAHConverter())
+
+        LOGGER.info("\n%d total documents inserted into treatmentArms.", doc_cnt)
 
     except Exception as e:
         print("Unexpected error:", str(e))
@@ -164,4 +180,4 @@ def main():
 
 
 if __name__ == '__main__':
-    exit(main())
+    exit(main(MongoDbAccessor()))
