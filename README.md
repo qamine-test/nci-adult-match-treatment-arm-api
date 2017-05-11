@@ -5,7 +5,8 @@ NCI Adult MATCH Treatment Arm API
 ## Prerequisites
 
 * [Install Python3](http://www.marinamele.com/2014/07/install-python3-on-mac-os-x-and-use-virtualenv-and-virtualenvwrapper.html)
-* [Setup Vurtial Environments](https://realpython.com/blog/python/python-virtual-environments-a-primer/)
+* [Setup Virtual Environments](https://realpython.com/blog/python/python-virtual-environments-a-primer/)
+* Required Python modules:  pymongo, flask, flask_env, flask_cors, flask_restful
 
 ## Development Setup
 
@@ -99,7 +100,8 @@ kill -9 $(lsof -n -i4TCP:5000)
 
 ## Scripts
 
-To merge the treatmentArm and treatmentArm collections in MongoDB Match database into single treatmentArms collection:
+Merge the treatmentArm and treatmentArm collections in MongoDB Match database into single treatmentArms collection.
+Requires pymongo python module.
 
 ```#!/bin/bash
 MONGO_HOST=localhost MONGO_PORT=27017 python3 scripts/consolidate_treatment_arm_collections/consolidate_treatment_arm_collections.py
