@@ -1,16 +1,29 @@
 import unittest
 from ddt import ddt, data, unpack
 from mock import patch
-import datetime, sys
+import datetime
+import sys
 sys.path.append("..")
-from consolidate_treatment_arm_collections import consolidate_treatment_arm_collections
+from consolidate_treatment_arm_collections import consolidate_treatment_arm_collections as ctac
+
 
 @ddt
-class TestConsTAColls(unittest.TestCase):
-
+class TestConsolidateTreatmentArmCollections(unittest.TestCase):
     @data(
         # successful conversion
         ({'_class': 'gov.match.model.TreatmentArm',
+          '_id': 'EAY131-Q',
+          'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+          'name': 'TDM1 in HER2 Amplification',
+          'version': '2016-05-31'},
+         {'_class': 'gov.match.model.TreatmentArm',
+          'treatmentId': 'EAY131-Q',
+          'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+          'name': 'TDM1 in HER2 Amplification',
+          'version': '2016-05-31',
+          'dateArchived': None}),
+        # successful conversion when input record has incorrect _class
+        ({'_class': 'gov.match.model.TreatmentArmor',
           '_id': 'EAY131-Q',
           'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
           'name': 'TDM1 in HER2 Amplification',
@@ -49,7 +62,9 @@ class TestConsTAColls(unittest.TestCase):
     @unpack
     def test_TAConverter_convert(self, ta_doc, exp_result):
         try:
-            ret_doc = consolidate_treatment_arm_collections.TAConverter().convert(ta_doc)
+            ret_doc = ctac.TAConverter().convert(ta_doc)
+            assert 'stateToken' in ret_doc and ret_doc['stateToken']
+            del ret_doc['stateToken']  # stateToken is randomly generated so must be removed prior to next assertion
             assert ret_doc == exp_result
         except Exception as e:
             assert str(e) == exp_result
@@ -173,23 +188,208 @@ class TestConsTAColls(unittest.TestCase):
     @unpack
     def test_TAHConverter_convert(self, tah_doc, exp_result):
         try:
-            ret_doc = consolidate_treatment_arm_collections.TAHConverter().convert(tah_doc)
+            ret_doc = ctac.TAHConverter().convert(tah_doc)
+            assert 'stateToken' in ret_doc and ret_doc['stateToken']
+            del ret_doc['stateToken']  # stateToken is randomly generated so must be removed prior to next assertion
             assert ret_doc == exp_result
         except Exception as e:
             assert str(e) == exp_result
 
-
     def test_TAConverter_collection_name(self):
-        assert consolidate_treatment_arm_collections.TAConverter().get_collection_name() == "treatmentArm"
-
+        assert ctac.TAConverter().get_collection_name() == "treatmentArm"
 
     def test_TAHConverter_collection_name(self):
-        assert consolidate_treatment_arm_collections.TAHConverter().get_collection_name() == "treatmentArmHistory"
+        assert ctac.TAHConverter().get_collection_name() == "treatmentArmHistory"
 
-    #@
-    def test_convert_to_treatment_arms(self):
-        pass
+    @data(
+        # treatmentArm data
+        ([{'_class': 'gov.match.model.TreatmentArm',
+           '_id': 'EAY131-Z',
+           'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+           'name': 'TDM1 in HER2 Amplification',
+           'version': '2016-07-31'},
+          {'_class': 'gov.match.model.TreatmentArm',
+           '_id': 'EAY131-Q',
+           'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+           'name': 'TDM1 in HER2 Amplification',
+           'version': '2016-05-31'},
 
+          {'_class': 'gov.match.model.TreatmentArm',
+           '_id': 'EAY131-Z1',
+           'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+           'name': 'TDM1 in HER2 Amplification',
+           'version': '2016-12-31'}
+          ]
+         )
+    )
+    @patch('consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.MongoDbAccessor')
+    def test_convert_to_treatment_arms(self, indata, mock_db_accessor):
+        mock_db_accessor.get_documents = lambda n: indata
+        cnt = ctac.convert_to_treatment_arms(mock_db_accessor, ctac.TAConverter())
+        assert cnt == len(indata)
+
+    @data([82], [0])
+    @unpack
+    @patch('consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.MongoDbAccessor')
+    def test_prepare_treatment_arms_collection(self, initial_doc_cnt, mock_db_accessor):
+        mock_db_accessor.get_document_count = lambda n: initial_doc_cnt
+
+        def mock_clear():
+            mock_db_accessor.get_document_count = lambda n: 0
+        mock_db_accessor.clear_treatment_arms = mock_clear
+
+        cnt = ctac.prepare_treatment_arms_collection(mock_db_accessor)
+        assert cnt == 0
+
+    @data(
+        # 1. Expected normal execution: both tables contain data with no errors
+        ([  # treatmentArm data
+            {'_class': 'gov.match.model.TreatmentArm',
+             '_id': 'EAY131-Z',
+             'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+             'name': 'TDM1 in HER2 Amplification',
+             'version': '2016-07-31'},
+            {'_class': 'gov.match.model.TreatmentArm',
+             '_id': 'EAY131-Q',
+             'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+             'name': 'TDM1 in HER2 Amplification',
+             'version': '2016-05-31'},
+            {'_class': 'gov.match.model.TreatmentArm',
+             '_id': 'EAY131-Z1',
+             'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+             'name': 'TDM1 in HER2 Amplification',
+             'version': '2016-12-31'}
+         ],
+         [  # treatmentArmHistory data
+            {'_class': 'gov.match.model.TreatmentArmHistoryItem',
+             '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
+             'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
+             'treatmentArm': {'_id': 'EAY131-S1',
+                              'dateCreated': datetime.datetime(2015, 1, 13, 21, 8, 22, 83000),
+                              'name': 'Trametinib in NF1 mutation',
+                              'treatmentArmDrugs': [{'drugId': '763093',
+                                                     'name': 'Trametinib dimethyl '
+                                                             'sulfoxide (GSK1120212B)',
+                                                     'pathway': 'NF1'}],
+                              'version': '09-14-2015'}},
+            {'_class': 'gov.match.model.TreatmentArmHistoryItem',
+             '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
+             'dateArchived': datetime.datetime(2016, 12, 5, 7, 36, 20, 602000),
+             'treatmentArm': {'_id': 'EAY131-S1',
+                              'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
+                              'name': 'Trametinib in NF1 mutation',
+                              'treatmentArmDrugs': [{'drugId': '763093',
+                                                     'name': 'Trametinib dimethyl '
+                                                             'sulfoxide (GSK1120212B)',
+                                                     'pathway': 'NF1'}],
+                              'version': '09-14-2016'}}
+         ],
+         0  # expected return value
+        ),
+        # 2. test when both source tables are empty
+        ([], [], 0),
+        # 3. test when treatmentArm contains data and treatmentArmHistory does not
+        ([  # treatmentArm data
+             {'_class': 'gov.match.model.TreatmentArm',
+              '_id': 'EAY131-Z',
+              'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+              'name': 'TDM1 in HER2 Amplification',
+              'version': '2016-07-31'},
+             {'_class': 'gov.match.model.TreatmentArm',
+              '_id': 'EAY131-Q',
+              'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+              'name': 'TDM1 in HER2 Amplification',
+              'version': '2016-05-31'},
+             {'_class': 'gov.match.model.TreatmentArm',
+              '_id': 'EAY131-Z1',
+              'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+              'name': 'TDM1 in HER2 Amplification',
+              'version': '2016-12-31'}
+         ],
+         [  # treatmentArmHistory data is empty
+         ],
+         0  # expected return value
+        ),
+        # 4. test when treatmentArmHistory contains data and treatmentArm does not
+        ([  # treatmentArm data is empty
+         ],
+         [  # treatmentArmHistory data
+             {'_class': 'gov.match.model.TreatmentArmHistoryItem',
+              '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
+              'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
+              'treatmentArm': {'_id': 'EAY131-S1',
+                               'dateCreated': datetime.datetime(2015, 1, 13, 21, 8, 22, 83000),
+                               'name': 'Trametinib in NF1 mutation',
+                               'treatmentArmDrugs': [{'drugId': '763093',
+                                                      'name': 'Trametinib dimethyl '
+                                                              'sulfoxide (GSK1120212B)',
+                                                      'pathway': 'NF1'}],
+                               'version': '09-14-2015'}},
+             {'_class': 'gov.match.model.TreatmentArmHistoryItem',
+              '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
+              'dateArchived': datetime.datetime(2016, 12, 5, 7, 36, 20, 602000),
+              'treatmentArm': {'_id': 'EAY131-S1',
+                               'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
+                               'name': 'Trametinib in NF1 mutation',
+                               'treatmentArmDrugs': [{'drugId': '763093',
+                                                      'name': 'Trametinib dimethyl '
+                                                              'sulfoxide (GSK1120212B)',
+                                                      'pathway': 'NF1'}],
+                               'version': '09-14-2016'}}
+         ],
+         0  # expected return value
+        ),
+        # 5. Test when an exception occurs
+        ([  # treatmentArm data with missing _id in second record
+             {'_class': 'gov.match.model.TreatmentArm',
+              '_id': 'EAY131-Z',
+              'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+              'name': 'TDM1 in HER2 Amplification',
+              'version': '2016-07-31'},
+             {'_class': 'gov.match.model.TreatmentArm',
+              'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+              'name': 'TDM1 in HER2 Amplification',
+              'version': '2016-05-31'},
+             {'_class': 'gov.match.model.TreatmentArm',
+              '_id': 'EAY131-Z1',
+              'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+              'name': 'TDM1 in HER2 Amplification',
+              'version': '2016-12-31'}
+         ],
+         [  # treatmentArmHistory data
+             {'_class': 'gov.match.model.TreatmentArmHistoryItem',
+              '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
+              'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
+              'treatmentArm': {'_id': 'EAY131-S1',
+                               'dateCreated': datetime.datetime(2015, 1, 13, 21, 8, 22, 83000),
+                               'name': 'Trametinib in NF1 mutation',
+                               'treatmentArmDrugs': [{'drugId': '763093',
+                                                      'name': 'Trametinib dimethyl '
+                                                              'sulfoxide (GSK1120212B)',
+                                                      'pathway': 'NF1'}],
+                               'version': '09-14-2015'}},
+             {'_class': 'gov.match.model.TreatmentArmHistoryItem',
+              '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
+              'dateArchived': datetime.datetime(2016, 12, 5, 7, 36, 20, 602000),
+              'treatmentArm': {'_id': 'EAY131-S1',
+                               'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
+                               'name': 'Trametinib in NF1 mutation',
+                               'treatmentArmDrugs': [{'drugId': '763093',
+                                                      'name': 'Trametinib dimethyl '
+                                                              'sulfoxide (GSK1120212B)',
+                                                      'pathway': 'NF1'}],
+                               'version': '09-14-2016'}}
+         ],
+         -1  # expected return value for error
+        )
+    )
+    @unpack
+    @patch('consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.MongoDbAccessor')
+    def test_main(self, ta_data, tah_data, exp_ret_val, mock_db_accessor):
+        mock_db_accessor.get_documents = lambda n: ta_data if n == 'treatmentArm' else tah_data
+        mock_db_accessor.get_document_count = lambda n: 0
+        ret_val = ctac.main(mock_db_accessor)
+        assert ret_val == exp_ret_val
 
 if __name__ == '__main__':
     unittest.main()
