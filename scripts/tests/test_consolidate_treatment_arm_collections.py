@@ -65,9 +65,9 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
             ret_doc = ctac.TAConverter().convert(ta_doc)
             assert 'stateToken' in ret_doc and ret_doc['stateToken']
             del ret_doc['stateToken']  # stateToken is randomly generated so must be removed prior to next assertion
-            assert ret_doc == exp_result
+            self.assertEqual(ret_doc, exp_result)
         except Exception as e:
-            assert str(e) == exp_result
+            self.assertEqual(str(e), exp_result)
 
     @data(
         # successful conversion
@@ -191,15 +191,15 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
             ret_doc = ctac.TAHConverter().convert(tah_doc)
             assert 'stateToken' in ret_doc and ret_doc['stateToken']
             del ret_doc['stateToken']  # stateToken is randomly generated so must be removed prior to next assertion
-            assert ret_doc == exp_result
+            self.assertEqual(ret_doc, exp_result)
         except Exception as e:
-            assert str(e) == exp_result
+            self.assertEqual(str(e), exp_result)
 
     def test_TAConverter_collection_name(self):
-        assert ctac.TAConverter().get_collection_name() == "treatmentArm"
+        self.assertEqual(ctac.TAConverter().get_collection_name(), "treatmentArm")
 
     def test_TAHConverter_collection_name(self):
-        assert ctac.TAHConverter().get_collection_name() == "treatmentArmHistory"
+        self.assertEqual(ctac.TAHConverter().get_collection_name(), "treatmentArmHistory")
 
     @data(
         # treatmentArm data
@@ -226,7 +226,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
     def test_convert_to_treatment_arms(self, indata, mock_db_accessor):
         mock_db_accessor.get_documents = lambda n: indata
         cnt = ctac.convert_to_treatment_arms(mock_db_accessor, ctac.TAConverter())
-        assert cnt == len(indata)
+        self.assertEqual(cnt, len(indata))
 
     @data([82], [0])
     @unpack
@@ -239,7 +239,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         mock_db_accessor.clear_treatment_arms = mock_clear
 
         cnt = ctac.prepare_treatment_arms_collection(mock_db_accessor)
-        assert cnt == 0
+        self.assertEqual(cnt, 0)
 
     @data(
         # 1. Expected normal execution: both tables contain data with no errors
@@ -389,7 +389,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         mock_db_accessor.get_documents = lambda n: ta_data if n == 'treatmentArm' else tah_data
         mock_db_accessor.get_document_count = lambda n: 0
         ret_val = ctac.main(mock_db_accessor)
-        assert ret_val == exp_ret_val
+        self.assertEqual(ret_val, exp_ret_val)
 
 if __name__ == '__main__':
     unittest.main()
