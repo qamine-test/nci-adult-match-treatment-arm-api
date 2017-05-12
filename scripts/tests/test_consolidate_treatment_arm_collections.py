@@ -189,7 +189,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
     def test_TAHConverter_convert(self, tah_doc, exp_result):
         try:
             ret_doc = ctac.TAHConverter().convert(tah_doc)
-            assert 'stateToken' in ret_doc and ret_doc['stateToken']
+            self.assertTrue('stateToken' in ret_doc and ret_doc['stateToken'])
             del ret_doc['stateToken']  # stateToken is randomly generated so must be removed prior to next assertion
             self.assertEqual(ret_doc, exp_result)
         except Exception as e:
