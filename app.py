@@ -5,8 +5,7 @@ Main application module
 #!/usr/bin/env python3
 
 import logging
-import os
-from logging.config import fileConfig
+# from logging.config import fileConfig
 
 from flask import Flask
 from flask_cors import CORS
@@ -20,7 +19,8 @@ from flask_env import MetaFlaskEnv
 
 from resources.version import Version
 from resources.treatment_arm import TreatmentArms
-from resources.treatment_arm import TreatmentArm
+from resources.treatment_arm import TreatmentArmsById
+# from resources.treatment_arm import TreatmentArm
 
 
 class Configuration(metaclass=MetaFlaskEnv):
@@ -46,11 +46,17 @@ CORS = CORS(APP, resources={r"/api/*": {"origins": "*"}})
 
 API.add_resource(Version, '/api/v1/version')
 
-API.add_resource(TreatmentArms, '/api/v1/treatment_arms')
+API.add_resource(TreatmentArms,
+                 '/api/v1/treatment_arms',
+                 endpoint='get_all')
 
-API.add_resource(TreatmentArm,
-                 '/api/v1/treatment_arms/<string:name>/<string:version>',
-                 endpoint='get_one')
+# API.add_resource(TreatmentArm,
+#                  '/api/v1/treatment_arms/<string:name>/<string:version>',
+#                  endpoint='get_one')
+#
+API.add_resource(TreatmentArmsById,
+                 '/api/v1/treatment_arms/<string:arm_id>',
+                 endpoint='get_by_id')
 
 if __name__ == '__main__':
     LOGGER.debug("server starting on port :" + str(APP.config["PORT"]))
