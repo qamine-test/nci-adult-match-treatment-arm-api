@@ -3,7 +3,6 @@ The API Version
 """
 
 from flask_restful import Resource
-from flask.json import jsonify
 
 class Version(Resource):
     """
@@ -16,4 +15,4 @@ class Version(Resource):
         Gets the Version resource
         """
 
-        return jsonify({"version": "0.0.1"})
+        return {"version": "0.0.1"}
