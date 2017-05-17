@@ -44,7 +44,7 @@ APP.config.from_object(Configuration)
 API = Api(APP)
 CORS = CORS(APP, resources={r"/api/*": {"origins": "*"}})
 
-API.add_resource(Version, '/api/v1/version')
+API.add_resource(Version, '/api/v1/treatment_arms/version')
 
 API.add_resource(TreatmentArms,
                  '/api/v1/treatment_arms',
