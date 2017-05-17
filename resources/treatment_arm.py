@@ -15,12 +15,6 @@ from accessors.treatment_arm_accessor import TreatmentArmsAccessor
 # 403 - forbidden
 # 500 - internal server error (i.e. db not available)
 
-# TO_DO Add projection query parameter where user can specify list of fields to return.  Default to returning all.
-
-def fields_to_projection(field_list):
-    """Creates and returns a dict needed to specify projection from field_list."""
-    return dict([(f, 1) for f in field_list])
-
 
 def is_active_only(active_param):
     # print( f"active_param={active_param}")
@@ -28,12 +22,10 @@ def is_active_only(active_param):
     return True if active_param and active_param.upper() in ['TRUE', '1'] else False
 
 
-# SMALL_FIELD_LIST = list(["name", "version", "treatmentId", "dateArchived", "stateToken", "treatmentArmDrugs"])
-
-
 def get_args():
     parser = reqparse.RequestParser()
     parser.add_argument('active', help='Return only active arms if set to "true" or "1"')
+    parser.add_argument('projection', help='Return only fields of arm specified here.  List should be comma-delimited.')
     args = parser.parse_args()
     return args
 
@@ -46,8 +38,15 @@ def get_query(args):
 def get_projection(args):
     projection = None
     if 'projection' in args and args['projection'] is not None:
-        projection = {}
-        # TO_DO parse projection parameter.
+        projection_list = str.split(args['projection'], ',')
+        projection = dict([(f, 1) for f in projection_list])
+
+        # pymongo gives _id even if you don't ask for it, so turn it off if not specifically requested
+        if '_id' not in projection:
+            projection['_id'] = 0
+    # import pprint
+    # pprint.pprint(args)
+    # pprint.pprint(projection)
     return projection
 
 
@@ -95,6 +94,4 @@ class TreatmentArmsById(Resource):
         query = {"treatmentId": arm_id}
         query.update(get_query(args))
         projection = get_projection(args)
-     #    import pprint
-     # pprint   pprint.pprint(projection)
         return TreatmentArmsAccessor().find(query, projection)
