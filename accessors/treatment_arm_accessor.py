@@ -13,19 +13,25 @@ class TreatmentArmsAccessor(MongoDbAccessor):
 
     def find(self, query, projection):
         """
-        Returns items from the collection using a query and a projection
+        Returns items from the collection using a query and a projection.
         """
-
-        # res = []
-        # for doc in self.collection.find(query, projection):
-        #     res.append(json.loads(json_util.dumps(doc)))
-        res = [json.loads(json_util.dumps(doc)) for doc in self.collection.find(query, projection)]
-        return res
+        return [json.loads(json_util.dumps(doc)) for doc in self.collection.find(query, projection)]
 
     def find_one(self, query, projection):
         """
         Returns one element found by filter
         """
-
         return json.loads(json_util.dumps(
             self.collection.find_one(query, projection)))
+
+    def count(self, query):
+        """
+        Returns the number of items from the collection using a query.
+        """
+        return self.collection.count(query)
+
+    def aggregate(self, pipeline):
+        """
+        Returns the aggregation defined by pipeline.
+        """
+        return self.collection.aggregate(pipeline)
