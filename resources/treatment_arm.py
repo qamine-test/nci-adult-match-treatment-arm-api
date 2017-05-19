@@ -3,12 +3,10 @@ The Treatment Arm REST resource
 """
 
 import logging
-# import pymongo
-# from flask_restful import abort
-from flask_restful import reqparse
-from flask_restful import Resource
-from accessors.treatment_arm_accessor import TreatmentArmsAccessor
 
+from accessors.treatment_arm_accessor import TreatmentArmsAccessor
+from flask_restful import Resource
+from flask_restful import reqparse
 
 # status codes
 # 200 - ok
@@ -19,9 +17,8 @@ from accessors.treatment_arm_accessor import TreatmentArmsAccessor
 
 logger = logging.getLogger(__name__)
 
+
 def is_active_only(active_param):
-    # print( f"active_param={active_param}")
-    # print( str(active_param and active_param.upper() in ['TRUE', '1']))
     return True if active_param and active_param.upper() in ['TRUE', '1'] else False
 
 
@@ -60,28 +57,34 @@ class TreatmentArms(Resource):
     @staticmethod
     def get():
         """
-        Gets the TreatmentArms resource
+        Gets the TreatmentArms data.
         """
         args = get_args()
         query = get_query(args)
         projection = get_projection(args)
 
-        # ret_val = None
-        # status_code = 200
-        # try:
-        #     ret_val = TreatmentArmsAccessor().find(query, projection)
-        #
-        # except pymongo.errors.ServerSelectionTimeoutError as exc:
-        #     print( "Caught pymongo.errors.ServerSelectionTimeoutError: ", str(exc))
-        #     raise exc
-        # except Exception as exc:
-        #     status_code = 500
-        #     print(str(exc))
-        #     abort(500)
-        # return ret_val, status_code
         return TreatmentArmsAccessor().find(query, projection)
 
 
+class TreatmentArmsById(Resource):
+    """
+    Treatment Arm REST resource
+    """
+
+    @staticmethod
+    def get(arm_id):
+        """
+        Gets the TreatmentArms data for the arm_id specified.
+        """
+        args = get_args()
+        query = {"treatmentId": arm_id}
+        query.update(get_query(args))
+        projection = get_projection(args)
+
+        return TreatmentArmsAccessor().find(query, projection)
+
+
+# Commented out for now because not specified on API doc nor unit-tested.
 # class TreatmentArm(Resource):
 #     """
 #     Treatment Arm REST resource
@@ -96,19 +99,3 @@ class TreatmentArms(Resource):
 #         return TreatmentArmsAccessor().find_one(
 #             {"name": name, "version": version}, None)
 #
-
-class TreatmentArmsById(Resource):
-    """
-    Treatment Arm REST resource
-    """
-
-    @staticmethod
-    def get(arm_id):
-        """
-        Gets the TreatmentArms resource
-        """
-        args = get_args()
-        query = {"treatmentId": arm_id}
-        query.update(get_query(args))
-        projection = get_projection(args)
-        return TreatmentArmsAccessor().find(query, projection)
