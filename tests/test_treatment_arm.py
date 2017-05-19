@@ -168,7 +168,8 @@ class TestTreatmentArms(unittest.TestCase):
     )
     @unpack
     @patch('resources.treatment_arm.TreatmentArmsAccessor')
-    def test_get(self, test_id, test_data, request_context, exp_result, exp_qry_param, exp_proj_param, mock_ta_accessor):
+    def test_get(self, test_id, test_data, request_context, exp_result, exp_qry_param, exp_proj_param,
+                 mock_ta_accessor):
         active_only = is_active_only_request(request_context)
         instance = mock_ta_accessor.return_value
         instance.find.return_value = test_data if not active_only else filter_out_inactives(test_data)
@@ -176,7 +177,7 @@ class TestTreatmentArms(unittest.TestCase):
         app = flask.Flask(__name__)
         with app.test_request_context(request_context):
             result = treatment_arm.TreatmentArms.get()
-            self.assertEqual(result, exp_result, "TestTreatmentArms Test Case %d"%test_id)
+            self.assertEqual(result, exp_result, "TestTreatmentArms Test Case %d" % test_id)
             instance.find.assert_called_with(exp_qry_param, exp_proj_param)
 
 
@@ -228,7 +229,8 @@ class TestTreatmentArmsById(unittest.TestCase):
         (301, 'EAY131-M', ACTIVE_ARMS, '?active=1', EAY131M_ACTIVE_ARMS, EAY131M_ACTIVE_QRY, DEFAULT_PROJECTION),
         (302, 'EAY131-M', ARCHIVED_ARMS, '?active=1', NO_ARMS, EAY131M_ACTIVE_QRY, DEFAULT_PROJECTION),
         (303, 'EAY131-M', NO_ARMS, '?active=1', NO_ARMS, EAY131M_ACTIVE_QRY, DEFAULT_PROJECTION),
-        (304, 'EAY131-M', EAY131M_ACTIVE_ARMS, '?active=1', EAY131M_ACTIVE_ARMS, EAY131M_ACTIVE_QRY, DEFAULT_PROJECTION),
+        (304, 'EAY131-M', EAY131M_ACTIVE_ARMS, '?active=1', EAY131M_ACTIVE_ARMS, EAY131M_ACTIVE_QRY,
+            DEFAULT_PROJECTION),
         (305, 'EAY131-M', EAY131M_ARCHIVED_ARMS, '?active=1', NO_ARMS, EAY131M_ACTIVE_QRY, DEFAULT_PROJECTION),
         (306, 'EAY131-M', EAY131M_ALL_ARMS, '?active=1', EAY131M_ACTIVE_ARMS, EAY131M_ACTIVE_QRY, DEFAULT_PROJECTION),
         (307, 'EAY131-M', EAY131L_ACTIVE_ARMS, '?active=1', NO_ARMS, EAY131M_ACTIVE_QRY, DEFAULT_PROJECTION),
@@ -237,7 +239,8 @@ class TestTreatmentArmsById(unittest.TestCase):
         (401, 'EAY131-L', ACTIVE_ARMS, '?active=1', EAY131L_ACTIVE_ARMS, EAY131L_ACTIVE_QRY, DEFAULT_PROJECTION),
         (402, 'EAY131-L', ARCHIVED_ARMS, '?active=1', NO_ARMS, EAY131L_ACTIVE_QRY, DEFAULT_PROJECTION),
         (403, 'EAY131-L', NO_ARMS, '?active=1', NO_ARMS, EAY131L_ACTIVE_QRY, DEFAULT_PROJECTION),
-        (404, 'EAY131-L', EAY131L_ACTIVE_ARMS, '?active=1', EAY131L_ACTIVE_ARMS, EAY131L_ACTIVE_QRY, DEFAULT_PROJECTION),
+        (404, 'EAY131-L', EAY131L_ACTIVE_ARMS, '?active=1', EAY131L_ACTIVE_ARMS, EAY131L_ACTIVE_QRY,
+            DEFAULT_PROJECTION),
         (405, 'EAY131-L', EAY131L_ARCHIVED_ARMS, '?active=1', NO_ARMS, EAY131L_ACTIVE_QRY, DEFAULT_PROJECTION),
         (406, 'EAY131-L', EAY131L_ALL_ARMS, '?active=1', EAY131L_ACTIVE_ARMS, EAY131L_ACTIVE_QRY, DEFAULT_PROJECTION),
         (407, 'EAY131-L', EAY131M_ACTIVE_ARMS, '?active=1', NO_ARMS, EAY131L_ACTIVE_QRY, DEFAULT_PROJECTION),
@@ -248,7 +251,8 @@ class TestTreatmentArmsById(unittest.TestCase):
         # Test for projection; this is done exclusively by checking that the projection parameter passed to the
         # mocked TreatmentArmAccessor object is what is expected.  MongoDb does the actual filtering, so there
         # is nothing to test in that regard.
-        (600, 'EAY131-L', ALL_ARMS, '?active=1&projection=name', EAY131L_ACTIVE_ARMS, EAY131L_ACTIVE_QRY, NAME_PROJECTION),
+        (600, 'EAY131-L', ALL_ARMS, '?active=1&projection=name', EAY131L_ACTIVE_ARMS, EAY131L_ACTIVE_QRY,
+            NAME_PROJECTION),
         (601, 'EAY131-L', ALL_ARMS, '?active=1&projection=name,_id', EAY131L_ACTIVE_ARMS, EAY131L_ACTIVE_QRY,
             NAME_AND_ID_PROJECTION),
         (602, 'EAY131-L', ALL_ARMS, '?active=1&projection=_id,name', EAY131L_ACTIVE_ARMS, EAY131L_ACTIVE_QRY,
@@ -268,9 +272,9 @@ class TestTreatmentArmsById(unittest.TestCase):
         with app.test_request_context(request_context):
             result = treatment_arm.TreatmentArmsById.get(arm_id)
             instance.find.assert_called_with(exp_qry_param, exp_proj_param)
-            self.assertEqual(len(result), len(exp_result), "TestTreatmentArmsById Test Case %d"%test_id)
+            self.assertEqual(len(result), len(exp_result), "TestTreatmentArmsById Test Case %d" % test_id)
             self.assertEqual(TestTreatmentArmsById._sort(result), TestTreatmentArmsById._sort(exp_result),
-                             "TestTreatmentArmsById Test Case %d"%test_id)
+                             "TestTreatmentArmsById Test Case %d" % test_id)
 
     @staticmethod
     def _sort(result):
