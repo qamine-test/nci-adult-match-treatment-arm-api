@@ -9,23 +9,34 @@ from consolidate_treatment_arm_collections import consolidate_treatment_arm_coll
 
 @ddt
 class TestConsolidateTreatmentArmCollections(unittest.TestCase):
+
+    # Test the TAConverter().convert function that converts a treatmentArm document to a treatmentArms document.
     @data(
         # successful conversion
         ({'_class': 'gov.match.model.TreatmentArm',
           '_id': 'EAY131-Q',
           'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
-          'name': 'TDM1 in HER2 Amplification',
+          'exclusionCriterias': [],
+         'name': 'TDM1 in HER2 Amplification',
           'version': '2016-05-31'},
          {'_class': 'gov.match.model.TreatmentArm',
           'treatmentId': 'EAY131-Q',
           'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
           'name': 'TDM1 in HER2 Amplification',
           'version': '2016-05-31',
+          'summaryReport': {
+            'numCurrentPatientsOnArm': 0,
+            'numFormerPatients': 0,
+            'numPendingArmApproval': 0,
+            'numNotEnrolledPatient': 0,
+            'assignmentRecords': []
+          },
           'dateArchived': None}),
         # successful conversion when input record has incorrect _class
         ({'_class': 'gov.match.model.TreatmentArmor',
           '_id': 'EAY131-Q',
           'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+          'exclusionCriterias': [],
           'name': 'TDM1 in HER2 Amplification',
           'version': '2016-05-31'},
          {'_class': 'gov.match.model.TreatmentArm',
@@ -33,10 +44,18 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
           'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
           'name': 'TDM1 in HER2 Amplification',
           'version': '2016-05-31',
+          'summaryReport': {
+            'numCurrentPatientsOnArm': 0,
+            'numFormerPatients': 0,
+            'numPendingArmApproval': 0,
+            'numNotEnrolledPatient': 0,
+            'assignmentRecords': []
+          },
           'dateArchived': None}),
         # 1. exception for missing _id
         ({'_class': 'gov.match.model.TreatmentArm',
           'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+          'exclusionCriterias': [],
           'name': 'TDM1 in HER2 Amplification',
           'version': '2016-05-31'},
          'Invalid treatmentArm document'),
@@ -44,6 +63,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         ({'_class': 'gov.match.model.TreatmentArm',
           'treatmentId': 'EAY131-Q',
           'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+          'exclusionCriterias': [],
           'name': 'TDM1 in HER2 Amplification',
           'version': '2016-05-31'},
          'Invalid treatmentArm document'),
@@ -51,6 +71,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         ({'_class': 'gov.match.model.TreatmentArm',
           '_id': None,
           'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
+          'exclusionCriterias': [],
           'name': 'TDM1 in HER2 Amplification',
           'version': '2016-05-31'},
          'Invalid treatmentArm document'),
@@ -69,11 +90,13 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         except Exception as e:
             self.assertEqual(str(e), exp_result)
 
+    # Test the TAHConverter().convert function that converts a treatmentArmHistory document to a treatmentArms document.
     @data(
         # successful conversion
         ({'_class': 'gov.match.model.TreatmentArmHistoryItem',
           '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
           'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
+          'exclusionCriterias': [],
           'treatmentArm': {'_id': 'EAY131-S1',
                            'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
                            'name': 'Trametinib in NF1 mutation',
@@ -95,6 +118,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         # 1. exception for missing _id
         ({'_class': 'gov.match.model.TreatmentArmHistoryItem',
           'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
+          'exclusionCriterias': [],
           'treatmentArm': {'_id': 'EAY131-S1',
                            'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
                            'name': 'Trametinib in NF1 mutation',
@@ -109,6 +133,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         ({'_class': 'gov.match.model.TreatmentArmHistoryItem',
           '_id': None,
           'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
+          'exclusionCriterias': [],
           'treatmentArm': {'_id': 'EAY131-S1',
                            'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
                            'name': 'Trametinib in NF1 mutation',
@@ -122,6 +147,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         # 3. exception for missing dateArchived
         ({'_class': 'gov.match.model.TreatmentArmHistoryItem',
           '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
+          'exclusionCriterias': [],
           'treatmentArm': {'_id': 'EAY131-S1',
                            'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
                            'name': 'Trametinib in NF1 mutation',
@@ -136,6 +162,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         ({'_class': 'gov.match.model.TreatmentArmHistoryItem',
           '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
           'dateArchived': None,
+          'exclusionCriterias': [],
           'treatmentArm': {'_id': 'EAY131-S1',
                            'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
                            'name': 'Trametinib in NF1 mutation',
@@ -150,6 +177,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         ({'_class': 'gov.match.model.TreatmentArmHistoryItem',
           '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
           'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
+          'exclusionCriterias': [],
           },
          'Invalid treatmentArmHistory document'
          ),
@@ -157,6 +185,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         ({'_class': 'gov.match.model.TreatmentArmHistoryItem',
           '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
           'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
+          'exclusionCriterias': [],
           'treatmentArm': {'_id': None,
                            'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
                            'name': 'Trametinib in NF1 mutation',
@@ -171,6 +200,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         ({'_class': 'gov.match.model.TreatmentArmHistoryItem',
           '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
           'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
+          'exclusionCriterias': [],
           'treatmentArm': {'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
                            'name': 'Trametinib in NF1 mutation',
                            'treatmentArmDrugs': [{'drugId': '763093',
@@ -189,6 +219,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
     def test_TAHConverter_convert(self, tah_doc, exp_result):
         try:
             ret_doc = ctac.TAHConverter().convert(tah_doc)
+            self.assertTrue('summaryReport' not in ret_doc)
             self.assertTrue('stateToken' in ret_doc and ret_doc['stateToken'])
             del ret_doc['stateToken']  # stateToken is randomly generated so must be removed prior to next assertion
             self.assertEqual(ret_doc, exp_result)
@@ -213,7 +244,6 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
            'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
            'name': 'TDM1 in HER2 Amplification',
            'version': '2016-05-31'},
-
           {'_class': 'gov.match.model.TreatmentArm',
            '_id': 'EAY131-Z1',
            'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),

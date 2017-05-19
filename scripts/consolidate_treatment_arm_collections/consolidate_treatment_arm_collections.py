@@ -10,10 +10,18 @@ with the following changes/additions:
    - For documents from treatmentArmHistory, treatmentId will originate from _id of 
      the treatmentArm subcollection.
 *  mongoDB will auto-generate a new unique _id
-*  add dateArchived key; active arm will be identified by dateArchived IS NULL and archived
+*  add 'dateArchived' key; active arm will be identified by dateArchived IS NULL and archived
    arms will get this value from treatmentArmHistory.
 *  add 'stateToken' key with UUID.
 *  _class will be 'gov.match.model.TreatmentArm' for all documents.
+*  item 'exclusionCriterias' is obsolete and will be excluded from treatmentArms
+*  for active arms only (that is, documents with dateArchived == null), add 'summaryReport' key, which 
+   will contain a subcollection with the following items with default values:
+        - 'numCurrentPatientsOnArm': 0,
+        - 'numFormerPatients': 0,
+        - 'numPendingArmApproval': 0,
+        - 'numNotEnrolledPatient': 0,
+        - 'assignmentRecords': []
 
 Note:  In production, this script will need to be run only once.  To simplify 
 development/testing efforts, it will first remove all documents from the
@@ -23,8 +31,9 @@ Returns 0 if successful; otherwise -1.
 """
 import logging
 import os
-import pymongo
 import uuid
+
+import pymongo
 
 # Logging functionality
 LOGGER = logging.getLogger(__name__)
@@ -71,6 +80,14 @@ class ConverterBase(object):
     def get_collection_name(self):
         return self._coll_name
 
+    @staticmethod
+    def _apply_common_changes(new_ta_doc):
+        del new_ta_doc['_id']
+        if 'exclusionCriterias' in new_ta_doc:
+            del new_ta_doc['exclusionCriterias']
+        new_ta_doc['_class'] = 'gov.match.model.TreatmentArm'
+        new_ta_doc['stateToken'] = uuid.uuid4()
+
 
 class TAConverter(ConverterBase):
     """Converts a document from the treatment collection to a document 
@@ -88,11 +105,16 @@ class TAConverter(ConverterBase):
             raise Exception('Invalid treatmentArm document')
 
         new_ta_doc = dict(ta_doc)
-        del new_ta_doc['_id']
-        new_ta_doc['_class'] = 'gov.match.model.TreatmentArm'
-        new_ta_doc['stateToken'] = uuid.uuid4()
+        ConverterBase._apply_common_changes(new_ta_doc)
         new_ta_doc['treatmentId'] = ta_doc['_id']
         new_ta_doc['dateArchived'] = None
+        new_ta_doc['summaryReport'] = {
+            'numCurrentPatientsOnArm': 0,
+            'numFormerPatients': 0,
+            'numPendingArmApproval': 0,
+            'numNotEnrolledPatient': 0,
+            'assignmentRecords': []
+        }
         return new_ta_doc
 
 
@@ -117,9 +139,7 @@ class TAHConverter(ConverterBase):
             raise Exception('Invalid treatmentArmHistory document')
 
         new_ta_doc = dict(tah_doc['treatmentArm'])
-        del new_ta_doc['_id']
-        new_ta_doc['_class'] = 'gov.match.model.TreatmentArm'
-        new_ta_doc['stateToken'] = uuid.uuid4()
+        ConverterBase._apply_common_changes(new_ta_doc)
         new_ta_doc['treatmentId'] = tah_doc['treatmentArm']['_id']
         new_ta_doc['dateArchived'] = tah_doc['dateArchived']
         return new_ta_doc
