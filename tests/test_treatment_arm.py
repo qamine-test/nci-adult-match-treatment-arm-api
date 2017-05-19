@@ -29,9 +29,9 @@ ACTIVE_ARMS = [
         },
         "treatmentArmDrugs": [
             {
-                "drugId": "768435",
+                "drugId": "768445",
                 "name": "MLN0128(TAK-228)",
-                "pathway": "PI3K/AKT/mTOR"
+                "pathway": "PI3K/mTOR"
             }
         ],
         "treatmentId": "EAY131-M",
@@ -89,9 +89,9 @@ ARCHIVED_ARMS = [
         },
         "treatmentArmDrugs": [
             {
-                "drugId": "768435",
-                "name": "MLN0128(TAK-228)",
-                "pathway": "PI3K/AKT/mTOR"
+                "drugId": "768412",
+                "name": "MLN0129(TAK-228)",
+                "pathway": "PI3/AKT/mTOR"
             }
         ],
         "treatmentId": "EAY131-M",
@@ -109,7 +109,7 @@ ARCHIVED_ARMS = [
         "treatmentArmDrugs": [
             {
                 "drugId": "768435",
-                "name": "MLN0128(TAK-228)",
+                "name": "MLN0133(TAK-228)",
                 "pathway": "PI3K/AKT/mTOR"
             }
         ],
@@ -122,6 +122,12 @@ ALL_ARMS = ACTIVE_ARMS + ARCHIVED_ARMS
 
 NO_ARMS = []
 
+# PROJECTIONS - for checking that the correct projection is passed to TreatmentArmsAccessor.find()
+DEFAULT_PROJECTION = None
+ID_PROJECTION = {'_id': 1}
+NAME_PROJECTION = {'name': 1, '_id': 0}
+NAME_AND_ID_PROJECTION = {'name': 1, '_id': 1}
+
 
 @ddt
 class TestTreatmentArms(unittest.TestCase):
@@ -129,12 +135,6 @@ class TestTreatmentArms(unittest.TestCase):
     # QUERIES - for checking that the correct query is passed to TreatmentArmsAccessor.find()
     DEFAULT_QUERY = {}
     ACTIVE_QRY = {'dateArchived': {"$eq": None}}
-
-    # PROJECTIONS - for checking that the correct projection is passed to TreatmentArmsAccessor.find()
-    DEFAULT_PROJECTION = None
-    ID_PROJECTION = {'_id': 1}
-    NAME_PROJECTION = {'name': 1, '_id': 0}
-    NAME_AND_ID_PROJECTION = {'name': 1, '_id': 1}
 
     @data(
         (100, ALL_ARMS,  '', ALL_ARMS, DEFAULT_QUERY, DEFAULT_PROJECTION),
@@ -199,12 +199,6 @@ class TestTreatmentArmsById(unittest.TestCase):
     EAY131L_ACTIVE_QRY = {"treatmentId": 'EAY131-L', 'dateArchived': {"$eq": None}}
     NO_EXIST_ALL_QRY = {"treatmentId": 'NO_EXIST'}
     NO_EXIST_ACTIVE_QRY = {"treatmentId": 'NO_EXIST', 'dateArchived': {"$eq": None}}
-
-    # PROJECTIONS - for checking that the correct projection is passed to TreatmentArmsAccessor.find()
-    DEFAULT_PROJECTION = None
-    ID_PROJECTION = {'_id': 1}
-    NAME_PROJECTION = {'name': 1, '_id': 0}
-    NAME_AND_ID_PROJECTION = {'name': 1, '_id': 1}
 
     @data(
         (100, 'EAY131-M', ALL_ARMS, '', EAY131M_ALL_ARMS, EAY131M_ALL_QRY, DEFAULT_PROJECTION),
@@ -278,9 +272,7 @@ class TestTreatmentArmsById(unittest.TestCase):
 
     @staticmethod
     def _sort(result):
-        # sort_field = 'dateArchived'
-        # return sorted(result, key=lambda r: r[sort_field] if r[sort_field] is not None else datetime.datetime.now())
-        return sorted(result, key=lambda r: str(r))
+        return sorted(result, key=str)
 
     @staticmethod
     def _create_find_return(test_data, arm_id, active_only):
