@@ -22,8 +22,8 @@ before_install:
 install: pip install -r requirements.txt
 
 script:
-  - coverage run -m --omit='*/tests/*,*/accessors/*,*/oncomine-vcf-converter-1.4.3/*, /home/*' --include='*/common/*,*/resource_helpers/*,*/resources/*, ,*/tasks/*' unittest discover tests
-  - coverage report
+  # - coverage run -m --omit='*/tests/*,*/accessors/*,*/oncomine-vcf-converter-1.4.3/*, /home/*' --include='*/common/*,*/resource_helpers/*,*/resources/*, ,*/tasks/*' unittest discover tests
+  # - coverage report
   # - coverage xml && python-codacy-coverage -r coverage.xml
   #Build Docker image
   - docker build -t $DOCKER_IMAGE:$DATE -t $DOCKER_IMAGE:latest .
