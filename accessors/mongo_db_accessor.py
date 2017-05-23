@@ -11,11 +11,8 @@ class MongoDbAccessor(object):
     Base class for MongoDB accessors
     """
     def __init__(self, collection_name):
-        host = flask.current_app.config["MONGO_HOST"]
-        port = flask.current_app.config["MONGO_PORT"]
-        db = 'match'
-
-        uri = "mongodb://%s:%s/%s"%(host, port, db)
+        uri = flask.current_app.config["MONGODB_URI"]
+        db = flask.current_app.config["DB_NAME"]
 
         self.mongo_client = MongoClient(uri)
         self.database = self.mongo_client[db]
