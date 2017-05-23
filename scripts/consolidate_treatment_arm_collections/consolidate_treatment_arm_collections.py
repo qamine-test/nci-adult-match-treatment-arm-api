@@ -194,18 +194,22 @@ def main(db_accessor):
     return 0
 
 
-if __name__ == '__main__':
-    if sys.version_info >= (3, 6, 0):
-        sys.stderr.write("Script will not run with python 3.6; please use python 3.5\n")
-        exit(1)
-
+def get_mongo_accessor():
     if 'MONGODB_URI' in os.environ:
         LOGGER.debug("Connecting to MongoDB specified in MONGODB_URI")
-        db = 'Match'
         uri = os.environ['MONGODB_URI']
     else:
         LOGGER.debug("Connecting to local MongoDB")
-        db = 'match'
         uri = 'mongodb://localhost:27017/match'
 
-    exit(main(MongoDbAccessor(uri, db)))
+    # Some instances of the DB are named 'Match' and others 'match'.
+    db = 'match' if '/match' in uri else 'Match'
+    return MongoDbAccessor(uri, db)
+
+
+if __name__ == '__main__':
+    if sys.version_info >= (3, 6, 0):
+        LOGGER.error("Script will not run with python 3.6; please use python 3.5\n")
+        exit(1)
+
+    exit(main(get_mongo_accessor()))
