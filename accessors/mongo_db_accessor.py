@@ -15,7 +15,7 @@ class MongoDbAccessor(object):
         port = flask.current_app.config["MONGO_PORT"]
         db = 'match'
 
-        uri = f"mongodb://{host}:{port}/{db}"
+        uri = "mongodb://%s:%s/%s"%(host, port, db)
 
         self.mongo_client = MongoClient(uri)
         self.database = self.mongo_client[db]
