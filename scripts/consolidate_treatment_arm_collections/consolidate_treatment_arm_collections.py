@@ -2,7 +2,7 @@
 Consolidate collections treatmentArm and treatmentArmHistory into a single
 treatmentArms collection.
 
-The new treatmentArms collection will look much like the old treatmentArm collection 
+The new treatmentArms collection will look much like the old treatmentArm collection
 with the following changes/additions:
 *  treatmentArm._id currently contains the unique identifier for each
    treatment arm; because it functions as a primary key, it needs to be
@@ -15,7 +15,7 @@ with the following changes/additions:
 *  add 'stateToken' key with UUID.
 *  _class will be 'gov.match.model.TreatmentArm' for all documents.
 *  item 'exclusionCriterias' is obsolete and will be excluded from treatmentArms
-*  for active arms only (that is, documents with dateArchived == null), add 'summaryReport' key, which 
+*  for active arms only (that is, documents with dateArchived == null), add 'summaryReport' key, which
    will contain a subcollection with the following items with default values:
         - 'numCurrentPatientsOnArm': 0,
         - 'numFormerPatients': 0,
@@ -121,22 +121,22 @@ class TAHConverter(ConverterBase):
     def __init__(self):
         ConverterBase.__init__(self, 'treatmentArmHistory')
 
-    def convert(self, tah_doc):
-        if(tah_doc is None
-           or '_id' not in tah_doc
-           or tah_doc['_id'] is None
-           or 'treatmentArm' not in tah_doc
-           or '_id' not in tah_doc['treatmentArm']
-           or tah_doc['treatmentArm']['_id'] is None
-           or 'dateArchived' not in tah_doc
-           or tah_doc['dateArchived'] is None
+    def convert(self, doc):
+        if(doc is None
+           or '_id' not in doc
+           or doc['_id'] is None
+           or 'treatmentArm' not in doc
+           or '_id' not in doc['treatmentArm']
+           or doc['treatmentArm']['_id'] is None
+           or 'dateArchived' not in doc
+           or doc['dateArchived'] is None
            ):
             raise Exception('Invalid treatmentArmHistory document')
 
-        new_ta_doc = dict(tah_doc['treatmentArm'])
+        new_ta_doc = dict(doc['treatmentArm'])
         ConverterBase._apply_common_changes(new_ta_doc)
-        new_ta_doc['treatmentId'] = tah_doc['treatmentArm']['_id']
-        new_ta_doc['dateArchived'] = tah_doc['dateArchived']
+        new_ta_doc['treatmentId'] = doc['treatmentArm']['_id']
+        new_ta_doc['dateArchived'] = doc['dateArchived']
         return new_ta_doc
 
 
