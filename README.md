@@ -5,7 +5,7 @@
 
 ## Prerequisites
 
-* [Install Python3](http://www.marinamele.com/2014/07/install-python3-on-mac-os-x-and-use-virtualenv-and-virtualenvwrapper.html)
+* [Install Python3.5](http://www.marinamele.com/2014/07/install-python3-on-mac-os-x-and-use-virtualenv-and-virtualenvwrapper.html)
 * [Setup Virtual Environments](https://realpython.com/blog/python/python-virtual-environments-a-primer/)
 * Required Python modules:  pymongo, flask, flask_env, flask_cors, flask_restful
 
@@ -36,14 +36,13 @@ workon nci-adult-match-treatment-arm-api
 ### Export environment variable for shell session
 
 ```#!/bin/bash
-export MONGO_HOST=localhost
-export MONGO_PORT=27017
+export MONGODB_URI=mongodb://localhost:27017/match
 ```
 
 ### Set explicitly for a specific command execution
 
 ```#!/bin/bash
-MONGO_HOST=localhost MONGO_PORT=27017 python app.py
+MONGODB_URI=mongodb://localhost:27017/match python app.py
 ```
 
 ## Dockerization
@@ -101,9 +100,16 @@ kill -9 $(lsof -n -i4TCP:5000)
 
 ## Scripts
 
+####consolidate_treatment_arms
 Merge the treatmentArm and treatmentArm collections in MongoDB Match database into single treatmentArms collection.
-Requires pymongo python module.
+
+ 
+* python 3 (must be 3.5 or earlier)
+* pymongo 3.4 python module
+
+Defaults to connect to the MongoDB at ```mongodb://localhost:27017/match```; can be overwritten by setting the MONGODB_URI 
+environment variable to the desired URI.
 
 ```#!/bin/bash
-MONGO_HOST=localhost MONGO_PORT=27017 python3 scripts/consolidate_treatment_arm_collections/consolidate_treatment_arm_collections.py
+python3 scripts/consolidate_treatment_arm_collections/consolidate_treatment_arm_collections.py
 ```
