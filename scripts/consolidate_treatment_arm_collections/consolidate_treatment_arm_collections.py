@@ -29,8 +29,10 @@ treatmentArms collection if they exist.
 
 Returns 0 if successful; otherwise -1.
 """
+import argparse
 import logging
 import os
+import sys
 import uuid
 
 import pymongo
@@ -43,13 +45,7 @@ LOGGER.addHandler(logging.StreamHandler())
 
 class MongoDbAccessor(object):
 
-    def __init__(self):
-
-        host = os.environ.get('MONGO_HOST', 'localhost')
-        port = os.environ.get('MONGO_PORT', 27017)
-        db = 'match'
-        uri = f"mongodb://{host}:{port}/{db}"
-
+    def __init__(self, uri, db):
         mongo_client = pymongo.MongoClient(uri)
         self.database = mongo_client[db]
 
@@ -200,4 +196,22 @@ def main(db_accessor):
 
 
 if __name__ == '__main__':
-    exit(main(MongoDbAccessor()))
+    if sys.version_info >= (3, 6, 0):
+        sys.stderr.write("Script will not run with python 3.6; please use python 3.5\n")
+        exit(1)
+
+    parser = argparse.ArgumentParser(description='Consolidate Treatment Arm Collections.')
+    parser.add_argument('--local', dest='local', action='store_true',
+                        help='access the MongoDB on localhost')
+
+    args = parser.parse_args()
+    if args.local:
+        host = os.environ.get('MONGO_HOST', 'localhost')
+        port = os.environ.get('MONGO_PORT', 27017)
+        db = 'match'
+        uri = "mongodb://%s:%s/%s"%(host, port, db)
+    else:
+        db = 'Match'
+        uri = "mongodb://treatmentArmApi:7NlhjpZTetjczk0e@match-inttest-shard-00-00-zsynp.mongodb.net:27017,match-inttest-shard-00-01-zsynp.mongodb.net:27017,match-inttest-shard-00-02-zsynp.mongodb.net:27017/Match?ssl=true&replicaSet=Match-IntTest-shard-0&authSource=admin"
+
+    exit(main(MongoDbAccessor(uri, db)))
