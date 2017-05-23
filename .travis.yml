@@ -8,7 +8,7 @@ sudo: required
 services:
 - docker
 
-python: 3.6
+python: 3.5
 
 before_install:
   - export AUTHOR=`git --no-pager show -s --format='%an <%ae>'`
