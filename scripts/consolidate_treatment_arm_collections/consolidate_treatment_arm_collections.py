@@ -1,13 +1,13 @@
 """
-Consolidate collections treatmentArm and treatmentArmHistory into a single 
+Consolidate collections treatmentArm and treatmentArmHistory into a single
 treatmentArms collection.
 
 The new treatmentArms collection will look much like the old treatmentArm collection 
 with the following changes/additions:
-*  treatmentArm._id currently contains the unique identifier for each 
-   treatment arm; because it functions as a primary key, it needs to be 
+*  treatmentArm._id currently contains the unique identifier for each
+   treatment arm; because it functions as a primary key, it needs to be
    renamed treatmentId.
-   - For documents from treatmentArmHistory, treatmentId will originate from _id of 
+   - For documents from treatmentArmHistory, treatmentId will originate from _id of
      the treatmentArm subcollection.
 *  mongoDB will auto-generate a new unique _id
 *  add 'dateArchived' key; active arm will be identified by dateArchived IS NULL and archived
@@ -23,13 +23,12 @@ with the following changes/additions:
         - 'numNotEnrolledPatient': 0,
         - 'assignmentRecords': []
 
-Note:  In production, this script will need to be run only once.  To simplify 
+Note:  In production, this script will need to be run only once.  To simplify
 development/testing efforts, it will first remove all documents from the
 treatmentArms collection if they exist.
 
 Returns 0 if successful; otherwise -1.
 """
-import argparse
 import logging
 import os
 import sys
@@ -63,7 +62,7 @@ class MongoDbAccessor(object):
 
 
 class ConverterBase(object):
-    """Base class for conversion objects.  Couples together the source 
+    """Base class for conversion objects.  Couples together the source
        collection and the code used to convert it to the desired format
        for the new treatmentArms collection.
     """
@@ -86,23 +85,23 @@ class ConverterBase(object):
 
 
 class TAConverter(ConverterBase):
-    """Converts a document from the treatment collection to a document 
+    """Converts a document from the treatment collection to a document
        for the treatmentArms collection.
     """
     def __init__(self):
         ConverterBase.__init__(self, 'treatmentArm')
 
-    def convert(self, ta_doc):
-        if(ta_doc is None
-           or '_id' not in ta_doc
-           or ta_doc['_id'] is None
-           or 'treatmentId' in ta_doc
+    def convert(self, doc):
+        if(doc is None
+           or '_id' not in doc
+           or doc['_id'] is None
+           or 'treatmentId' in doc
            ):
             raise Exception('Invalid treatmentArm document')
 
-        new_ta_doc = dict(ta_doc)
+        new_ta_doc = dict(doc)
         ConverterBase._apply_common_changes(new_ta_doc)
-        new_ta_doc['treatmentId'] = ta_doc['_id']
+        new_ta_doc['treatmentId'] = doc['_id']
         new_ta_doc['dateArchived'] = None
         new_ta_doc['summaryReport'] = {
             'numCurrentPatientsOnArm': 0,
@@ -115,7 +114,7 @@ class TAConverter(ConverterBase):
 
 
 class TAHConverter(ConverterBase):
-    """Converts a document from the treatmentArmHistory collection to a 
+    """Converts a document from the treatmentArmHistory collection to a
        document for the treatmentArms collection.
     """
 
@@ -159,7 +158,7 @@ def prepare_treatment_arms_collection(db_accessor):
 
 
 def convert_to_treatment_arms(db_accessor, converter):
-    """Using the db_accessor, get all of the documents from collection named in converter, 
+    """Using the db_accessor, get all of the documents from collection named in converter,
        convert them to the required format using the converter.convert function, and insert
        them into the treatmentArms collection.
        Return the number of documents converted.
@@ -200,18 +199,13 @@ if __name__ == '__main__':
         sys.stderr.write("Script will not run with python 3.6; please use python 3.5\n")
         exit(1)
 
-    parser = argparse.ArgumentParser(description='Consolidate Treatment Arm Collections.')
-    parser.add_argument('--local', dest='local', action='store_true',
-                        help='access the MongoDB on localhost')
-
-    args = parser.parse_args()
-    if args.local:
-        host = os.environ.get('MONGO_HOST', 'localhost')
-        port = os.environ.get('MONGO_PORT', 27017)
-        db = 'match'
-        uri = "mongodb://%s:%s/%s"%(host, port, db)
-    else:
+    if 'MONGODB_URI' in os.environ:
+        LOGGER.debug("Connecting to MongoDB specified in MONGODB_URI")
         db = 'Match'
-        uri = "mongodb://treatmentArmApi:7NlhjpZTetjczk0e@match-inttest-shard-00-00-zsynp.mongodb.net:27017,match-inttest-shard-00-01-zsynp.mongodb.net:27017,match-inttest-shard-00-02-zsynp.mongodb.net:27017/Match?ssl=true&replicaSet=Match-IntTest-shard-0&authSource=admin"
+        uri = os.environ['MONGODB_URI']
+    else:
+        LOGGER.debug("Connecting to local MongoDB")
+        db = 'match'
+        uri = 'mongodb://localhost:27017/match'
 
     exit(main(MongoDbAccessor(uri, db)))
