@@ -1,5 +1,5 @@
-# Base image 
-FROM python:3.6
+# Base image
+FROM python:3.5
 
 MAINTAINER jeremy.pumphrey@nih.gov
 
@@ -11,10 +11,10 @@ WORKDIR $INSTALL_PATH
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-# Add the app code 
+# Add the app code
 COPY . .
 
 EXPOSE 5000
 
-# Default command 
+# Default command
 CMD ["python", "./app.py"]
