@@ -92,4 +92,5 @@ ENV/
 bin/
 
 # Project-specific ignores
+.idea
 .data_setup/
