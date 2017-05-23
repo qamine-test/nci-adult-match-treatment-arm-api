@@ -6,7 +6,7 @@ import logging
 
 from accessors.treatment_arm_accessor import TreatmentArmsAccessor
 from flask_restful import Resource
-from flask_restful import reqparse
+from flask_restful import request
 
 # status codes
 # 200 - ok
@@ -23,10 +23,11 @@ def is_active_only(active_param):
 
 
 def get_args():
-    parser = reqparse.RequestParser()
-    parser.add_argument('active', help='Return only active arms if set to "true" or "1"')
-    parser.add_argument('projection', help='Return only fields of arm specified here.  List should be comma-delimited.')
-    args = parser.parse_args()
+    args = request.args.to_dict()
+    if 'projection' not in args:
+        args['projection'] = None
+    if 'active' not in args:
+        args['active'] = None
     return args
 
 
@@ -44,9 +45,7 @@ def get_projection(args):
         # pymongo gives _id even if you don't ask for it, so turn it off if not specifically requested
         if '_id' not in projection:
             projection['_id'] = 0
-    # import pprint
-    # pprint.pprint(args)
-    # pprint.pprint(projection)
+
     return projection
 
 
