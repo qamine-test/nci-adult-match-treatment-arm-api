@@ -24,7 +24,7 @@ Matching rules for 'exon', 'function', 'oncominevariantclass', 'gene':
    - Matches if not present in nonHotspotRules
    - Matches if empty in patient variant report
    - If present and non-Empty in both, then matches if an exact match
-   
+
    So, for example:
    If the VR contains 4 in the 'exon', but there is no 'exon' in the nonHotspotRules, the exons match.
    If the VR's 'exon' is empty and there is no 'exon' in the nonHotspotRules, the exons match.
@@ -37,59 +37,111 @@ Matching rules for 'exon', 'function', 'oncominevariantclass', 'gene':
 """
 
 
-def match_item(variant_item, nhr_item):
-    if not nhr_item:
-        return True
-    if not variant_item:
-        return True
-    if variant_item == nhr_item:
-        return True
-    return False
-
-
-def match_vr_to_nhr(variant, nhr):
-    item_list = ['exon', 'function', 'oncominevariantclass', 'gene']
-    pprint(variant)
-    pprint(nhr)
-    print("\n")
-    # ex = nhr['exon']
-    print("nhr[exon]")
-    for item in item_list:
-        if match_item(variant[item], (nhr[item] if item in nhr else None)):
-            return False
-    return True
-
-
-def get_ta_non_hotspot_rules():
-    return [ ta_nhr for ta_nhr in TreatmentArmsAccessor().aggregate([
-        {"$match": {"variantReport.nonHotspotRules": {"$ne": []}}},
-        {"$unwind": "$variantReport.nonHotspotRules"},
-        {"$project": {"treatmentId": 1,
-                      "version": 1,
-                      "dateArchved": 1,
-                      "treatmentArmStatus": 1,
-                      "nonHotspotRules": "$variantReport.nonHotspotRules",
-                      "exon": "$variantReport.nonHotspotRules.exon",
-                      "function": "$variantReport.nonHotspotRules.function",
-                      "gene": "$variantReport.nonHotspotRules.gene",
-                      "oncominevariantclass": "$variantReport.nonHotspotRules.oncominevariantclass",
-                      "_id": 0}}
-        ])]
-
-
-def find_amois(vr, ta_rules):
+def find_amois(vr, var_rules_mgr):
     """
     
     :param vr: patient variantReport dict
-    :param ta_rules: array of treatmentArm nonHotspotRules
-    :return: array of items from ta_rules that were a match for the items in the vr 
+    :param var_rules_mgr: instance of the VariantRulesMgr class
+    :return: array of items from ta_rules that were a match for the items in the vr
     """
     amois = list()
-    for var_type in ['indels', 'singleNucleotideVariants', 'copyNumberVariants', 'geneFusions']:
-        variant_list = vr[var_type]
-        amois.extend([ta_rule for ta_rule in ta_rules for var in variant_list if match_vr_to_nhr(var, ta_rule)])
-
+    amois.extend(var_rules_mgr.get_copy_number_variant_matching_rules(vr['copyNumberVariants']))
+    amois.extend(var_rules_mgr.get_gene_fusions_matching_rules(vr['geneFusions']))
+    amois.extend(var_rules_mgr.get_single_nucleotide_variants_matching_rules(vr['singleNucleotideVariants']))
+    amois.extend(var_rules_mgr.get_indels_matching_rules(vr['indels']))
+    amois.extend(var_rules_mgr.get_non_hotspot_matching_rules(vr['singleNucleotideVariants'] + vr['indels']))
     return amois
+
+
+class VariantRulesMgr:
+    def __init__(self, non_hotspot_rules=None,
+                 cnv_identifier_rules=None,
+                 snv_identifier_rules=None,
+                 gene_fusion_identifier_rules=None,
+                 indel_identifier_rules=None):
+        ta_accessor = TreatmentArmsAccessor()
+        self.nhs_rules = non_hotspot_rules if non_hotspot_rules else ta_accessor.get_ta_non_hotspot_rules()
+        self.cnv_rules = cnv_identifier_rules if cnv_identifier_rules \
+            else ta_accessor.get_ta_identifier_rules('copyNumberVariants')
+        self.snv_rules = snv_identifier_rules if snv_identifier_rules \
+            else ta_accessor.get_ta_identifier_rules('singleNucleotideVariants')
+        self.gf_rules = gene_fusion_identifier_rules if gene_fusion_identifier_rules \
+            else ta_accessor.get_ta_identifier_rules('geneFusions')
+        self.indel_rules = indel_identifier_rules if indel_identifier_rules \
+            else ta_accessor.get_ta_identifier_rules('indels')
+
+    @staticmethod
+    def _match_item(variant_item, nhr_item):
+        if not nhr_item:
+            return True
+        if not variant_item:
+            return True
+        if variant_item == nhr_item:
+            return True
+        return False
+
+    @staticmethod
+    def _match_vr_to_nhr(variant, nhr):
+        item_list = ['exon', 'function', 'oncominevariantclass', 'gene']
+        pprint(variant)
+        pprint(nhr)
+        print("\n")
+        # ex = nhr['exon']
+        print("nhr[exon]")
+        for item in item_list:
+            if VariantRulesMgr._match_item(variant[item], (nhr[item] if item in nhr else None)):
+                return False
+        return True
+
+    def get_non_hotspot_matching_rules(self, patient_variants):
+        """
+        Matches each of the variants to the NonHotspotRules in self.
+        :param patient_variants:
+        :return: an array containing the rules that matched.
+        """
+        return [r for r in self.nhs_rules for pv in patient_variants if VariantRulesMgr._match_vr_to_nhr(pv, r)]
+
+    @staticmethod
+    def _get_identifier_matching_rules(rule_list, patient_variants):
+        """
+        Matches each of the variants to each of the rules in rule_list.
+        :param rule_list: list of rules with an identifier field
+        :param patient_variants: list of variants with an identifier field
+        :return: an array containing the rules that matched.
+        """
+        return [rule for rule in rule_list for var in patient_variants if rule.identifier == var.identifier]
+
+    def get_copy_number_variant_matching_rules(self, patient_variants):
+        """
+        Matches each of the variants to the CopyNumberVariant rules in self.
+        :param patient_variants: list of variants with an identifier field
+        :return: an array containing the rules that matched.
+        """
+        return VariantRulesMgr._get_identifier_matching_rules(self.cnv_rules, patient_variants)
+
+    def get_single_nucleotide_variants_matching_rules(self, patient_variants):
+        """
+        Matches each of the variants to the singleNucleotideVariants rules in self.
+        :param patient_variants: list of variants with an identifier field
+        :return: an array containing the rules that matched.
+        """
+        return VariantRulesMgr._get_identifier_matching_rules(self.snv_rules, patient_variants)
+
+    def get_gene_fusions_matching_rules(self, patient_variants):
+        """
+        Matches each of the variants to the geneFusions rules in self.
+        :param patient_variants: list of variants with an identifier field
+        :return: an array containing the rules that matched.
+        """
+        return VariantRulesMgr._get_identifier_matching_rules(self.cnv_rules, patient_variants)
+
+    def get_indels_matching_rules(self, patient_variants):
+        """
+        Matches each of the variants to the indel rules in self.
+        :param patient_variants: list of variants with an identifier field
+        :return: an array containing the rules that matched.
+        """
+        return VariantRulesMgr._get_identifier_matching_rules(self.cnv_rules, patient_variants)
 
 
 class AmoisAnnotator:
@@ -112,7 +164,7 @@ class AmoisAnnotator:
 
     @staticmethod
     def _extract_annot_data(amois):
-        return dict([(k,v) for k,v in amois.items() if k in AmoisAnnotator.REQ_FIELDS])
+        return dict([(k, v) for k, v in amois.items() if k in AmoisAnnotator.REQ_FIELDS])
 
     @staticmethod
     def _get_amoi_state(amoi):
@@ -146,8 +198,8 @@ class AmoisAnnotator:
 def create_amois_annotation(amois_list):
     """
 
-    :param amois_list: 
-    :return: dict in the following format: { STATE: [{treatmentId, version, action}, ...], ... } 
+    :param amois_list:
+    :return: dict in the following format: { STATE: [{treatmentId, version, action}, ...], ... }
     """
     annotator = AmoisAnnotator()
     for amoi in amois_list:
@@ -184,9 +236,9 @@ class AmoisResource(Resource):
         status_code = 200
         try:
             vr = AmoisResource.get_variant_report_arg()
-            ta_rules = get_ta_non_hotspot_rules()
-            LOGGER.debug("%d rules loaded from treatmentArms collection" % len(ta_rules))
-            amois_list = find_amois(vr, ta_rules)
+            var_rules_mgr = VariantRulesMgr()
+            # LOGGER.debug("%d rules loaded from treatmentArms collection" % len(ta_rules))
+            amois_list = find_amois(vr, var_rules_mgr)
             vr['amois'] = create_amois_annotation(amois_list)
 
             LOGGER.debug("VR:\n"+pformat(vr, width=140, indent=2))
