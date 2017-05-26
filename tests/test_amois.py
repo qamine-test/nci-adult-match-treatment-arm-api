@@ -9,24 +9,25 @@ from resources import amois
 # def create_vr_dict(e, f, g, o):
 #     return { 'exon': e, 'function': f, 'oncominevariantclass': o, 'gene': g}
 #
-def create_nhr_dict(e, f, g, o, id, ver, incl, status = 'OPEN', archived = False):
-    nhr = dict()
+def create_ta_vr_rule(e, f, g, o, trtmt_id, ver, incl, status='OPEN', archived=False):
+    '''Create and return a dictionary containing required fields for a Treatment Arm Variant Report Rule.'''
+    ta_vr_rule = dict()
     if e:
-        nhr['exon'] = e
+        ta_vr_rule['exon'] = e
     if f:
-        nhr['function'] = f
+        ta_vr_rule['function'] = f
     if g:
-        nhr['exon'] = g
+        ta_vr_rule['exon'] = g
     if o:
-        nhr['oncominevariantclass'] = o
-    if not nhr:
+        ta_vr_rule['oncominevariantclass'] = o
+    if not ta_vr_rule:
         raise Exception("bad test data: NonHotspotRule requires at least one field.")
-    nhr['treatmentId'] = id
-    nhr['version'] = ver
-    nhr['inclusion'] = incl
-    nhr['dateArchived'] = None if not archived else datetime.datetime(2016, 7, 7)
-    nhr['treatmentArmStatus'] = status
-    return nhr
+    ta_vr_rule['treatmentId'] = trtmt_id
+    ta_vr_rule['version'] = ver
+    ta_vr_rule['inclusion'] = incl
+    ta_vr_rule['dateArchived'] = None if not archived else datetime.datetime(2016, 7, 7)
+    ta_vr_rule['treatmentArmStatus'] = status
+    return ta_vr_rule
 
 
 @ddt
@@ -47,8 +48,8 @@ class TestAmoisAnnotator(unittest.TestCase):
         ({'treatmentArmStatus': 'SUSPENDED', 'dateArchived': datetime.datetime.now()}, 'PREVIOUS'),
     )
     @unpack
-    def test_get_amoi_state(self, ta_nhr, exp_state):
-        state = amois.AmoisAnnotator._get_amoi_state(ta_nhr)
+    def test_get_amoi_state(self, ta_vr_rules, exp_state):
+        state = amois.AmoisAnnotator._get_amoi_state(ta_vr_rules)
         self.assertEqual(state, exp_state)
 
     # Test the AmoisAnnotator._get_amoi_state function with exception.
@@ -61,16 +62,16 @@ class TestAmoisAnnotator(unittest.TestCase):
          "Unknown status 'None' for TreatmentArm 'EAY-1', version 2016-09-09"),
     )
     @unpack
-    def test_get_amoi_state_with_exc(self, ta_nhr, exp_exp_msg):
+    def test_get_amoi_state_with_exc(self, ta_vr_rules, exp_exp_msg):
         with self.assertRaises(Exception) as cm:
-            amois.AmoisAnnotator._get_amoi_state(ta_nhr)
+            amois.AmoisAnnotator._get_amoi_state(ta_vr_rules)
         self.assertEqual(str(cm.exception), exp_exp_msg)
 
     # Test the AmoisAnnotator._get_amoi_state function with normal execution.
     @data(
-        (create_nhr_dict(1,1,1,1,'EAY131-P', '2016-11-11', False),
+        (create_ta_vr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False),
          {'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False}),
-        (create_nhr_dict(1, 1, 1, 1, 'EAY131-P', '2016-11-11', True),
+        (create_ta_vr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', True),
          {'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True}),
     )
     @unpack
@@ -80,14 +81,14 @@ class TestAmoisAnnotator(unittest.TestCase):
 
     @data(
         ([], {}),
-        ([create_nhr_dict(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False, "OPEN")],
+        ([create_ta_vr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False, "OPEN")],
          {'CURRENT': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False}]}),
-        ([create_nhr_dict(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False, "OPEN"),
-          create_nhr_dict(1, 1, 1, 1, 'EAY131-Q', '2016-12-11', False, "OPEN"),],
+        ([create_ta_vr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False, "OPEN"),
+          create_ta_vr_rule(1, 1, 1, 1, 'EAY131-Q', '2016-12-11', False, "OPEN"), ],
          {'CURRENT': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False},
                       {'treatmentId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False}]}),
-        ([create_nhr_dict(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False, "OPEN", True),
-          create_nhr_dict(1, 1, 1, 1, 'EAY131-Q', '2016-12-11', False, "OPEN"), ],
+        ([create_ta_vr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False, "OPEN", True),
+          create_ta_vr_rule(1, 1, 1, 1, 'EAY131-Q', '2016-12-11', False, "OPEN"), ],
          {'PREVIOUS': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False}],
           'CURRENT': [{'treatmentId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False}]}),
     )
@@ -98,6 +99,7 @@ class TestAmoisAnnotator(unittest.TestCase):
             annotator.add(a)
         self.maxDiff = None
         self.assertEqual(annotator.get(), exp_annotation)
+
 
 @ddt
 class TestMatchItem(unittest.TestCase):
@@ -113,7 +115,7 @@ class TestMatchItem(unittest.TestCase):
     )
     @unpack
     def test_match_item(self, vr_item, nhr_item, exp_result):
-        self.assertEqual(amois.match_item(vr_item, nhr_item), exp_result)
+        self.assertEqual(amois.VariantRulesMgr._match_item(vr_item, nhr_item), exp_result)
 
 
 if __name__ == '__main__':
