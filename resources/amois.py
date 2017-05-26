@@ -15,7 +15,7 @@ LOGGER.setLevel(logging.DEBUG)
 
 
 """
-Matching rules for 'exon', 'function', 'oncominevariantclass', 'gene':
+NonHotspot Matching rules for 'exon', 'function', 'oncominevariantclass', 'gene':
    Observations:
    - All four are present in patient variant report (but may be empty)
    - At least one present in nonHotspotRules
@@ -31,26 +31,10 @@ Matching rules for 'exon', 'function', 'oncominevariantclass', 'gene':
    If the VR's 'exon' is empty and 'exon' in the nonHotspotRules is 3, the exons match.
    If the VR contains 4 in the 'exon', and 'exon' in the nonHotspotRules is 4, the exons match.
    If the VR contains 4 in the 'exon', but 'exon' in the nonHotspotRules is 3, the exons DO NOT match.
-   
+
    Follow the same logic for all four ('exon', 'function', 'oncominevariantclass', 'gene');
    if all four match, it's an aMOI.
 """
-
-
-def find_amois(vr, var_rules_mgr):
-    """
-    
-    :param vr: patient variantReport dict
-    :param var_rules_mgr: instance of the VariantRulesMgr class
-    :return: array of items from ta_rules that were a match for the items in the vr
-    """
-    amois = list()
-    amois.extend(var_rules_mgr.get_copy_number_variant_matching_rules(vr['copyNumberVariants']))
-    amois.extend(var_rules_mgr.get_gene_fusions_matching_rules(vr['geneFusions']))
-    amois.extend(var_rules_mgr.get_single_nucleotide_variants_matching_rules(vr['singleNucleotideVariants']))
-    amois.extend(var_rules_mgr.get_indels_matching_rules(vr['indels']))
-    amois.extend(var_rules_mgr.get_non_hotspot_matching_rules(vr['singleNucleotideVariants'] + vr['indels']))
-    return amois
 
 
 class VariantRulesMgr:
@@ -195,9 +179,25 @@ class AmoisAnnotator:
         return state
 
 
+def find_amois(vr, var_rules_mgr):
+    """
+    Finds all of the aMOIs for the variants in vr by identifying which ones match the rules in var_rules_mgr.
+    :param vr: patient variantReport dict
+    :param var_rules_mgr: instance of the VariantRulesMgr class
+    :return: list of items from var_rules_mgr that were a match for the items in the vr
+    """
+    amois = list()
+    amois.extend(var_rules_mgr.get_copy_number_variant_matching_rules(vr['copyNumberVariants']))
+    amois.extend(var_rules_mgr.get_gene_fusions_matching_rules(vr['geneFusions']))
+    amois.extend(var_rules_mgr.get_single_nucleotide_variants_matching_rules(vr['singleNucleotideVariants']))
+    amois.extend(var_rules_mgr.get_indels_matching_rules(vr['indels']))
+    amois.extend(var_rules_mgr.get_non_hotspot_matching_rules(vr['singleNucleotideVariants'] + vr['indels']))
+    return amois
+
+
 def create_amois_annotation(amois_list):
     """
-
+    Given all of the aMOIs in amois_list, assemble all of the required data into format required for annotation.
     :param amois_list:
     :return: dict in the following format: { STATE: [{treatmentId, version, action}, ...], ... }
     """
@@ -248,24 +248,24 @@ class AmoisResource(Resource):
         return vr, status_code
 
 
-if __name__ == '__main__':
-    import flask
-    import os
-    from flask_env import MetaFlaskEnv
-
-
-    class Configuration(metaclass=MetaFlaskEnv):
-        """
-        Service configuration
-        """
-        DEBUG = True
-        PORT = 5010
-        MONGODB_URI = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/match')
-        # Some instances of the DB are named 'Match' and others 'match'.
-        DB_NAME = 'match' if '/match' in MONGODB_URI else 'Match'
-
-    app = flask.Flask(__name__)
-    app.config.from_object(Configuration)
-    with app.test_request_context(''):
-        import pprint
-        pprint.pprint(get_ta_non_hotspot_rules())
+# if __name__ == '__main__':
+#     import flask
+#     import os
+#     from flask_env import MetaFlaskEnv
+#
+#
+#     class Configuration(metaclass=MetaFlaskEnv):
+#         """
+#         Service configuration
+#         """
+#         DEBUG = True
+#         PORT = 5010
+#         MONGODB_URI = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/match')
+#         # Some instances of the DB are named 'Match' and others 'match'.
+#         DB_NAME = 'match' if '/match' in MONGODB_URI else 'Match'
+#
+#     app = flask.Flask(__name__)
+#     app.config.from_object(Configuration)
+#     with app.test_request_context(''):
+#         import pprint
+#         pprint.pprint(get_ta_non_hotspot_rules())
