@@ -18,7 +18,7 @@ from tornado.wsgi import WSGIContainer
 
 from flask_env import MetaFlaskEnv
 
-# from resources.amois import AmoisAnnotator
+from resources.amois import AmoisResource
 from resources.healthcheck import HealthCheck
 from resources.version import Version
 from resources.treatment_arm import TreatmentArms
@@ -48,7 +48,7 @@ APP.config.from_object(Configuration)
 API = Api(APP)
 CORS = CORS(APP, resources={r"/api/*": {"origins": "*"}})
 
-# API.add_resource(AmoisAnnotator, '/api/v1/treatment_arms/amois', endpoint='get_amois')
+API.add_resource(AmoisResource, '/api/v1/treatment_arms/amois', endpoint='get_amois')
 API.add_resource(HealthCheck, '/api/v1/treatment_arms/healthcheck', endpoint='get_healthcheck')
 API.add_resource(TreatmentArms, '/api/v1/treatment_arms', endpoint='get_all')
 API.add_resource(TreatmentArmsById, '/api/v1/treatment_arms/<string:arm_id>', endpoint='get_by_id')
