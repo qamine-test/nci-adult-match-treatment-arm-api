@@ -47,6 +47,8 @@ MONGODB_URI=mongodb://localhost:27017/match python app.py
 
 ## Dockerization
 
+*Note: you need to have access to FNLCR private docker repository. Please contact systems team if you need the access.*
+
 To build the production image based on Apache run the following:
 
 ```#!/bin/bash
@@ -69,7 +71,7 @@ To restore MongoDB data for your local development:
 
 ```#!/bin/bash
 docker exec -it nciadultmatchtreatmentarmapi_mongo_1 bash
-mongorestore --db match ./backup
+mongorestore --db Match ./backup
 ```
 
 After you've restored the backup you may check the restored data (while still attached to the mongo container, as above):
