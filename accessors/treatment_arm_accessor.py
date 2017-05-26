@@ -35,3 +35,36 @@ class TreatmentArmsAccessor(MongoDbAccessor):
         Returns the aggregation defined by pipeline.
         """
         return self.collection.aggregate(pipeline)
+
+    def get_ta_non_hotspot_rules(self):
+        return [ta_nhr for ta_nhr in self.aggregate([
+            {"$match": {"variantReport.nonHotspotRules": {"$ne": []}}},
+            {"$unwind": "$variantReport.nonHotspotRules"},
+            {"$project": {"treatmentId": 1,
+                          "version": 1,
+                          "dateArchived": 1,
+                          "treatmentArmStatus": 1,
+                          "inclusion": "$variantReport.nonHotspotRules.inclusion",
+                          "exon": "$variantReport.nonHotspotRules.exon",
+                          "function": "$variantReport.nonHotspotRules.function",
+                          "gene": "$variantReport.nonHotspotRules.gene",
+                          "oncominevariantclass": "$variantReport.nonHotspotRules.oncominevariantclass",
+                          }}
+            ])]
+
+
+    def get_ta_identifier_rules(self, variant_type):
+        if variant_type not in ['singleNucleotideVariants', 'copyNumberVariants', 'geneFusions', 'indels']:
+            raise Exception( "Unknown variant_type '%s' passed to %s" (variant_type, instance.__class__.__name__))
+
+        return [ta_ir for ta_ir in self.aggregate([
+            {"$match": {"variantReport."+variant_type: {"$ne": []}}},
+            {"$unwind": "$variantReport"+variant_type},
+            {"$project": {"treatmentId": 1,
+                          "version": 1,
+                          "dateArchived": 1,
+                          "treatmentArmStatus": 1,
+                          "identifier": "$variantReport."+variant_type+".identifier",
+                          "inclusion": "$variantReport."+variant_type+".inclusion",
+                          }}
+            ])]
