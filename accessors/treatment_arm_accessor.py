@@ -55,7 +55,7 @@ class TreatmentArmsAccessor(MongoDbAccessor):
 
     def get_ta_identifier_rules(self, variant_type):
         if variant_type not in ['singleNucleotideVariants', 'copyNumberVariants', 'geneFusions', 'indels']:
-            raise Exception( "Unknown variant_type '%s' passed to %s" (variant_type, instance.__class__.__name__))
+            raise Exception( "Unknown variant_type '%s' passed to %s" % (variant_type, instance.__class__.__name__))
 
         return [ta_ir for ta_ir in self.aggregate([
             {"$match": {"variantReport."+variant_type: {"$ne": []}}},
