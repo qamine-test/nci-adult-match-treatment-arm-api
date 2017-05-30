@@ -1,9 +1,26 @@
 import unittest
 import datetime
-# import flask
+import flask
 from ddt import ddt, data, unpack
+from flask_env import MetaFlaskEnv
 # from mock import patch
 from resources import amois
+
+global APP
+def setUpModule():
+    class Configuration(metaclass=MetaFlaskEnv):
+        """
+        Service configuration
+        """
+        DEBUG = True
+        PORT = 5010
+        MONGODB_URI = 'mongodb://localhost:27017/match'
+        # Some instances of the DB are named 'Match' and others 'match'.
+        DB_NAME = 'match' if '/match' in MONGODB_URI else 'Match'
+
+    global APP
+    APP = flask.Flask(__name__)
+    APP.config.from_object(Configuration)
 
 
 # def create_vr_dict(e, f, g, o):
@@ -145,7 +162,12 @@ class TestVariantRulesMgr(unittest.TestCase):
         (create_var_rpt(4, 'missense', 'IDH1', 'Hotspot'), create_nhr_dict(4, None, 'IDH1', 'Hotspot'), True),
         (create_var_rpt(4, 'missense', 'IDH1', 'Hotspot'), create_nhr_dict(None, 'missense', 'IDH1', 'Hotspot'), True),
         (create_var_rpt(4, 'missense', 'IDH1', ''), create_nhr_dict(4, 'missense', 'IDH1', 'Hotspot'), True),
+
+
+
+
         (create_var_rpt(4, 'missense', '', 'Hotspot'), create_nhr_dict(4, 'missense', 'IDH1', 'Hotspot'), True),
+
         (create_var_rpt(4, '', 'IDH1', 'Hotspot'), create_nhr_dict(4, 'missense', 'IDH1', 'Hotspot'), True),
         (create_var_rpt('', 'missense', 'IDH1', 'Hotspot'), create_nhr_dict(4, 'missense', 'IDH1', 'Hotspot'), True),
         (create_var_rpt(4, 'missense', 'IDH1', 'Hotspot'), create_nhr_dict(14, 'missense', 'IDH1', 'Hotspot'), False),
@@ -157,6 +179,17 @@ class TestVariantRulesMgr(unittest.TestCase):
     @unpack
     def test_match_var_to_nhr(self, variant, nhr, exp_result):
         self.assertEqual(amois.VariantRulesMgr._match_var_to_nhr(variant, nhr), exp_result)
+
+    # Test the VariantRulesMgr._match_var_to_nhr function.
+    @data(
+        ([], [], [])
+
+    )
+    @unpack
+    def test_get_matching_nonhotspot_rules(self, patient_variants, nhr_list, exp_amois):
+        with APP.test_request_context(''):
+            vrm = amois.VariantRulesMgr(nhr_list, {}, {}, {}, {})
+            self.assertEqual(vrm.get_matching_nonhotspot_rules(patient_variants), exp_amois)
 
 if __name__ == '__main__':
     unittest.main()
