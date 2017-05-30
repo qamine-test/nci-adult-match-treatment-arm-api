@@ -15,7 +15,6 @@ before_install:
   - export DATE=`TZ=America/New_York date "+%m-%d-%y-%H%M"`
   - export DATE_TM=`TZ=America/New_York date "+%m-%d-%y %H:%M"`
   - export DOCKER_IMAGE="fnlcr/nci-adult-match-treatment-arm-api"
-  - export CODACY_PROJECT_TOKEN=318880ddae3d4facbca1f1b4ed6e04a3
   - echo "{\"buildNumber\":\"build "$TRAVIS_BUILD_NUMBER"\", \"buildTime\":\""$DATE_TM"\", \"buildId\":\""$TRAVIS_BUILD_ID"\", \"docker\":\""$$DOCKER_IMAGE:$DATE"\"}" > build-info.json
   - cat build-info.json
   - python --version
