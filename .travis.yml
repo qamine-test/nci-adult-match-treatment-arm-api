@@ -13,8 +13,9 @@ python: 3.5
 before_install:
   - export AUTHOR=`git --no-pager show -s --format='%an <%ae>'`
   - export DATE=`TZ=America/New_York date "+%m-%d-%y-%H%M"`
-  - export DATE_TM=`TZ=America/New_York date "+%m-%d-%y %H:%M"`  
+  - export DATE_TM=`TZ=America/New_York date "+%m-%d-%y %H:%M"`
   - export DOCKER_IMAGE="fnlcr/nci-adult-match-treatment-arm-api"
+  - export CODACY_PROJECT_TOKEN=318880ddae3d4facbca1f1b4ed6e04a3
   - echo "{\"buildNumber\":\"build "$TRAVIS_BUILD_NUMBER"\", \"buildTime\":\""$DATE_TM"\", \"buildId\":\""$TRAVIS_BUILD_ID"\", \"docker\":\""$$DOCKER_IMAGE:$DATE"\"}" > build-info.json
   - cat build-info.json
   - python --version
@@ -22,9 +23,9 @@ before_install:
 install: pip install -r requirements.txt
 
 script:
-  # - coverage run -m --omit='*/tests/*,*/accessors/*,*/oncomine-vcf-converter-1.4.3/*, /home/*' --include='*/common/*,*/resource_helpers/*,*/resources/*, ,*/tasks/*' unittest discover tests
-  # - coverage report
-  # - coverage xml && python-codacy-coverage -r coverage.xml
+  - coverage run -m --omit='*/tests/*,*/accessors/*,*/oncomine-vcf-converter-1.4.3/*, /home/*' --include='*/common/*,*/resource_helpers/*,*/resources/*, ,*/tasks/*' unittest discover tests
+  - coverage report
+  - coverage xml && python-codacy-coverage -r coverage.xml
   #Build Docker image
   - docker build -t $DOCKER_IMAGE:$DATE -t $DOCKER_IMAGE:latest .
   - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
@@ -35,14 +36,14 @@ after_success:
   # - docker images
   - docker push $DOCKER_IMAGE # Pushes both date and latest
   #Deploy both services to AWS IntTest
-  # - docker run -it --rm -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY 
-  #   -e AWS_DEFAULT_REGION=us-east-1 silintl/ecs-deploy 
-  #   --cluster AdultMatch-IntTest-Backend  --service-name AdultMatch-nci-adult-treatment-arm-api-INTTEST 
+  # - docker run -it --rm -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+  #   -e AWS_DEFAULT_REGION=us-east-1 silintl/ecs-deploy
+  #   --cluster AdultMatch-IntTest-Backend  --service-name AdultMatch-nci-adult-treatment-arm-api-INTTEST
   #   -i $DOCKER_IMAGE:$DATE
   #Trigger Travis bdd tests
-  # - curl -s -X POST -H "Content-Type:application/json" -H "Accept:application/json" 
-  #   -H "Travis-API-Version:3" -H "Authorization:token $TRAVIS_TOKEN" 
-  #   -d "{\"request\":{\"message\":\"Triggered by nci-match-ir-ecosystem-api $TRAVIS_COMMIT\", \"branch\":\"master\", \"config\":{\"env\":{\"matrix\":[\"TRIGGER_REPO=nci-match-ir-ecosystem-api;TRIGGER_VER=$DATE;CUC_TAG=@ion_reporter;AUTHOR=$AUTHOR\"]}}}}" 
+  # - curl -s -X POST -H "Content-Type:application/json" -H "Accept:application/json"
+  #   -H "Travis-API-Version:3" -H "Authorization:token $TRAVIS_TOKEN"
+  #   -d "{\"request\":{\"message\":\"Triggered by nci-match-ir-ecosystem-api $TRAVIS_COMMIT\", \"branch\":\"master\", \"config\":{\"env\":{\"matrix\":[\"TRIGGER_REPO=nci-match-ir-ecosystem-api;TRIGGER_VER=$DATE;CUC_TAG=@ion_reporter;AUTHOR=$AUTHOR\"]}}}}"
   #   https://api.travis-ci.org/repo/CBIIT%2Fnci-uMatch-bddtests/requests
 
 notifications:
