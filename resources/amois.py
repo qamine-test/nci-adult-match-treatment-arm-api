@@ -56,6 +56,12 @@ class VariantRulesMgr:
 
     @staticmethod
     def _match_item(variant_item, nhr_item):
+        """
+        Matches a single item of a patient variant with the corresponding NonHotspotRule (nhr) item.
+        :param variant_item: item from patient variant
+        :param nhr_item: item from non-hotspot rule
+        :return: True if they match; otherwise False
+        """
         if not nhr_item:
             return True
         if not variant_item:
@@ -65,15 +71,20 @@ class VariantRulesMgr:
         return False
 
     @staticmethod
-    def _match_vr_to_nhr(variant, nhr):
+    def _match_var_to_nhr(variant, nhr):
+        """
+        Matches the given variant with the given NonHotspotRule (nhr).
+        :param variant: a patient variant
+        :param nhr: a non-hotspot rule
+        :return: True if they match; otherwise False
+        """
         item_list = ['exon', 'function', 'oncominevariantclass', 'gene']
-        pprint(variant)
-        pprint(nhr)
-        print("\n")
-        # ex = nhr['exon']
-        print("nhr[exon]")
+        # pprint(variant)
+        # pprint(nhr)
+        # print("\n")
+        # print("nhr[exon]")
         for item in item_list:
-            if VariantRulesMgr._match_item(variant[item], (nhr[item] if item in nhr else None)):
+            if not VariantRulesMgr._match_item(variant[item], (nhr[item] if item in nhr else None)):
                 return False
         return True
 
@@ -83,7 +94,10 @@ class VariantRulesMgr:
         :param patient_variants:
         :return: an array containing the rules that matched.
         """
-        return [r for r in self.nhs_rules for pv in patient_variants if VariantRulesMgr._match_vr_to_nhr(pv, r)]
+        def _matches(pv, r):
+            return pv['confirmed'] and VariantRulesMgr._match_var_to_nhr(pv, r)
+
+        return [r for r in self.nhs_rules for pv in patient_variants if _matches(pv, r)]
 
     @staticmethod
     def _get_identifier_matching_rules(rule_list, patient_variants):
@@ -93,7 +107,10 @@ class VariantRulesMgr:
         :param patient_variants: list of variants with an identifier field
         :return: an array containing the rules that matched.
         """
-        return [rule for rule in rule_list for var in patient_variants if rule.identifier == var.identifier]
+        def _matches(pv, r):
+            return pv['confirmed'] and r['identifier'] == pv['identifier']
+
+        return [r for r in rule_list for pv in patient_variants if _matches(pv, r)]
 
     def get_copy_number_variant_matching_rules(self, patient_variants):
         """
@@ -158,7 +175,7 @@ class AmoisAnnotator:
          "PRIOR"      "SUSPENDED" or "CLOSED"   None
          "FUTURE"     "READY" or "PENDING"      None
          "PREVIOUS"   <doesn't matter>          not None
-    
+
         :param amoi:  Treatment Arm NonHotSpotRules dict
         :return: "PREVIOUS", "FUTURE", "CURRENT", or "PRIOR"
         """
@@ -228,9 +245,9 @@ class AmoisResource(Resource):
     def get():
         """
         Gets the AMOIS data and annotates the given Variant Report with it.
-        
+
         "amois": { STATE: [{treatmentId, version, action}, ...], ... }
-         
+
         """
         vr = dict()
         status_code = 200
