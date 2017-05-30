@@ -11,7 +11,7 @@ from pprint import pformat, pprint
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
-# LOGGER.addHandler(logging.StreamHandler())
+LOGGER.addHandler(logging.StreamHandler())
 
 
 """
@@ -134,7 +134,7 @@ class VariantRulesMgr:
         :param patient_variants: list of variants with an identifier field
         :return: an array containing the rules that matched.
         """
-        return VariantRulesMgr._get_matching_identifier_rules(self.cnv_rules, patient_variants)
+        return VariantRulesMgr._get_matching_identifier_rules(self.gf_rules, patient_variants)
 
     def get_matching_indel_rules(self, patient_variants):
         """
@@ -142,7 +142,7 @@ class VariantRulesMgr:
         :param patient_variants: list of variants with an identifier field
         :return: an array containing the rules that matched.
         """
-        return VariantRulesMgr._get_matching_identifier_rules(self.cnv_rules, patient_variants)
+        return VariantRulesMgr._get_matching_identifier_rules(self.indel_rules, patient_variants)
 
 
 class AmoisAnnotator:
@@ -226,11 +226,11 @@ def create_amois_annotation(amois_list):
 
 class AmoisResource(Resource):
 
-    REQ_VR_FIELDS = ['indels', 'singleNucleotideVariants', 'copyNumberVariants',
-                     'nonHotspotRules', 'unifiedGeneFusions', 'geneFusions']
+    REQ_VR_FIELDS = ['indels', 'singleNucleotideVariants', 'copyNumberVariants', 'unifiedGeneFusions']
 
     @staticmethod
     def get_variant_report_arg():
+        print("request is %s" % type(request))
         args = request.get_json()
 
         LOGGER.debug("ARGS:\n"+pformat(args, width=140, indent=2))
@@ -256,7 +256,8 @@ class AmoisResource(Resource):
             var_rules_mgr = VariantRulesMgr()
             # LOGGER.debug("%d rules loaded from treatmentArms collection" % len(ta_rules))
             amois_list = find_amois(vr, var_rules_mgr)
-            vr['amois'] = create_amois_annotation(amois_list)
+            if amois_list:
+                vr['amois'] = create_amois_annotation(amois_list)
 
             LOGGER.debug("VR:\n"+pformat(vr, width=140, indent=2))
         except Exception as exc:
