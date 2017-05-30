@@ -86,18 +86,26 @@ db.treatmentArm.count()
 
 Exit from MongoDB shell by pressing `Ctrl+C`
 
+### To start the container stand-alone but attached to the Docker network
+
+Example with connecting to `nciadultmatchui_adult-match-net` Docker network. Replace with yours if needed.
+
+```#!/bin/bash
+docker run --name ncimatch-adult-treatment-arm-api -it --network nciadultmatchui_adult-match-net -e ENVIRONMENT=test -e MONGODB_URI=mongodb://mongo:27017/Match -p 5010:5010 fnlcr/nci-adult-match-treatment-arm-api:latest
+```
+
 ## Misc
 
 To find a service listening on a specific port
 
 ```#!/bin/bash
-lsof -n -i4TCP:5000 | grep LISTEN
+lsof -n -i4TCP:5010 | grep LISTEN
 ```
 
 To kill a service on a specific port
 
 ```#!/bin/bash
-kill -9 $(lsof -n -i4TCP:5000)
+kill -9 $(lsof -n -i4TCP:5010)
 ```
 
 ## Scripts
