@@ -9,24 +9,39 @@ from resources import amois
 # def create_vr_dict(e, f, g, o):
 #     return { 'exon': e, 'function': f, 'oncominevariantclass': o, 'gene': g}
 #
-def create_ta_vr_rule(e, f, g, o, trtmt_id, ver, incl, status='OPEN', archived=False):
-    '''Create and return a dictionary containing required fields for a Treatment Arm Variant Report Rule.'''
-    ta_vr_rule = dict()
-    if e:
-        ta_vr_rule['exon'] = e
-    if f:
-        ta_vr_rule['function'] = f
-    if g:
-        ta_vr_rule['exon'] = g
-    if o:
-        ta_vr_rule['oncominevariantclass'] = o
-    if not ta_vr_rule:
-        raise Exception("bad test data: NonHotspotRule requires at least one field.")
+def create_ta_nhr_rule(e, f, g, o, trtmt_id, ver, incl, status='OPEN', archived=False):
+    '''Create and return a dictionary containing required fields for a Treatment Arm NonHotspotRule.'''
+    ta_vr_rule = create_nhr_dict(e, f, g, o)
     ta_vr_rule['treatmentId'] = trtmt_id
     ta_vr_rule['version'] = ver
     ta_vr_rule['inclusion'] = incl
     ta_vr_rule['dateArchived'] = None if not archived else datetime.datetime(2016, 7, 7)
     ta_vr_rule['treatmentArmStatus'] = status
+    return ta_vr_rule
+
+def create_var_rpt(e, f, g, o, identifier='ABC', confirmed=True):
+    vr = create_nhr_dict(e, f, g, o)
+    # patient variant report must contain all four
+    if len(vr) != 4:
+        import pprint
+        pprint.pprint(vr)
+        raise Exception("bad test data: Patient Variant Report must contain all four required fields.")
+    vr['identifier'] = identifier
+    vr['confirmed'] = confirmed
+    return vr
+
+def create_nhr_dict(e, f, g, o):
+    ta_vr_rule = dict()
+    if e is not None:
+        ta_vr_rule['exon'] = e
+    if f is not None:
+        ta_vr_rule['function'] = f
+    if g is not None:
+        ta_vr_rule['gene'] = g
+    if o is not None:
+        ta_vr_rule['oncominevariantclass'] = o
+    if not ta_vr_rule:
+        raise Exception("bad test data: NonHotspotRule requires at least one field.")
     return ta_vr_rule
 
 
@@ -69,9 +84,9 @@ class TestAmoisAnnotator(unittest.TestCase):
 
     # Test the AmoisAnnotator._get_amoi_state function with normal execution.
     @data(
-        (create_ta_vr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False),
+        (create_ta_nhr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False),
          {'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False}),
-        (create_ta_vr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', True),
+        (create_ta_nhr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', True),
          {'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True}),
     )
     @unpack
@@ -81,14 +96,14 @@ class TestAmoisAnnotator(unittest.TestCase):
 
     @data(
         ([], {}),
-        ([create_ta_vr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False, "OPEN")],
+        ([create_ta_nhr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False, "OPEN")],
          {'CURRENT': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False}]}),
-        ([create_ta_vr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False, "OPEN"),
-          create_ta_vr_rule(1, 1, 1, 1, 'EAY131-Q', '2016-12-11', False, "OPEN"), ],
+        ([create_ta_nhr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False, "OPEN"),
+          create_ta_nhr_rule(1, 1, 1, 1, 'EAY131-Q', '2016-12-11', False, "OPEN"), ],
          {'CURRENT': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False},
                       {'treatmentId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False}]}),
-        ([create_ta_vr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False, "OPEN", True),
-          create_ta_vr_rule(1, 1, 1, 1, 'EAY131-Q', '2016-12-11', False, "OPEN"), ],
+        ([create_ta_nhr_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False, "OPEN", True),
+          create_ta_nhr_rule(1, 1, 1, 1, 'EAY131-Q', '2016-12-11', False, "OPEN"), ],
          {'PREVIOUS': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False}],
           'CURRENT': [{'treatmentId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False}]}),
     )
@@ -102,7 +117,12 @@ class TestAmoisAnnotator(unittest.TestCase):
 
 
 @ddt
-class TestMatchItem(unittest.TestCase):
+class TestVariantRulesMgr(unittest.TestCase):
+    """
+    Tests the methods in the VariantRulesMgr class.
+    """
+
+    # Test the VariantRulesMgr._match_item function.
     @data(
         ('string_data', 'string_data', True),
         (19, 19, True),
@@ -117,6 +137,26 @@ class TestMatchItem(unittest.TestCase):
     def test_match_item(self, vr_item, nhr_item, exp_result):
         self.assertEqual(amois.VariantRulesMgr._match_item(vr_item, nhr_item), exp_result)
 
+    # Test the VariantRulesMgr._match_var_to_nhr function.
+    @data( # order of params is e, f, g, o
+        (create_var_rpt(4, 'missense', 'IDH1', 'Hotspot'), create_nhr_dict(4, 'missense', 'IDH1', 'Hotspot'), True),
+        (create_var_rpt(4, 'missense', 'IDH1', 'Hotspot'), create_nhr_dict(4, 'missense', 'IDH1', None), True),
+        (create_var_rpt(4, 'missense', 'IDH1', 'Hotspot'), create_nhr_dict(4, 'missense', None, 'Hotspot'), True),
+        (create_var_rpt(4, 'missense', 'IDH1', 'Hotspot'), create_nhr_dict(4, None, 'IDH1', 'Hotspot'), True),
+        (create_var_rpt(4, 'missense', 'IDH1', 'Hotspot'), create_nhr_dict(None, 'missense', 'IDH1', 'Hotspot'), True),
+        (create_var_rpt(4, 'missense', 'IDH1', ''), create_nhr_dict(4, 'missense', 'IDH1', 'Hotspot'), True),
+        (create_var_rpt(4, 'missense', '', 'Hotspot'), create_nhr_dict(4, 'missense', 'IDH1', 'Hotspot'), True),
+        (create_var_rpt(4, '', 'IDH1', 'Hotspot'), create_nhr_dict(4, 'missense', 'IDH1', 'Hotspot'), True),
+        (create_var_rpt('', 'missense', 'IDH1', 'Hotspot'), create_nhr_dict(4, 'missense', 'IDH1', 'Hotspot'), True),
+        (create_var_rpt(4, 'missense', 'IDH1', 'Hotspot'), create_nhr_dict(14, 'missense', 'IDH1', 'Hotspot'), False),
+        (create_var_rpt(4, 'missense', 'IDH1', 'Hotspot'),
+         create_nhr_dict(4, 'nonframeshiftinsertion', 'IDH1', 'Hotspot'), False),
+        (create_var_rpt(4, 'missense', 'IDH1', 'Hotspot'), create_nhr_dict(4, 'missense', 'ERBB2', 'Hotspot'), False),
+        (create_var_rpt(4, 'missense', 'IDH1', 'Hotspot'), create_nhr_dict(4, 'missense', 'IDH1', 'Deleterious'), False),
+    )
+    @unpack
+    def test_match_var_to_nhr(self, variant, nhr, exp_result):
+        self.assertEqual(amois.VariantRulesMgr._match_var_to_nhr(variant, nhr), exp_result)
 
 if __name__ == '__main__':
     unittest.main()
