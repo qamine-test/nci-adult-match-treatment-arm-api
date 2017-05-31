@@ -278,59 +278,77 @@ EXCLUSION = False
 
 
 @ddt
+@patch('resources.amois.VariantRulesMgr')
 @patch('resources.amois.TreatmentArmsAccessor')
 class TestAmoisResource(unittest.TestCase):
-    def setUp(self):
-        nh_rules = list(
+    @classmethod
+    def setUpClass(cls):
+        cls.nh_rules = list(
             [ta_nh_rule(15, 'func1', 'EGFR', None, 'HOTSPOTARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
              ta_nh_rule(15, None, 'EGFR', None, 'HOTSPOTARM-A', '2016-12-20', INCLUSION, 'CLOSED', True),
              ta_nh_rule(16, 'func2', 'EGFR', 'OCV1', 'HOTSPOTARM-B', '2016-11-20', INCLUSION, 'OPEN', False),
              ta_nh_rule(None, 'func3', 'EGFR', 'OCV1', 'HOTSPOTARM-C', '2016-10-20', EXCLUSION, 'OPEN', False),
              ])
 
-        cnv_rules = list(
-            [ta_id_rule('CNVOSM','CNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+        cls.cnv_rules = list(
+            [ta_id_rule('CNVOSM', 'CNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
 
-            ])
+             ])
 
-        snv_rules = list(
+        cls.snv_rules = list(
             [ta_id_rule('SNVOSM', 'SNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
 
              ])
-        gf_rules = list(
+        cls.gf_rules = list(
             [ta_id_rule('GFOSM', 'GENEFUSARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
 
              ])
-        indel_rules = list(
+        cls.indel_rules = list(
             [ta_id_rule('INDOSM', 'INDELARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
 
              ])
 
         with APP.test_request_context(''):
-            self.variant_rules_mgr = amois.VariantRulesMgr(nh_rules, cnv_rules, snv_rules, gf_rules, indel_rules)
-            self.app = API.app.test_client()
+            cls.app = API.app.test_client()
 
     @data(
         ({
             "singleNucleotideVariants": [
-                {
+                {  # should match on identifier
                     "confirmed": True,
-                    "gene": "IDH1",
+                    "gene": "EFGR",
                     "oncominevariantclass": "Hotspot",
                     "exon": "4",
                     "function": "missense",
+                    "identifier": "SNVOSM",
+                    "inclusion": True,
+                },
+                {  # should match on nonHotspot Rule
+                    "confirmed": True,
+                    "gene": "EGFR",
+                    "oncominevariantclass": "OCV1",
+                    "exon": "16",
+                    "function": "func2",
                     "identifier": "COSM28747",
                     "inclusion": True,
-                }
+                },
             ],
             "indels": [],
             "copyNumberVariants": [],
             "unifiedGeneFusions": [],
-        }, []),
+          },
+         {'PRIOR': [{'treatmentId': 'SNVARM-A', 'version': '2016-12-20', 'inclusion': True}],
+          'CURRENT': [{'treatmentId': 'HOTSPOTARM-B', 'version': '2016-11-20', 'inclusion': True}],
+          # 'PRIOR': [{'treatmentId': 'EAY131-R', 'version': '2016-12-12', 'inclusion': False}]
+          }),
 
     )
     @unpack
-    def test_get(self, vr_json, exp_anno_amois, mock_ta_accessor):
+    def test_get(self, vr_json, exp_anno_amois, mock_var_rules_mgr, mock_ta_accessor):
+        # Replace the VRM in get (which is built with the default contructor) with this custom built instance
+        vrm = amois.VariantRulesMgr(self.nh_rules, self.cnv_rules, self.snv_rules, self.gf_rules, self.indel_rules)
+        mock_var_rules_mgr.instance = vrm
+
         with APP.test_request_context(''):
             exp_result = vr_json
             if exp_anno_amois:
@@ -338,10 +356,10 @@ class TestAmoisResource(unittest.TestCase):
             self.maxDiff = None
 
             response = self.app.get('/amois',
-                        data = json.dumps(vr_json),
-                        content_type = 'application/json')
-
+                                    data=json.dumps(vr_json),
+                                    content_type='application/json')
             self.assertEqual(json.loads(response.get_data().decode("utf-8")), exp_result)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=1)
