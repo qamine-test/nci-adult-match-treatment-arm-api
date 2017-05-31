@@ -5,6 +5,7 @@ import json
 from ddt import ddt, data, unpack
 from flask_env import MetaFlaskEnv
 from flask_restful import Api
+from mock import patch
 from resources import amois
 
 
@@ -160,6 +161,7 @@ class TestAmoisAnnotator(unittest.TestCase):
 
 # ******** Test the VariantRulesMgr class in amois.py. ******** #
 @ddt
+@patch('resources.amois.TreatmentArmsAccessor')
 class TestVariantRulesMgr(unittest.TestCase):
 
     # Test the VariantRulesMgr._match_item function.
@@ -174,7 +176,7 @@ class TestVariantRulesMgr(unittest.TestCase):
         ('', '19', True),
     )
     @unpack
-    def test_match_item(self, vr_item, nhr_item, exp_result):
+    def test_match_item(self, vr_item, nhr_item, exp_result, mock_ta_accessor):
         self.assertEqual(amois.VariantRulesMgr._match_item(vr_item, nhr_item), exp_result)
 
     # Test the VariantRulesMgr._match_var_to_nhr function.
@@ -195,7 +197,7 @@ class TestVariantRulesMgr(unittest.TestCase):
         (variant(4, 'missense', 'IDH1', 'Hotspot'), ta_nh_rule(4, 'missense', 'IDH1', 'Deleterious'), False),
     )
     @unpack
-    def test_match_var_to_nhr(self, patient_variant, nhr, exp_result):
+    def test_match_var_to_nhr(self, patient_variant, nhr, exp_result, mock_ta_accessor):
         self.assertEqual(amois.VariantRulesMgr._match_var_to_nhr(patient_variant, nhr), exp_result)
 
     # Test the VariantRulesMgr.get_matching_nonhotspot_rules function.
@@ -227,7 +229,7 @@ class TestVariantRulesMgr(unittest.TestCase):
          []),
     )
     @unpack
-    def test_get_matching_nonhotspot_rules(self, patient_variants, nhr_list, exp_amois_indexes):
+    def test_get_matching_nonhotspot_rules(self, patient_variants, nhr_list, exp_amois_indexes, mock_ta_accessor):
         with APP.test_request_context(''):
             vrm = amois.VariantRulesMgr(nhr_list, {}, {}, {}, {})
             exp_amois = [nhr_list[i] for i in exp_amois_indexes]
@@ -255,7 +257,7 @@ class TestVariantRulesMgr(unittest.TestCase):
          [0, 1]),
     )
     @unpack
-    def test_get_matching_identifier_rules(self, patient_variants, ta_id_rules, exp_amois_indexes):
+    def test_get_matching_identifier_rules(self, patient_variants, ta_id_rules, exp_amois_indexes, mock_ta_accessor):
         with APP.test_request_context(''):
             exp_amois = [ta_id_rules[i] for i in exp_amois_indexes]
 
@@ -276,6 +278,7 @@ EXCLUSION = False
 
 
 @ddt
+@patch('resources.amois.TreatmentArmsAccessor')
 class TestAmoisResource(unittest.TestCase):
     def setUp(self):
         nh_rules = list(
@@ -327,7 +330,7 @@ class TestAmoisResource(unittest.TestCase):
 
     )
     @unpack
-    def test_get(self, vr_json, exp_anno_amois):
+    def test_get(self, vr_json, exp_anno_amois, mock_ta_accessor):
         with APP.test_request_context(''):
             exp_result = vr_json
             if exp_anno_amois:
@@ -341,4 +344,4 @@ class TestAmoisResource(unittest.TestCase):
             self.assertEqual(json.loads(response.get_data().decode("utf-8")), exp_result)
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=1)
