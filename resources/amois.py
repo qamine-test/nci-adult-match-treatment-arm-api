@@ -5,36 +5,34 @@ The AMOIS REST resource
 import logging
 
 from accessors.treatment_arm_accessor import TreatmentArmsAccessor
-# from accessors.patient_accessor import PatientAccessor
 from flask_restful import Resource, request
-from pprint import pformat, pprint
+from pprint import pformat
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 LOGGER.addHandler(logging.StreamHandler())
 
 
-"""
-NonHotspot Matching rules for 'exon', 'function', 'oncominevariantclass', 'gene':
-   Observations:
-   - All four are present in patient variant report (but may be empty)
-   - At least one present in nonHotspotRules
+# NonHotspot Matching rules for 'exon', 'function', 'oncominevariantclass', 'gene':
+#    Observations:
+#    - All four are present in patient variant report (but may be empty)
+#    - At least one present in nonHotspotRules
+#
+#    The rules:
+#    - Matches if not present in nonHotspotRules
+#    - Matches if empty in patient variant report
+#    - If present and non-Empty in both, then matches if an exact match
+#
+#    So, for example:
+#    If the VR contains 4 in the 'exon', but there is no 'exon' in the nonHotspotRules, the exons match.
+#    If the VR's 'exon' is empty and there is no 'exon' in the nonHotspotRules, the exons match.
+#    If the VR's 'exon' is empty and 'exon' in the nonHotspotRules is 3, the exons match.
+#    If the VR contains 4 in the 'exon', and 'exon' in the nonHotspotRules is 4, the exons match.
+#    If the VR contains 4 in the 'exon', but 'exon' in the nonHotspotRules is 3, the exons DO NOT match.
+#
+#    Follow the same logic for all four ('exon', 'function', 'oncominevariantclass', 'gene');
+#    if all four match, it's an aMOI.
 
-   The rules:
-   - Matches if not present in nonHotspotRules
-   - Matches if empty in patient variant report
-   - If present and non-Empty in both, then matches if an exact match
-
-   So, for example:
-   If the VR contains 4 in the 'exon', but there is no 'exon' in the nonHotspotRules, the exons match.
-   If the VR's 'exon' is empty and there is no 'exon' in the nonHotspotRules, the exons match.
-   If the VR's 'exon' is empty and 'exon' in the nonHotspotRules is 3, the exons match.
-   If the VR contains 4 in the 'exon', and 'exon' in the nonHotspotRules is 4, the exons match.
-   If the VR contains 4 in the 'exon', but 'exon' in the nonHotspotRules is 3, the exons DO NOT match.
-
-   Follow the same logic for all four ('exon', 'function', 'oncominevariantclass', 'gene');
-   if all four match, it's an aMOI.
-"""
 
 
 class VariantRulesMgr:
@@ -79,10 +77,6 @@ class VariantRulesMgr:
         :return: True if they match; otherwise False
         """
         item_list = ['exon', 'function', 'oncominevariantclass', 'gene']
-        # pprint(variant)
-        # pprint(nhr)
-        # print("\n")
-        # print("nhr[exon]")
         for item in item_list:
             if not VariantRulesMgr._match_item(variant[item], (nhr[item] if item in nhr else None)):
                 return False
@@ -158,7 +152,6 @@ class AmoisAnnotator:
             self._annotation[state].append(annot_data)
         else:
             self._annotation[state] = [annot_data]
-        # print("annotation after add:\n"+pformat(self._annotation))
 
     def get(self):
         return self._annotation
@@ -176,7 +169,7 @@ class AmoisAnnotator:
          "FUTURE"     "READY" or "PENDING"      None
          "PREVIOUS"   <doesn't matter>          not None
 
-        :param amoi:  Treatment Arm NonHotSpotRules dict
+        :param amoi:  Treatment Arm Rule dict
         :return: "PREVIOUS", "FUTURE", "CURRENT", or "PRIOR"
         """
         if amoi['dateArchived']:
@@ -205,7 +198,7 @@ def find_amois(vr, var_rules_mgr):
     """
     amois = list()
     amois.extend(var_rules_mgr.get_matching_copy_number_variant_rules(vr['copyNumberVariants']))
-    amois.extend(var_rules_mgr.get_matching_gene_fusions_rules(vr['geneFusions']))
+    amois.extend(var_rules_mgr.get_matching_gene_fusions_rules(vr['unifiedGeneFusions']))
     amois.extend(var_rules_mgr.get_matching_single_nucleotide_variants_rules(vr['singleNucleotideVariants']))
     amois.extend(var_rules_mgr.get_matching_indel_rules(vr['indels']))
     amois.extend(var_rules_mgr.get_matching_nonhotspot_rules(vr['singleNucleotideVariants'] + vr['indels']))
@@ -230,10 +223,10 @@ class AmoisResource(Resource):
 
     @staticmethod
     def get_variant_report_arg():
-        print("request is %s" % type(request))
+        # print("request is %s" % type(request))
         args = request.get_json()
 
-        LOGGER.debug("ARGS:\n"+pformat(args, width=140, indent=2))
+        # LOGGER.debug("ARGS:\n"+pformat(args, width=140, indent=2))
         missing_fields = [f for f in AmoisResource.REQ_VR_FIELDS if f not in args]
         if missing_fields:
             err_msg = ("The following required fields were missing from the variant report: "
@@ -253,13 +246,16 @@ class AmoisResource(Resource):
         status_code = 200
         try:
             vr = AmoisResource.get_variant_report_arg()
+            # LOGGER.debug("VR on input:\n"+pformat(vr, width=140, indent=2))
+
             var_rules_mgr = VariantRulesMgr()
-            # LOGGER.debug("%d rules loaded from treatmentArms collection" % len(ta_rules))
+            # LOGGER.debug(("{cnt} nonHotspotRules loaded from treatmentArms collection".format(cnt=len(var_rules_mgr.nhs_rules))))
+            # LOGGER.debug(("%d SNV Rules loaded from treatmentArms collection" % len(var_rules_mgr.snv_rules)))
             amois_list = find_amois(vr, var_rules_mgr)
             if amois_list:
                 vr['amois'] = create_amois_annotation(amois_list)
 
-            LOGGER.debug("VR:\n"+pformat(vr, width=140, indent=2))
+            # LOGGER.debug("VR on output:\n"+pformat(vr, width=140, indent=2))
         except Exception as exc:
             LOGGER.error(str(exc))
             status_code = 404
