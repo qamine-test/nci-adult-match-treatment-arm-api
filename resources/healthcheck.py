@@ -17,12 +17,18 @@ class HealthCheck(Resource):
         ]
 
     def get(self):
-        accessor = TreatmentArmsAccessor()
+        try:
+            accessor = TreatmentArmsAccessor()
 
-        return_info = dict()
-        return_info['Total Arm Count'] = accessor.count({})
-        return_info['Active Arm Count'] = accessor.count({'dateArchived': None})
-        for status in accessor.aggregate(self.status_pipeline):
-            return_info['Active Arms in %s Status' % status["_id"]] = status["count"]
+            return_info = dict()
+            return_info['Total Arm Count'] = accessor.count({})
+            return_info['Active Arm Count'] = accessor.count({'dateArchived': None})
+            for status in accessor.aggregate(self.status_pipeline):
+                return_info['Active Arms in %s Status' % status["_id"]] = status["count"]
 
-        return return_info
+            return return_info
+
+        except Exception as ex:
+            message = str(ex)
+            self.logger.exception(message)
+            return message, 500
