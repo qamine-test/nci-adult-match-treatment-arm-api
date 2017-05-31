@@ -12,7 +12,6 @@ from resources import amois
 APP = None
 API = None
 
-
 # The following function is called by the Python unittest framework and sets up the Flask application that is
 # required in order to test the functionality of the Amois Resource.
 def setUpModule():
@@ -126,9 +125,9 @@ class TestAmoisAnnotator(unittest.TestCase):
 
     # Test the AmoisAnnotator._get_amoi_state function with normal execution.
     @data(
-        (ta_nh_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False),
+        (ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False),
          {'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False}),
-        (ta_nh_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', True),
+        (ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', True),
          {'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True}),
     )
     @unpack
@@ -140,14 +139,14 @@ class TestAmoisAnnotator(unittest.TestCase):
     # get() functions of the AmoisAnnotator class.
     @data(
         ([], {}),
-        ([ta_nh_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False, "OPEN")],
+        ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN")],
          {'CURRENT': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False}]}),
-        ([ta_nh_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', True, "OPEN"),
-          ta_nh_rule(1, 1, 1, 1, 'EAY131-Q', '2016-12-11', False, "OPEN"), ],
+        ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', True, "OPEN"),
+          ta_nh_rule("1", "1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"), ],
          {'CURRENT': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True},
                       {'treatmentId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False}]}),
-        ([ta_nh_rule(1, 1, 1, 1, 'EAY131-P', '2016-11-11', False, "OPEN", True),
-          ta_nh_rule(1, 1, 1, 1, 'EAY131-Q', '2016-12-11', False, "OPEN"),
+        ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN", True),
+          ta_nh_rule("1", "1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
           ta_id_rule('COSM6240', 'EAY131-R', '2016-12-12', False, "CLOSED")],
          {'PREVIOUS': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False}],
           'CURRENT': [{'treatmentId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False}],
@@ -181,20 +180,20 @@ class TestVariantRulesMgr(unittest.TestCase):
 
     # Test the VariantRulesMgr._match_var_to_nhr function.
     @data(  # order of params is e, f, g, o
-        (variant(4, 'missense', 'IDH1', 'Hotspot'), ta_nh_rule(4, 'missense', 'IDH1', 'Hotspot'), True),
-        (variant(4, 'missense', 'IDH1', 'Hotspot'), ta_nh_rule(4, 'missense', 'IDH1', None), True),
-        (variant(4, 'missense', 'IDH1', 'Hotspot'), ta_nh_rule(4, 'missense', None, 'Hotspot'), True),
-        (variant(4, 'missense', 'IDH1', 'Hotspot'), ta_nh_rule(4, None, 'IDH1', 'Hotspot'), True),
-        (variant(4, 'missense', 'IDH1', 'Hotspot'), ta_nh_rule(None, 'missense', 'IDH1', 'Hotspot'), True),
-        (variant(4, 'missense', 'IDH1', ''), ta_nh_rule(4, 'missense', 'IDH1', 'Hotspot'), True),
-        (variant(4, 'missense', '', 'Hotspot'), ta_nh_rule(4, 'missense', 'IDH1', 'Hotspot'), True),
-        (variant(4, '', 'IDH1', 'Hotspot'), ta_nh_rule(4, 'missense', 'IDH1', 'Hotspot'), True),
-        (variant('', 'missense', 'IDH1', 'Hotspot'), ta_nh_rule(4, 'missense', 'IDH1', 'Hotspot'), True),
-        (variant(4, 'missense', 'IDH1', 'Hotspot'), ta_nh_rule(14, 'missense', 'IDH1', 'Hotspot'), False),
-        (variant(4, 'missense', 'IDH1', 'Hotspot'),
-         ta_nh_rule(4, 'nonframeshiftinsertion', 'IDH1', 'Hotspot'), False),
-        (variant(4, 'missense', 'IDH1', 'Hotspot'), ta_nh_rule(4, 'missense', 'ERBB2', 'Hotspot'), False),
-        (variant(4, 'missense', 'IDH1', 'Hotspot'), ta_nh_rule(4, 'missense', 'IDH1', 'Deleterious'), False),
+        (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
+        (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', None), True),
+        (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', None, 'Hotspot'), True),
+        (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", None, 'IDH1', 'Hotspot'), True),
+        (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule(None, 'missense', 'IDH1', 'Hotspot'), True),
+        (variant("4", 'missense', 'IDH1', ''), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
+        (variant("4", 'missense', '', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
+        (variant("4", '', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
+        (variant('', 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
+        (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("14", 'missense', 'IDH1', 'Hotspot'), False),
+        (variant("4", 'missense', 'IDH1', 'Hotspot'),
+         ta_nh_rule("4", 'nonframeshiftinsertion', 'IDH1', 'Hotspot'), False),
+        (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'ERBB2', 'Hotspot'), False),
+        (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Deleterious'), False),
     )
     @unpack
     def test_match_var_to_nhr(self, patient_variant, nhr, exp_result, mock_ta_accessor):
@@ -203,29 +202,29 @@ class TestVariantRulesMgr(unittest.TestCase):
     # Test the VariantRulesMgr.get_matching_nonhotspot_rules function.
     @data(
         ([], [], []),
-        ([variant(14, 'missense', 'IDH1', 'Hotspot')], [], []),
-        ([], ta_nh_rule(12, 'missense', 'ERBB2', 'Hotspot'), []),
-        ([variant(14, 'missense', 'IDH2', 'Hotspot')],
-         [ta_nh_rule(14, 'missense', None, 'Hotspot')], [0]),
-        ([variant(14, 'missense', 'IDH2', 'Hotspot')],
-         [ta_nh_rule(14, 'missense', None, 'Deleterious'), ta_nh_rule(14, 'missense', None, 'Hotspot')],
+        ([variant("14", 'missense', 'IDH1', 'Hotspot')], [], []),
+        ([], ta_nh_rule("12", 'missense', 'ERBB2', 'Hotspot'), []),
+        ([variant("14", 'missense', 'IDH2', 'Hotspot')],
+         [ta_nh_rule("14", 'missense', None, 'Hotspot')], [0]),
+        ([variant("14", 'missense', 'IDH2', 'Hotspot')],
+         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')],
          [1]),
-        ([variant(2, 'missense', 'IDH2', 'Hotspot'), variant(14, 'missense', 'IDH2', 'Deleterious')],
-         [ta_nh_rule(14, 'missense', None, 'Deleterious'), ta_nh_rule(14, 'missense', None, 'Hotspot')],
+        ([variant("2", 'missense', 'IDH2', 'Hotspot'), variant("14", 'missense', 'IDH2', 'Deleterious')],
+         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')],
          [0]),
-        ([variant(14, 'missense', 'IDH2', 'Hotspot'), variant(14, 'missense', 'IDH2', 'Deleterious')],
-         [ta_nh_rule(14, 'missense', None, 'Deleterious'), ta_nh_rule(14, 'missense', None, 'Hotspot')],
+        ([variant("14", 'missense', 'IDH2', 'Hotspot'), variant("14", 'missense', 'IDH2', 'Deleterious')],
+         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')],
          [0, 1]),
-        ([variant(14, 'missense', 'IDH2', 'Hotspot', 'ABC', False)],
-         [ta_nh_rule(14, 'missense', None, 'Deleterious'), ta_nh_rule(14, 'missense', None, 'Hotspot')],
+        ([variant("14", 'missense', 'IDH2', 'Hotspot', 'ABC', False)],
+         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')],
          []),
-        ([variant(2, 'missense', 'IDH2', 'Hotspot', 'ABC1', True),
-          variant(14, 'missense', 'IDH2', 'Deleterious', 'ABC', False)],
-         [ta_nh_rule(14, 'missense', None, 'Deleterious'), ta_nh_rule(14, 'missense', None, 'Hotspot')],
+        ([variant("2", 'missense', 'IDH2', 'Hotspot', 'ABC1', True),
+          variant("14", 'missense', 'IDH2', 'Deleterious', 'ABC', False)],
+         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')],
          []),
-        ([variant(14, 'missense', 'IDH2', 'Hotspot', 'ABC', False),
-          variant(14, 'missense', 'IDH2', 'Deleterious', 'ABC1', False)],
-         [ta_nh_rule(14, 'missense', None, 'Deleterious'), ta_nh_rule(14, 'missense', None, 'Hotspot')],
+        ([variant("14", 'missense', 'IDH2', 'Hotspot', 'ABC', False),
+          variant("14", 'missense', 'IDH2', 'Deleterious', 'ABC1', False)],
+         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')],
          []),
     )
     @unpack
@@ -242,17 +241,17 @@ class TestVariantRulesMgr(unittest.TestCase):
     #   * get_matching_indel_rules
     @data(
         ([], [], []),
-        ([variant(9, '1', '1', '1', 'ABCD', True)], [], []),
+        ([variant("9", '1', '1', '1', 'ABCD', True)], [], []),
         ([], [ta_id_rule('ABCDE')], []),
-        ([variant(9, '1', '1', '1', 'ABCDE', True)], [ta_id_rule('ABCDE')], [0]),
-        ([variant(9, '1', '1', '1', 'ABCDE', False)], [ta_id_rule('ABCDE')], []),
-        ([variant(9, '1', '1', '1', 'ABCDE', False), variant(9, '1', '1', '1', 'EDCBA', True)],
+        ([variant("9", '1', '1', '1', 'ABCDE', True)], [ta_id_rule('ABCDE')], [0]),
+        ([variant("9", '1', '1', '1', 'ABCDE', False)], [ta_id_rule('ABCDE')], []),
+        ([variant("9", '1', '1', '1', 'ABCDE', False), variant("9", '1', '1', '1', 'EDCBA', True)],
          [ta_id_rule('ABCDE'), ta_id_rule('EDCBA')],
          [1]),
-        ([variant(9, '1', '1', '1', 'ABCDE', True), variant(9, '1', '1', '1', 'EDCBA', False)],
+        ([variant("9", '1', '1', '1', 'ABCDE', True), variant("9", '1', '1', '1', 'EDCBA', False)],
          [ta_id_rule('ABCDE'), ta_id_rule('EDCBA')],
          [0]),
-        ([variant(9, '1', '1', '1', 'ABCDE', True), variant(9, '1', '1', '1', 'EDCBA', True)],
+        ([variant("9", '1', '1', '1', 'ABCDE', True), variant("9", '1', '1', '1', 'EDCBA', True)],
          [ta_id_rule('ABCDE'), ta_id_rule('EDCBA')],
          [0, 1]),
     )
@@ -276,38 +275,101 @@ class TestVariantRulesMgr(unittest.TestCase):
 INCLUSION = True
 EXCLUSION = False
 
+nh_rules = list(
+    [ta_nh_rule("15", 'func1', 'EGFR', None, 'HOTSPOTARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+     ta_nh_rule("15", None, 'EGFR', None, 'HOTSPOTARM-A', '2016-12-20', INCLUSION, 'CLOSED', True),
+     ta_nh_rule("16", 'func2', 'EGFR', 'OCV1', 'HOTSPOTARM-B', '2016-11-20', INCLUSION, 'OPEN', False),
+     ta_nh_rule(None, 'func3', 'EGFR', 'OCV1', 'HOTSPOTARM-C', '2016-10-20', EXCLUSION, 'OPEN', False),
+     ])
 
+cnv_rules = list(
+    [ta_id_rule('CNVOSM', 'CNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+
+     ])
+
+snv_rules = list(
+    [ta_id_rule('SNVOSM', 'SNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+
+     ])
+gf_rules = list(
+    [ta_id_rule('GFOSM', 'GENEFUSARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+
+     ])
+indel_rules = list(
+    [ta_id_rule('INDOSM', 'INDELARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+
+     ])
+
+
+# ******** Test the find_amois function in amois.py. ******** #
 @ddt
-@patch('resources.amois.VariantRulesMgr')
 @patch('resources.amois.TreatmentArmsAccessor')
+class TestFindAmoisFunction(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        with APP.test_request_context(''):
+            cls.app = API.app.test_client()
+
+    @data(
+        ({
+            "singleNucleotideVariants": [
+                {  # should match on identifier
+                    "confirmed": True,
+                    "gene": "EFGR",
+                    "oncominevariantclass": "Hotspot",
+                    "exon": "4",
+                    "function": "missense",
+                    "identifier": "SNVOSM",
+                    "inclusion": True,
+                },
+                {  # should match on nonHotspot Rule
+                    "confirmed": True,
+                    "gene": "EGFR",
+                    "oncominevariantclass": "OCV1",
+                    "exon": "16",
+                    "function": "func2",
+                    "identifier": "COSM28747",
+                    "inclusion": True,
+                },
+            ],
+            "indels": [],
+            "copyNumberVariants": [],
+            "unifiedGeneFusions": [],
+          },
+         [snv_rules[0], nh_rules[2]]),
+        ({
+             "singleNucleotideVariants": [
+                 {  # should NOT match
+                     "confirmed": False,
+                     "gene": "EFGR",
+                     "oncominevariantclass": "Hotspot",
+                     "exon": "4",
+                     "function": "missense",
+                     "identifier": "SNVOSM",
+                     "inclusion": True,
+                 },
+             ],
+             "indels": [],
+             "copyNumberVariants": [],
+             "unifiedGeneFusions": [],
+         },
+         [])
+        )
+    @unpack
+    def test(self, var_rpt, exp_amois_list, mock_ta_accessor):
+        self.maxDiff = None
+        vrm = amois.VariantRulesMgr(nh_rules, cnv_rules, snv_rules, gf_rules, indel_rules)
+        amois_list = amois.find_amois(var_rpt, vrm)
+        self.assertEqual(amois_list, exp_amois_list)
+
+
+# ******** Test the AmoisResource class in amois.py. ******** #
+@ddt
+@patch('resources.amois.TreatmentArmsAccessor')
+@patch('resources.amois.find_amois')
 class TestAmoisResource(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.nh_rules = list(
-            [ta_nh_rule(15, 'func1', 'EGFR', None, 'HOTSPOTARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-             ta_nh_rule(15, None, 'EGFR', None, 'HOTSPOTARM-A', '2016-12-20', INCLUSION, 'CLOSED', True),
-             ta_nh_rule(16, 'func2', 'EGFR', 'OCV1', 'HOTSPOTARM-B', '2016-11-20', INCLUSION, 'OPEN', False),
-             ta_nh_rule(None, 'func3', 'EGFR', 'OCV1', 'HOTSPOTARM-C', '2016-10-20', EXCLUSION, 'OPEN', False),
-             ])
-
-        cls.cnv_rules = list(
-            [ta_id_rule('CNVOSM', 'CNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-
-             ])
-
-        cls.snv_rules = list(
-            [ta_id_rule('SNVOSM', 'SNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-
-             ])
-        cls.gf_rules = list(
-            [ta_id_rule('GFOSM', 'GENEFUSARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-
-             ])
-        cls.indel_rules = list(
-            [ta_id_rule('INDOSM', 'INDELARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-
-             ])
-
         with APP.test_request_context(''):
             cls.app = API.app.test_client()
 
@@ -339,16 +401,64 @@ class TestAmoisResource(unittest.TestCase):
           },
          {'PRIOR': [{'treatmentId': 'SNVARM-A', 'version': '2016-12-20', 'inclusion': True}],
           'CURRENT': [{'treatmentId': 'HOTSPOTARM-B', 'version': '2016-11-20', 'inclusion': True}],
-          # 'PRIOR': [{'treatmentId': 'EAY131-R', 'version': '2016-12-12', 'inclusion': False}]
-          }),
+          },
+         [snv_rules[0], nh_rules[2]]),
+        ({
+             "singleNucleotideVariants": [
+                 {  # should NOT match
+                     "confirmed": False,
+                     "gene": "EFGR",
+                     "oncominevariantclass": "Hotspot",
+                     "exon": "4",
+                     "function": "missense",
+                     "identifier": "SNVOSM",
+                     "inclusion": True,
+                 },
+             ],
+             "indels": [],
+             "copyNumberVariants": [],
+             "unifiedGeneFusions": [],
+         },
+         {},
+         [])
 
-    )
+        )
     @unpack
-    def test_get(self, vr_json, exp_anno_amois, mock_var_rules_mgr, mock_ta_accessor):
-        # Replace the VRM in get (which is built with the default contructor) with this custom built instance
-        vrm = amois.VariantRulesMgr(self.nh_rules, self.cnv_rules, self.snv_rules, self.gf_rules, self.indel_rules)
-        mock_var_rules_mgr.instance = vrm
+    def test_get(self, vr_json, exp_anno_amois, mock_find_amois_ret_val, mock_find_amois, mock_ta_accessor):
+        self.maxDiff = None
 
+        mock_find_amois.return_value = mock_find_amois_ret_val
+        amois.find_amois = mock_find_amois
+
+        with APP.test_request_context(''):
+            exp_result = dict(vr_json)
+            if exp_anno_amois:
+                exp_result['amois'] = exp_anno_amois
+
+            response = self.app.get('/amois',
+                                    data=json.dumps(vr_json),
+                                    content_type='application/json')
+            result = json.loads(response.get_data().decode("utf-8"))
+
+            self.assertEqual(result, exp_result)
+            self.assertEqual(response.status_code, 200)
+
+    @data(
+        ({
+            "unknown1": [],
+            "indels": [],
+            "copyNumberVariants": [],
+            "unifiedGeneFusions": [],
+          },
+         {}),
+        ({
+             "unknown2": [],
+         },
+         {})
+
+        )
+    @unpack
+    def test_get_with_error(self, vr_json, exp_anno_amois, mock_find_amois, mock_ta_accessor):
         with APP.test_request_context(''):
             exp_result = vr_json
             if exp_anno_amois:
@@ -358,8 +468,9 @@ class TestAmoisResource(unittest.TestCase):
             response = self.app.get('/amois',
                                     data=json.dumps(vr_json),
                                     content_type='application/json')
-            self.assertEqual(json.loads(response.get_data().decode("utf-8")), exp_result)
+            # self.assertEqual(json.loads(response.get_data().decode("utf-8")), exp_result)
+            self.assertEqual(response.status_code, 404)
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=1)
+    unittest.main(verbosity=2)
