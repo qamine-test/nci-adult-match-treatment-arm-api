@@ -31,6 +31,15 @@ class MyTestCase(unittest.TestCase):
             self.assertEqual(result["Active Arms in OPEN Status"], active_open_cnt)
             self.assertEqual(result["Active Arms in SUSPENDED Status"], active_suspended_cnt)
 
+    @patch('resources.healthcheck.TreatmentArmsAccessor',side_effect=Exception('Oh no!'))
+    def test_get_except(self, mock_ta_accessor):
+
+        app = flask.Flask(__name__)
+        with app.test_request_context(''):
+            (result, status_code) = healthcheck.HealthCheck().get()
+            self.assertEqual(result, 'Oh no!')
+            self.assertEqual(status_code, 500)
+
 
 if __name__ == '__main__':
     unittest.main()
