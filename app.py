@@ -6,24 +6,21 @@ Main application module
 
 import logging
 import os
-# from logging.config import fileConfig
 
 from flask import Flask
 from flask_cors import CORS
+from flask_env import MetaFlaskEnv
 from flask_restful import Api
-
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from tornado.wsgi import WSGIContainer
 
-from flask_env import MetaFlaskEnv
-
+import log  # contains required log configuration
 from resources.amois import AmoisResource
 from resources.healthcheck import HealthCheck
-from resources.version import Version
 from resources.treatment_arm import TreatmentArms
 from resources.treatment_arm import TreatmentArmsById
-# from resources.treatment_arm import TreatmentArm
+from resources.version import Version
 
 
 class Configuration(metaclass=MetaFlaskEnv):
@@ -39,8 +36,6 @@ class Configuration(metaclass=MetaFlaskEnv):
 
 # Logging functionality
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.DEBUG)
-LOGGER.addHandler(logging.StreamHandler())
 
 APP = Flask(__name__)
 APP.config.from_object(Configuration)
