@@ -15,8 +15,6 @@ from flask_restful import request
 # 403 - forbidden
 # 500 - internal server error (i.e. db not available)
 
-logger = logging.getLogger(__name__)
-
 
 def is_active_only(active_param):
     return True if active_param and active_param.upper() in ['TRUE', '1'] else False
@@ -53,11 +51,14 @@ class TreatmentArms(Resource):
     """
     Treatment Arm REST resource
     """
-    @staticmethod
-    def get():
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+
+    def get(self):
         """
         Gets the TreatmentArms data.
         """
+        self.logger.debug("Getting TreatmentArms")
         args = get_args()
         query = get_query(args)
         projection = get_projection(args)
@@ -69,12 +70,14 @@ class TreatmentArmsById(Resource):
     """
     Treatment Arm REST resource
     """
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
 
-    @staticmethod
-    def get(arm_id):
+    def get(self, arm_id):
         """
         Gets the TreatmentArms data for the arm_id specified.
         """
+        self.logger.debug("Getting TreatmentArms by ID: {ARMID}".format(ARMID=arm_id))
         args = get_args()
         query = {"treatmentId": arm_id}
         query.update(get_query(args))
