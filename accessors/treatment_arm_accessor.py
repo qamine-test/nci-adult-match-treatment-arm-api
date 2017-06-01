@@ -59,7 +59,7 @@ class TreatmentArmsAccessor(MongoDbAccessor):
 
         return [ta_ir for ta_ir in self.aggregate([
             {"$match": {"variantReport."+variant_type: {"$ne": []}}},
-            {"$unwind": "$variantReport"+variant_type},
+            {"$unwind": "$variantReport."+variant_type},
             {"$project": {"treatmentId": 1,
                           "version": 1,
                           "dateArchived": 1,
