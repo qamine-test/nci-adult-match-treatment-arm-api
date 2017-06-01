@@ -17,6 +17,7 @@ class HealthCheck(Resource):
         ]
 
     def get(self):
+        self.logger.debug('Retrieving TreatmentArms Healthcheck')
         try:
             accessor = TreatmentArmsAccessor()
 
