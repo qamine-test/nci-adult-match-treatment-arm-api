@@ -68,7 +68,7 @@ class TreatmentArms(Resource):
 
 class TreatmentArmsById(Resource):
     """
-    Treatment Arm REST resource
+    Treatment Arm REST resource to get Arm by ID
     """
     def __init__(self):
         self.logger = logging.getLogger(__name__)
