@@ -176,7 +176,7 @@ class TestTreatmentArms(unittest.TestCase):
 
         app = flask.Flask(__name__)
         with app.test_request_context(request_context):
-            result = treatment_arm.TreatmentArms.get()
+            result = treatment_arm.TreatmentArms().get()
             self.assertEqual(result, exp_result, "TestTreatmentArms Test Case %d" % test_id)
             instance.find.assert_called_with(exp_qry_param, exp_proj_param)
 
@@ -264,7 +264,7 @@ class TestTreatmentArmsById(unittest.TestCase):
 
         app = flask.Flask(__name__)
         with app.test_request_context(request_context):
-            result = treatment_arm.TreatmentArmsById.get(arm_id)
+            result = treatment_arm.TreatmentArmsById().get(arm_id)
             instance.find.assert_called_with(exp_qry_param, exp_proj_param)
             self.assertEqual(len(result), len(exp_result), "TestTreatmentArmsById Test Case %d" % test_id)
             self.assertEqual(TestTreatmentArmsById._sort(result), TestTreatmentArmsById._sort(exp_result),
