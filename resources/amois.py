@@ -8,11 +8,6 @@ from accessors.treatment_arm_accessor import TreatmentArmsAccessor
 from flask_restful import Resource, request
 from pprint import pformat
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.DEBUG)
-LOGGER.addHandler(logging.StreamHandler())
-
-
 # NonHotspot Matching rules for 'exon', 'function', 'oncominevariantclass', 'gene':
 #    Observations:
 #    - All four are present in patient variant report (but may be empty)
@@ -51,6 +46,21 @@ class VariantRulesMgr:
             else ta_accessor.get_ta_identifier_rules('geneFusions')
         self.indel_rules = indel_identifier_rules if indel_identifier_rules \
             else ta_accessor.get_ta_identifier_rules('indels')
+
+    def nonhotspot_rule_count(self):
+        return len(self.nhs_rules)
+
+    def copy_number_variant_rule_count(self):
+        return len(self.cnv_rules)
+
+    def single_nucleotide_variant_rule_count(self):
+        return len(self.snv_rules)
+
+    def gene_fusion_rule_count(self):
+        return len(self.gf_rules)
+
+    def indel_rule_count(self):
+        return len(self.indel_rules)
 
     @staticmethod
     def _match_item(variant_item, nhr_item):
@@ -221,6 +231,9 @@ class AmoisResource(Resource):
 
     REQ_VR_FIELDS = ['indels', 'singleNucleotideVariants', 'copyNumberVariants', 'unifiedGeneFusions']
 
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+
     @staticmethod
     def get_variant_report_arg():
         # print("request is %s" % type(request))
@@ -234,32 +247,46 @@ class AmoisResource(Resource):
             raise Exception(err_msg)
         return args
 
-    @staticmethod
-    def get():
+    # @staticmethod
+    def get(self):
         """
         Gets the AMOIS data and annotates the given Variant Report with it.
 
         "amois": { STATE: [{treatmentId, version, action}, ...], ... }
 
         """
-        vr = dict()
+        self.logger.debug("Getting annotated aMOI information for Patient Variant Report")
+        ret_val = None
         status_code = 200
         try:
             vr = AmoisResource.get_variant_report_arg()
-            # LOGGER.debug("VR on input:\n"+pformat(vr, width=140, indent=2))
+            self.logger.debug("amois: var_rpt on input:\n" + pformat(vr, width=140, indent=1, depth=2))
 
             var_rules_mgr = VariantRulesMgr()
-            # LOGGER.debug(("{cnt} nonHotspotRules loaded from treatmentArms collection".format(cnt=len(var_rules_mgr.nhs_rules))))
-            # LOGGER.debug(("%d SNV Rules loaded from treatmentArms collection" % len(var_rules_mgr.snv_rules)))
+            self.logger.debug("{cnt} nonHotspotRules loaded from treatmentArms collection"
+                              .format(cnt=var_rules_mgr.nonhotspot_rule_count()))
+            self.logger.debug("{cnt} SNV Rules loaded from treatmentArms collection"
+                              .format(cnt=var_rules_mgr.single_nucleotide_variant_rule_count()))
+            self.logger.debug("{cnt} CNV Rules loaded from treatmentArms collection"
+                              .format(cnt=var_rules_mgr.copy_number_variant_rule_count()))
+            self.logger.debug("{cnt} Gene Fusions Rules loaded from treatmentArms collection"
+                              .format(cnt=var_rules_mgr.gene_fusion_rule_count()))
+            self.logger.debug("{cnt} Indel Rules loaded from treatmentArms collection"
+                              .format(cnt=var_rules_mgr.indel_rule_count()))
+
             amois_list = find_amois(vr, var_rules_mgr)
             if amois_list:
+                self.logger.debug("{cnt} aMOIs found".format(cnt=len(amois_list)))
                 vr['amois'] = create_amois_annotation(amois_list)
+            else:
+                self.logger.debug("No aMOIs found")
 
-            # LOGGER.debug("VR on output:\n"+pformat(vr, width=140, indent=2))
+            ret_val = vr
         except Exception as exc:
-            LOGGER.error(str(exc))
+            ret_val = str(exc)
+            self.logger.error(ret_val)
             status_code = 404
-        return vr, status_code
+        return ret_val, status_code
 
 
 # if __name__ == '__main__':
