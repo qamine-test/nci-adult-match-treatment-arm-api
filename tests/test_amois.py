@@ -407,17 +407,17 @@ class TestAmoisResource(unittest.TestCase):
              "singleNucleotideVariants": [
                  {  # should NOT match
                      "confirmed": False,
-                     "gene": "EFGR",
-                     "oncominevariantclass": "Hotspot",
-                     "exon": "4",
-                     "function": "missense",
-                     "identifier": "SNVOSM",
+                     "gene": "EFGRB",
+                     "oncominevariantclass": "Deleterious",
+                     "exon": "14",
+                     "function": "frameshiftinsertion",
+                     "identifier": "SNVOSN",
                      "inclusion": True,
                  },
              ],
              "indels": [],
-             "copyNumberVariants": [],
              "unifiedGeneFusions": [],
+             "copyNumberVariants": [],
          },
          {},
          [])
@@ -445,9 +445,9 @@ class TestAmoisResource(unittest.TestCase):
 
     @data(
         ({
-            "unknown1": [],
             "indels": [],
             "copyNumberVariants": [],
+            "unknown1": [],
             "unifiedGeneFusions": [],
           },
          {}),
@@ -458,7 +458,8 @@ class TestAmoisResource(unittest.TestCase):
 
         )
     @unpack
-    def test_get_with_error(self, vr_json, exp_anno_amois, mock_find_amois, mock_ta_accessor):
+    @patch('resources.amois.logging')
+    def test_get_with_error(self, vr_json, exp_anno_amois, mock_logging, mock_find_amois, mock_ta_accessor):
         with APP.test_request_context(''):
             exp_result = vr_json
             if exp_anno_amois:
@@ -471,6 +472,9 @@ class TestAmoisResource(unittest.TestCase):
             # self.assertEqual(json.loads(response.get_data().decode("utf-8")), exp_result)
             self.assertEqual(response.status_code, 404)
 
+            mock_logger = mock_logging.getLogger()
+            mock_logger.error.assert_called_once()
+
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=1)
