@@ -150,7 +150,7 @@ class VariantRulesMgr:
 
 
 class AmoisAnnotator:
-    REQ_FIELDS = ['treatmentId', 'version', 'inclusion']
+    REQ_FIELDS = ['treatmentId', 'version', 'inclusion', 'type']
 
     def __init__(self):
         self._annotation = dict()
@@ -158,8 +158,16 @@ class AmoisAnnotator:
     def add(self, amoi):
         state = AmoisAnnotator._get_amoi_state(amoi)
         annot_data = AmoisAnnotator._extract_annot_data(amoi)
+        self._add_annot_by_state(state, annot_data)
+
+    def _add_annot_by_state(self, state, annot_data):
         if state in self._annotation:
-            self._annotation[state].append(annot_data)
+            state_annots = self._annotation[state]
+            equiv_annot = next((a for a in state_annots if AmoisAnnotator._equiv_annot(a, annot_data)), None)
+            if not equiv_annot:
+                state_annots.append(annot_data)
+            elif equiv_annot['type'] != annot_data['type']:
+                 equiv_annot['type'] = 'Both'
         else:
             self._annotation[state] = [annot_data]
 
@@ -167,8 +175,26 @@ class AmoisAnnotator:
         return self._annotation
 
     @staticmethod
-    def _extract_annot_data(amois):
-        return dict([(k, v) for k, v in amois.items() if k in AmoisAnnotator.REQ_FIELDS])
+    def _equiv_annot(annot1, annot2):
+        EQUIV_FIELDS = ['treatmentId', 'version', 'inclusion']
+        for fld_name in EQUIV_FIELDS:
+            if annot1[fld_name] != annot2[fld_name]:
+                return False
+        return True
+
+    @staticmethod
+    def _extract_annot_data(amoi):
+        missing_fields = [f for f in AmoisAnnotator.REQ_FIELDS if f not in amoi]
+        if missing_fields:
+            err_msg = ("The following required fields were missing from the submitted aMOI: "
+                       + ", ".join(missing_fields))
+            raise Exception(err_msg)
+        error_fields = [f for f in AmoisAnnotator.REQ_FIELDS if amoi[f] is None]
+        if error_fields:
+            err_msg = ("The following required fields were empty in the submitted aMOI: "
+                       + ", ".join(error_fields))
+            raise Exception(err_msg)
+        return dict([(k, v) for k, v in amoi.items() if k in AmoisAnnotator.REQ_FIELDS])
 
     @staticmethod
     def _get_amoi_state(amoi):
@@ -239,7 +265,7 @@ class AmoisResource(Resource):
         # print("request is %s" % type(request))
         args = request.get_json()
 
-        # LOGGER.debug("ARGS:\n"+pformat(args, width=140, indent=2))
+        # self.logger.debug("ARGS:\n"+pformat(args, width=140, indent=2))
         missing_fields = [f for f in AmoisResource.REQ_VR_FIELDS if f not in args]
         if missing_fields:
             err_msg = ("The following required fields were missing from the variant report: "
