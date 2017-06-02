@@ -63,26 +63,27 @@ def variant(e, f, g, o, identifier='ABC', confirmed=True):
     return vr
 
 
-def add_common_ta_fields(ta_rule, archived, incl, status, trtmt_id, ver):
-    # Add the fields to ta_rule that are common to both types of treatment arm rules (identifier and nonHotspot).
+def add_common_ta_fields(ta_rule, archived, incl, status, trtmt_id, ver, rule_type):
+    # Add the fields to ta_rule that are common to both types of treatment arm rules (identifier and NonHotspot).
     ta_rule['treatmentId'] = trtmt_id
     ta_rule['version'] = ver
     ta_rule['inclusion'] = incl
     ta_rule['dateArchived'] = None if not archived else datetime.datetime(2016, 7, 7)
     ta_rule['treatmentArmStatus'] = status
+    ta_rule["type"] = rule_type
 
 
 def ta_nh_rule(e, f, g, o, trtmt_id='TMTID', ver='2016-11-11', incl=True, status='OPEN', archived=False):
     # Create a treatmentArm NonHotspot Rule (matches on the EFGO fields).
     nh_rule = efgo_dict(e, f, g, o)
-    add_common_ta_fields(nh_rule, archived, incl, status, trtmt_id, ver)
+    add_common_ta_fields(nh_rule, archived, incl, status, trtmt_id, ver, "NonHotspot")
     return nh_rule
 
 
 def ta_id_rule(identifier, trtmt_id='TMTID', ver='2016-11-11', incl=True, status='OPEN', archived=False):
     # Create a treatmentArm Identifier Rule (matches on identifier field)
     id_rule = {'identifier': identifier}
-    add_common_ta_fields(id_rule, archived, incl, status, trtmt_id, ver)
+    add_common_ta_fields(id_rule, archived, incl, status, trtmt_id, ver, "Hotspot")
     return id_rule
 
 
@@ -123,34 +124,50 @@ class TestAmoisAnnotator(unittest.TestCase):
             amois.AmoisAnnotator._get_amoi_state(ta_vr_rules)
         self.assertEqual(str(cm.exception), exp_exp_msg)
 
-    # Test the AmoisAnnotator._get_amoi_state function with normal execution.
+    # Test the AmoisAnnotator._extract_annot_data function with normal execution.
     @data(
         (ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False),
-         {'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False}),
+         {'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}),
         (ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', True),
-         {'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True}),
+         {'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True, 'type': 'NonHotspot'}),
+        (ta_id_rule('ABCDE', 'EAY131-Q', '2016-11-11', True),
+         {'treatmentId': 'EAY131-Q', 'version': '2016-11-11', 'inclusion': True, 'type': 'Hotspot'}),
     )
     @unpack
-    def test_extract_annot_data(self, amois_dict, exp_annot):
+    def test_extract_annot_data_with_exc(self, amois_dict, exp_annot):
         annot = amois.AmoisAnnotator._extract_annot_data(amois_dict)
         self.assertEqual(annot, exp_annot)
+
+    # Test the AmoisAnnotator._extract_annot_data function with exception.
+    @data(
+        ({'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'},
+         "The following required fields were missing from the submitted aMOI: treatmentId"),
+        ({'treatmentId': None, 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'},
+         "The following required fields were empty in the submitted aMOI: treatmentId"),
+    )
+    @unpack
+    def test_extract_annot_data(self, amois_dict, exp_exp_msg):
+        with self.assertRaises(Exception) as cm:
+            amois.AmoisAnnotator._extract_annot_data(amois_dict)
+        self.assertEqual(str(cm.exception), exp_exp_msg)
 
     # Test the amois.create_amois_annotation function which, in effect, also tests the add() and
     # get() functions of the AmoisAnnotator class.
     @data(
         ([], {}),
         ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN")],
-         {'CURRENT': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False}]}),
+         {'CURRENT': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}]}),
         ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', True, "OPEN"),
-          ta_nh_rule("1", "1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"), ],
-         {'CURRENT': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True},
-                      {'treatmentId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False}]}),
+          ta_nh_rule("1", "1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
+          ta_id_rule("EDBCA", 'EAY131-P', '2016-11-11', True),],
+         {'CURRENT': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True, 'type': 'Both'},
+                      {'treatmentId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False, 'type': 'NonHotspot'}]}),
         ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN", True),
           ta_nh_rule("1", "1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
           ta_id_rule('COSM6240', 'EAY131-R', '2016-12-12', False, "CLOSED")],
-         {'PREVIOUS': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False}],
-          'CURRENT': [{'treatmentId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False}],
-          'PRIOR': [{'treatmentId': 'EAY131-R', 'version': '2016-12-12', 'inclusion': False}]}),
+         {'PREVIOUS': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}],
+          'CURRENT': [{'treatmentId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False, 'type': 'NonHotspot'}],
+          'PRIOR': [{'treatmentId': 'EAY131-R', 'version': '2016-12-12', 'inclusion': False, 'type': 'Hotspot'}]}),
     )
     @unpack
     def test_create_amois_annotation(self, amois_list, exp_annotation):
@@ -272,14 +289,16 @@ class TestVariantRulesMgr(unittest.TestCase):
             vrm = amois.VariantRulesMgr({}, {}, {}, {}, ta_id_rules)
             self.assertEqual(vrm.get_matching_indel_rules(patient_variants), exp_amois, "Indel")
 
+
+# ******** These variables contain source data for the find_amois and AmoisResource tests that follow. ******** #
 INCLUSION = True
 EXCLUSION = False
 
 nh_rules = list(
-    [ta_nh_rule("15", 'func1', 'EGFR', None, 'HOTSPOTARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-     ta_nh_rule("15", None, 'EGFR', None, 'HOTSPOTARM-A', '2016-12-20', INCLUSION, 'CLOSED', True),
-     ta_nh_rule("16", 'func2', 'EGFR', 'OCV1', 'HOTSPOTARM-B', '2016-11-20', INCLUSION, 'OPEN', False),
-     ta_nh_rule(None, 'func3', 'EGFR', 'OCV1', 'HOTSPOTARM-C', '2016-10-20', EXCLUSION, 'OPEN', False),
+    [ta_nh_rule("15", 'func1', 'EGFR', None, 'NONHOTSPOTARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+     ta_nh_rule("15", None, 'EGFR', None, 'NONHOTSPOTARM-A', '2016-12-20', INCLUSION, 'CLOSED', True),
+     ta_nh_rule("16", 'func2', 'EGFR', 'OCV1', 'NONHOTSPOTARM-B', '2016-11-20', INCLUSION, 'OPEN', False),
+     ta_nh_rule(None, 'func3', 'EGFR', 'OCV1', 'NONHOTSPOTARM-C', '2016-10-20', EXCLUSION, 'OPEN', False),
      ])
 
 cnv_rules = list(
@@ -322,7 +341,7 @@ class TestFindAmoisFunction(unittest.TestCase):
                     "identifier": "SNVOSM",
                     "inclusion": True,
                 },
-                {  # should match on nonHotspot Rule
+                {  # should match on NonHotspot Rule
                     "confirmed": True,
                     "gene": "EGFR",
                     "oncominevariantclass": "OCV1",
@@ -339,12 +358,12 @@ class TestFindAmoisFunction(unittest.TestCase):
          [snv_rules[0], nh_rules[2]]),
         ({
              "singleNucleotideVariants": [
-                 {  # should NOT match
+                 {  # should NOT match because not confirmed
                      "confirmed": False,
                      "gene": "EFGR",
-                     "oncominevariantclass": "Hotspot",
+                     "oncominevariantclass": "Deleterious",
                      "exon": "4",
-                     "function": "missense",
+                     "function": "func3",
                      "identifier": "SNVOSM",
                      "inclusion": True,
                  },
@@ -385,27 +404,27 @@ class TestAmoisResource(unittest.TestCase):
                     "identifier": "SNVOSM",
                     "inclusion": True,
                 },
-                {  # should match on nonHotspot Rule
+                {  # should match on NonHotspot Rule
                     "confirmed": True,
                     "gene": "EGFR",
                     "oncominevariantclass": "OCV1",
                     "exon": "16",
                     "function": "func2",
-                    "identifier": "COSM28747",
+                    "identifier": "COSM28746",
                     "inclusion": True,
                 },
             ],
-            "indels": [],
             "copyNumberVariants": [],
+            "indels": [],
             "unifiedGeneFusions": [],
           },
-         {'PRIOR': [{'treatmentId': 'SNVARM-A', 'version': '2016-12-20', 'inclusion': True}],
-          'CURRENT': [{'treatmentId': 'HOTSPOTARM-B', 'version': '2016-11-20', 'inclusion': True}],
+         {'PRIOR': [{'treatmentId': 'SNVARM-A', 'version': '2016-12-20', 'inclusion': True, 'type': 'Hotspot'}],
+          'CURRENT': [{'treatmentId': 'NONHOTSPOTARM-B', 'version': '2016-11-20', 'inclusion': True, 'type': 'NonHotspot'}],
           },
          [snv_rules[0], nh_rules[2]]),
         ({
              "singleNucleotideVariants": [
-                 {  # should NOT match
+                 {  # should NOT match because not confirmed
                      "confirmed": False,
                      "gene": "EFGRB",
                      "oncominevariantclass": "Deleterious",
@@ -415,8 +434,8 @@ class TestAmoisResource(unittest.TestCase):
                      "inclusion": True,
                  },
              ],
-             "indels": [],
              "unifiedGeneFusions": [],
+             "indels": [],
              "copyNumberVariants": [],
          },
          {},
