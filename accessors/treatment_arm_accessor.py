@@ -49,7 +49,7 @@ class TreatmentArmsAccessor(MongoDbAccessor):
                           "function": "$variantReport.nonHotspotRules.function",
                           "gene": "$variantReport.nonHotspotRules.gene",
                           "oncominevariantclass": "$variantReport.nonHotspotRules.oncominevariantclass",
-                          "type": "nonHotspot"
+                          "type": "NonHotspot"
                           }}
             ])]
 
