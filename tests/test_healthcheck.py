@@ -32,13 +32,18 @@ class MyTestCase(unittest.TestCase):
             self.assertEqual(result["Active Arms in SUSPENDED Status"], active_suspended_cnt)
 
     @patch('resources.healthcheck.TreatmentArmsAccessor',side_effect=Exception('Oh no!'))
-    def test_get_except(self, mock_ta_accessor):
+    @patch('resources.healthcheck.logging')
+    def test_get_except(self, mock_logging, mock_ta_accessor):
 
         app = flask.Flask(__name__)
         with app.test_request_context(''):
             (result, status_code) = healthcheck.HealthCheck().get()
             self.assertEqual(result, 'Oh no!')
             self.assertEqual(status_code, 500)
+
+            # Verify exception handling
+            mock_logger = mock_logging.getLogger()
+            mock_logger.exception.assert_called_once()
 
 
 if __name__ == '__main__':
