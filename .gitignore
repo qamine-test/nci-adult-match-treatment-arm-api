@@ -94,3 +94,7 @@ bin/
 # Project-specific ignores
 .idea
 .data_setup/
+
+# scratch files
+scratch
+scratch*.py
