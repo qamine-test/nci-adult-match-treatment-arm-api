@@ -1,5 +1,15 @@
 """
 The AMOIS REST resource
+
+Gets the AMOIS data and annotates the given Variant Report with it in the following format:
+
+"amois": { STATE: [{treatmentId, version, inclusion, type}, ...], ... }
+
+    STATE:        will be one of the following:  PRIOR, CURRENT, PREVIOUS, FUTURE
+    treatmentId:  this is the Treatment Arm ID directly from the treatementArms collection
+    version:      this is the version of the Treatment Arm for which the aMOI was found
+    inclusion:    boolean - if True, then it's an inclusion aMOI; if False, then it's an exclusion aMOI
+    type:         the type of aMOI; will be one of the following:  Hotspot, NonHotspot, Both
 """
 
 import logging
@@ -276,9 +286,9 @@ class AmoisResource(Resource):
     # @staticmethod
     def get(self):
         """
-        Gets the AMOIS data and annotates the given Variant Report with it.
+        Gets the AMOIS data and annotates the given Variant Report with it in the following format:
 
-        "amois": { STATE: [{treatmentId, version, action}, ...], ... }
+        "amois": { STATE: [{treatmentId, version, inclusion(True|False), type(Hotspot|NonHotspot|Both)}, ...], ... }
 
         """
         self.logger.debug("Getting annotated aMOI information for Patient Variant Report")
