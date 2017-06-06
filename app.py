@@ -15,7 +15,7 @@ from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from tornado.wsgi import WSGIContainer
 
-import log  # contains required log configuration
+from config import log  # contains required log configuration
 from resources.amois import AmoisResource
 from resources.healthcheck import HealthCheck
 from resources.treatment_arm import TreatmentArms
