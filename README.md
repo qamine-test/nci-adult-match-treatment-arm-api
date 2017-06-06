@@ -107,6 +107,24 @@ To kill a service on a specific port
 ```#!/bin/bash
 kill -9 $(lsof -n -i4TCP:5010)
 ```
+## Unit Tests
+To run the unit tests, make sure that the path to the TreatmentArmAPI root directory is included in the PYTHONPATH
+environment variable.
+
+To run a single unit test:
+```
+python3 <testfile>.py
+```
+
+To run all unit tests:
+```
+python3 -m unittest discover <test_directory>
+```
+
+To run all tests with the coverage tool, execute the following from the TreatmentArmAPI root directory:
+```
+coverage run -m unittest discover tests; coverage report -m
+```
 
 ## Scripts
 
