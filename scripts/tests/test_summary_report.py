@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import unittest
 from ddt import ddt, data, unpack
 
@@ -10,23 +12,20 @@ DEFAULT_TA = {'_id': '1234567890',
               'treatmentId': 'EAY131-A',
               'version': '2016-08-14',
               'treatmentArmStatus': 'OPEN'}
-ALL_FIELDS = SummaryReport._REQ_JSON_FIELDS + ["summaryReport."+f for f in SummaryReport._REQ_SR_FIELDS]
+ALL_FIELDS = SummaryReport._REQ_JSON_FIELDS
 
-def create_json(omit_flds={}):
-    sr = dict([(f, DEFAULT_SR[f]) for f in DEFAULT_SR if f not in omit_flds])
-    ta_json = dict([(f, DEFAULT_TA[f]) for f in DEFAULT_TA if f not in omit_flds])
-    if 'summaryReport' not in omit_flds:
-        ta_json['summaryReport'] = sr
 
-    return ta_json
+def create_json(omit_flds=dict()):
+    return dict([(f, DEFAULT_TA[f]) for f in DEFAULT_TA if f not in omit_flds])
+
 
 @ddt
 class TestSummaryReport(unittest.TestCase):
 
     @data(
         (['ALL']),
-        (['version','assignmentRecords']),
-        (['summaryReport']),
+        (['version','treatmentId']),
+        (['version']),
 
     )
     def test_constructor_with_exc(self, missing_field_list):
@@ -44,14 +43,14 @@ class TestSummaryReport(unittest.TestCase):
         for f in missing_field_list:
             self.assertTrue(f in exc_str)
 
-    def test_gets_after_normal_construction(self):
+    def test_get_after_normal_construction(self):
         sr = SummaryReport(create_json())
         self.assertEqual(sr._id, DEFAULT_TA['_id'])
         self.assertEqual(sr.treatmentId, DEFAULT_TA['treatmentId'])
         self.assertEqual(sr.version, DEFAULT_TA['version'])
         self.assertEqual(sr.treatmentArmStatus, DEFAULT_TA['treatmentArmStatus'])
         self.assertEqual(sr.assignmentRecords, DEFAULT_SR['assignmentRecords'])
-        self.assertEqual(sr.numNotEnrolledPatients, DEFAULT_SR['numNotEnrolledPatients'])
+        self.assertEqual(sr.numNotEnrolledPatient, DEFAULT_SR['numNotEnrolledPatient'])
         self.assertEqual(sr.numPendingArmApproval, DEFAULT_SR['numPendingArmApproval'])
         self.assertEqual(sr.numFormerPatients, DEFAULT_SR['numFormerPatients'])
         self.assertEqual(sr.numCurrentPatientsOnArm, DEFAULT_SR['numCurrentPatientsOnArm'])
@@ -76,7 +75,7 @@ class TestSummaryReportAdds(unittest.TestCase):
     @unpack
     def test_normal_add(self, patient_type, not_enrolled_cnt, former_cnt, current_cnt, pending_cnt):
         TestSummaryReportAdds.test_sr.add_patient_by_type(patient_type)
-        self.assertEqual(TestSummaryReportAdds.test_sr.numNotEnrolledPatients, not_enrolled_cnt)
+        self.assertEqual(TestSummaryReportAdds.test_sr.numNotEnrolledPatient, not_enrolled_cnt)
         self.assertEqual(TestSummaryReportAdds.test_sr.numPendingArmApproval, pending_cnt)
         self.assertEqual(TestSummaryReportAdds.test_sr.numFormerPatients, former_cnt)
         self.assertEqual(TestSummaryReportAdds.test_sr.numCurrentPatientsOnArm, current_cnt)
@@ -92,6 +91,6 @@ if __name__ == '__main__':
     # pprint.pprint(DEFAULT_SR)
     # pprint.pprint(DEFAULT_TA)
     # pprint.pprint(create_json())
-    # pprint.pprint(create_json(['version','assignmentRecords']))
-    # pprint.pprint(create_json(['summaryReport']))
+    # pprint.pprint(create_json(['version','treatmentId']))
+    # pprint.pprint(create_json(['version']))
     unittest.main()
