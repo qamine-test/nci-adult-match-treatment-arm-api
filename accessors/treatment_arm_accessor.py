@@ -1,7 +1,7 @@
-import json
+# import json
 import logging
 
-from bson import json_util
+# from bson import json_util
 
 from accessors.mongo_db_accessor import MongoDbAccessor
 
@@ -20,29 +20,28 @@ class TreatmentArmsAccessor(MongoDbAccessor):
         Returns items from the collection using a query and a projection.
         """
         self.logger.debug('Retrieving TreatmentArms documents from database')
-        return [json.loads(json_util.dumps(doc)) for doc in self.collection.find(query, projection)]
+        return MongoDbAccessor.find(self, query, projection)
 
     def find_one(self, query, projection):
         """
         Returns one element found by filter
         """
         self.logger.debug('Retrieving one TreatmentArms document from database')
-        return json.loads(json_util.dumps(
-            self.collection.find_one(query, projection)))
+        return MongoDbAccessor.find_one(self, query, projection)
 
     def count(self, query):
         """
         Returns the number of items from the collection using a query.
         """
         self.logger.debug('Counting TreatmentArms documents in database')
-        return self.collection.count(query)
+        return MongoDbAccessor.count(self, query)
 
     def aggregate(self, pipeline):
         """
         Returns the aggregation defined by pipeline.
         """
         self.logger.debug('Retrieving TreatmentArms document aggregation from database')
-        return self.collection.aggregate(pipeline)
+        return MongoDbAccessor.aggregate(self, pipeline)
 
     def get_ta_non_hotspot_rules(self):
         self.logger.debug('Retrieving TreatmentArms non-Hotspot Rules from database')

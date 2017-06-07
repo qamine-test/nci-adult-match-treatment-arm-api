@@ -1,9 +1,11 @@
 """
 Mongo DB connection helper
 """
+import json
 
-from pymongo import MongoClient
 import flask
+from bson import json_util
+from pymongo import MongoClient
 
 
 class MongoDbAccessor(object):
@@ -17,3 +19,27 @@ class MongoDbAccessor(object):
         self.mongo_client = MongoClient(uri)
         self.database = self.mongo_client[db]
         self.collection = self.database[collection_name]
+
+    def find(self, query, projection):
+        """
+        Returns items from the collection using a query and a projection.
+        """
+        return [json.loads(json_util.dumps(doc)) for doc in self.collection.find(query, projection)]
+
+    def find_one(self, query, projection):
+        """
+        Returns one element found by filter
+        """
+        return json.loads(json_util.dumps(self.collection.find_one(query, projection)))
+
+    def count(self, query):
+        """
+        Returns the number of items from the collection using a query.
+        """
+        return self.collection.count(query)
+
+    def aggregate(self, pipeline):
+        """
+        Returns the aggregation defined by pipeline.
+        """
+        return self.collection.aggregate(pipeline)
