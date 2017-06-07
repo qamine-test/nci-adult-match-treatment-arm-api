@@ -28,5 +28,12 @@ APP.config.from_object(Configuration)
 
 if __name__ == '__main__':
     LOGGER.info("Starting the Summary Report Refresher")
-    with APP.app_context():
-        Refresher().run()
+    exit_code = 0
+    try:
+        with APP.app_context():
+            Refresher().run()
+    except Exception as exc:
+        LOGGER.exception(str(exc))
+        exit_code = 1
+
+    exit(exit_code)
