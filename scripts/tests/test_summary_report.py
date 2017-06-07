@@ -15,8 +15,11 @@ DEFAULT_TA = {'_id': '1234567890',
 ALL_FIELDS = SummaryReport._REQ_JSON_FIELDS
 
 
-def create_json(omit_flds=dict()):
-    return dict([(f, DEFAULT_TA[f]) for f in DEFAULT_TA if f not in omit_flds])
+def create_json(omit_flds=None):
+    if omit_flds is None:
+        return DEFAULT_TA
+    else:
+        return dict([(f, DEFAULT_TA[f]) for f in DEFAULT_TA if f not in omit_flds])
 
 
 @ddt
@@ -26,7 +29,6 @@ class TestSummaryReport(unittest.TestCase):
         (['ALL']),
         (['version','treatmentId']),
         (['version']),
-
     )
     def test_constructor_with_exc(self, missing_field_list):
         if len(missing_field_list) == 1 and missing_field_list[0] == 'ALL':
@@ -58,10 +60,11 @@ class TestSummaryReport(unittest.TestCase):
 
 
 @ddt
-class TestSummaryReportAdds(unittest.TestCase):
+class self(unittest.TestCase):
 
-    def setUpClass():
-        TestSummaryReportAdds.test_sr = SummaryReport(create_json())
+    @classmethod
+    def setUpClass(cls):
+        cls.test_sr = SummaryReport(create_json())
 
     @data(
         (SummaryReport.NOT_ENROLLED, 1, 0, 0, 0),
@@ -74,15 +77,15 @@ class TestSummaryReportAdds(unittest.TestCase):
     )
     @unpack
     def test_normal_add(self, patient_type, not_enrolled_cnt, former_cnt, current_cnt, pending_cnt):
-        TestSummaryReportAdds.test_sr.add_patient_by_type(patient_type)
-        self.assertEqual(TestSummaryReportAdds.test_sr.numNotEnrolledPatient, not_enrolled_cnt)
-        self.assertEqual(TestSummaryReportAdds.test_sr.numPendingArmApproval, pending_cnt)
-        self.assertEqual(TestSummaryReportAdds.test_sr.numFormerPatients, former_cnt)
-        self.assertEqual(TestSummaryReportAdds.test_sr.numCurrentPatientsOnArm, current_cnt)
+        self.test_sr.add_patient_by_type(patient_type)
+        self.assertEqual(self.test_sr.numNotEnrolledPatient, not_enrolled_cnt)
+        self.assertEqual(self.test_sr.numPendingArmApproval, pending_cnt)
+        self.assertEqual(self.test_sr.numFormerPatients, former_cnt)
+        self.assertEqual(self.test_sr.numCurrentPatientsOnArm, current_cnt)
 
     def test_add_with_exc(self):
         with self.assertRaises(Exception) as cm:
-            TestSummaryReportAdds.test_sr.add_patient_by_type('invalidType')
+            self.test_sr.add_patient_by_type('invalidType')
         exc_str = str(cm.exception)
         self.assertEqual(exc_str, "Invalid patient type 'invalidType'")
 
