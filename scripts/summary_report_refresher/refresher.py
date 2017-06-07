@@ -2,8 +2,10 @@ import logging
 
 from accessors.patient_accessor import PatientAccessor
 from accessors.treatment_arm_accessor import TreatmentArmsAccessor
-from summary_report import SummaryReport
+from scripts.summary_report_refresher.summary_report import SummaryReport
 
+
+PATIENT_STATUS_FIELD = 'currentPatientStatus'
 
 class Refresher:
     def __init__(self):
@@ -23,4 +25,16 @@ class Refresher:
         self.logger.debug("{cnt} patients returned for '{trtmt_id}"
                           .format(cnt=len(patients), trtmt_id=sum_rpt.treatmentId))
 
-    # def
+        for pat in patients:
+            Refresher._match(pat, sum_rpt)
+
+        # TODO not implemented yet
+        # self.ta_accessor.update_summary_report(sum_rpt)
+
+    @staticmethod
+    def _match(pat, sum_rpt):
+        patient_status = pat[PATIENT_STATUS_FIELD]
+        if patient_status == 'ON_TREATMENT_ARM':
+            sum_rpt.add_patient_by_type(SummaryReport.CURRENT)
+        elif patient_status == 'PENDING_APPROVAL':
+            sum_rpt.add_patient_by_type(SummaryReport.PENDING)
