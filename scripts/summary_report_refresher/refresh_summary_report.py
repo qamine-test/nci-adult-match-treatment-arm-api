@@ -5,8 +5,9 @@ import os
 from flask import Flask
 from flask_env import MetaFlaskEnv
 
-from config import log
-from refresher import Refresher
+from config import log  # contains required log configuration; ignore Codacy complaints about unused code
+from scripts.summary_report_refresher.refresher import Refresher
+
 
 class Configuration(metaclass=MetaFlaskEnv):
     """
