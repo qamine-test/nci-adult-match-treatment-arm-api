@@ -1,7 +1,4 @@
-# import json
 import logging
-
-# from bson import json_util
 
 from accessors.mongo_db_accessor import MongoDbAccessor
 
@@ -79,3 +76,11 @@ class TreatmentArmsAccessor(MongoDbAccessor):
                           "type": "Hotspot"
                           }}
             ])]
+
+    def get_arms_for_summary_report_refresh(self):
+        self.logger.debug('Retrieving TreatmentArms from database for Summary Report Refresh')
+        return [ta for ta in self.find({'dateArchived': None},
+                                       {'treatmentId': 1,
+                                        'version': 1,
+                                        'treatmentArmStatus': 1,
+                                        'stateToken': 1})]
