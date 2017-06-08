@@ -9,7 +9,7 @@ services:
     depends_on:
       - mongo
     environment:
-      - MONGODB_URI=mongodb://mongo:27017/match
+      - MONGODB_URI=mongodb://mongo:27017/Match
   mongo:
     image: mongo:3.4.0
     volumes:

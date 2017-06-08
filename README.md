@@ -36,13 +36,13 @@ workon nci-adult-match-treatment-arm-api
 ### Export environment variable for shell session
 
 ```#!/bin/bash
-export MONGODB_URI=mongodb://localhost:27017/match
+export MONGODB_URI=mongodb://localhost:27017/Match
 ```
 
 ### Set explicitly for a specific command execution
 
 ```#!/bin/bash
-MONGODB_URI=mongodb://localhost:27017/match python app.py
+MONGODB_URI=mongodb://localhost:27017/Match python app.py
 ```
 
 ## Dockerization

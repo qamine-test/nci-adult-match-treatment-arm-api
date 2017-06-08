@@ -15,7 +15,7 @@ from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from tornado.wsgi import WSGIContainer
 
-from config import log  # contains required log configuration
+from config import log  # contains required log configuration; ignore Codacy complaints about unused code
 from resources.amois import AmoisResource
 from resources.healthcheck import HealthCheck
 from resources.treatment_arm import TreatmentArms
@@ -29,7 +29,7 @@ class Configuration(metaclass=MetaFlaskEnv):
     """
     DEBUG = True
     PORT = 5010
-    MONGODB_URI = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/match')
+    MONGODB_URI = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/Match')
     # Some instances of the DB are named 'Match' and others 'match'.
     DB_NAME = 'match' if '/match' in MONGODB_URI else 'Match'
 
@@ -55,7 +55,7 @@ API.add_resource(Version, '/api/v1/treatment_arms/version', endpoint='get_versio
 #
 
 if __name__ == '__main__':
-    # LOGGER.debug("connecting to '%s' on '%s'" % (Configuration.DB_NAME, Configuration.MONGODB_URI))
+    LOGGER.debug("connecting to '%s' on '%s'" % (Configuration.DB_NAME, Configuration.MONGODB_URI))
     LOGGER.debug("server starting on port :" + str(APP.config["PORT"]))
     HTTP_SERVER = HTTPServer(WSGIContainer(APP))
     HTTP_SERVER.listen(port=APP.config["PORT"])
