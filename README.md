@@ -81,7 +81,7 @@ mongo shell
 show dbs
 use match
 show collections
-db.treatmentArm.count()
+db.treatmentArms.count()
 ```
 
 Exit from MongoDB shell by pressing `Ctrl+C`
