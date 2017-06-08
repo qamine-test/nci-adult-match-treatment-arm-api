@@ -27,3 +27,17 @@ class Patient(object):
 
     def treatment_arm_version(self):
         return self._pat['treatmentArm']['version'] if 'treatmentArm' in self._pat else None
+
+    def get_assignment_reason(self, trtmtId, trtmtVersion):
+        """
+        Find the matching record in the patientAssignmentLogic for the reason the given treatment arm/version
+        was assigned.
+        :param trtmtId:  the Treatment Arm Identifier
+        :param trtmtVersion: the version of the Treatment Arm
+        :return: a string describing the reason the assignment was made.
+        """
+        for assignment_logic in self._pat['patientAssignments']['patientAssignmentLogic']:
+            if(assignment_logic['treatmentArmId'] == trtmtId and
+               assignment_logic['treatmentArmVersion'] == trtmtVersion):
+                return assignment_logic['reason']
+        return None
