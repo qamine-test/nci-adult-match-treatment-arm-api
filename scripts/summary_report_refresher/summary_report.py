@@ -50,3 +50,10 @@ class SummaryReport:
         if pat_type not in SummaryReport._SR_COUNT_FIELDS:
             raise Exception("Invalid patient type '{t}'".format(t=pat_type))
         self.sr[pat_type] += 1
+
+    def get_json(self):
+        """
+        Returns the structure needed to update the database.
+        :return: a dict containing the full summary report structure
+        """
+        return self.sr
