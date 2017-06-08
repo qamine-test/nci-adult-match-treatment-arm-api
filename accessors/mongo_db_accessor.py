@@ -43,3 +43,21 @@ class MongoDbAccessor(object):
         Returns the aggregation defined by pipeline.
         """
         return self.collection.aggregate(pipeline)
+
+    def update_one(self, query, update):
+        """
+        Updates a single document
+        :param query: a query identifies the single document
+        :param update: the modifications to apply
+        :return: an instance of UpdateResult
+        """
+        return self.collection.update_one(query, update)
+
+    def update_many(self, query, update):
+        """
+        Updates many documents
+        :param query: a query identifies the single document
+        :param update: the modifications to apply
+        :return: an instance of UpdateResult
+        """
+        return self.collection.update_many(query, update)
