@@ -1,4 +1,5 @@
 import logging
+from bson.objectid import ObjectId
 
 from accessors.mongo_db_accessor import MongoDbAccessor
 
@@ -84,3 +85,13 @@ class TreatmentArmsAccessor(MongoDbAccessor):
                                         'version': 1,
                                         'treatmentArmStatus': 1,
                                         'stateToken': 1})]
+
+    def update_summary_report(self, ta_id, sum_rpt_json):
+        """
+        Updates a single summary report for the document identified by ta_id.
+        :param ta_id:  the unique _id for the document in the collection
+        :param sum_rpt_json:  the updated summary report
+        """
+        ta_id_str = ta_id['$oid']
+        self.logger.debug('Updating TreatmentArms with new Summary Report for {_id}'.format(_id=ta_id_str))
+        return self.update_one({ '_id': ObjectId(ta_id_str)}, { '$set': {'summaryReport': sum_rpt_json}})
