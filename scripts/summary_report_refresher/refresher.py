@@ -10,6 +10,7 @@ from scripts.summary_report_refresher.summary_report import SummaryReport
 
 PATIENT_STATUS_FIELD = 'currentPatientStatus'
 
+
 class Refresher:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
@@ -46,24 +47,31 @@ class Refresher:
             match_type = SummaryReport.PENDING
 
         if match_type is not None:
-            assignment_rec = Refresher._create_assignment_record(pat, patient_status)
+            assignment_rec = Refresher._create_assignment_record(pat, patient_status, sum_rpt.treatmentId)
             sum_rpt.add_patient_by_type(match_type, assignment_rec)
 
     # def __init__(self, pat_seq_num, ta_version, assnmnt_status, assnmnt_reason, step_num, diseases, analysis_id,
     #              date_selected, date_on_arm, date_off_arm=None):
     @staticmethod
-    def _create_assignment_record(pat, status):
-        trigger = pat.find_trigger_by_status(status)
+    def _create_assignment_record(pat, status, ta_id):
+        """
 
+        :param pat:
+        :param status:
+        :param ta_id:
+        :return:
+        """
+        trigger = pat.find_trigger_by_status(status)
+        ta_version = pat.treatment_arm_version()
 
         return AssignmentRecord(trigger['patientSequenceNumber'],
-                                pat.treatment_arm_version(),
+                                ta_version,
                                 pat.currentPatientStatus,
-                                "todo: get reason",  # TODO look in pat['patientAssignments']['patientAssignmentLogic']
+                                pat.get_assignment_reason(ta_id, ta_version),
                                 pat.currentStepNumber,
                                 pat.diseases,
                                 "todo: analysisId",  # TODO find out where this comes from
-                                datetime(2001,1,1),  # TODO get dateSelected from patientTriggers
+                                datetime(2001, 1, 1),  # TODO get dateSelected from patientTriggers
                                 trigger['dateCreated'],  # TODO get dateOnArm from patientTriggers
                                 None,  # TODO get dateOffArm
                                 )
