@@ -13,36 +13,8 @@ class PatientAccessor(MongoDbAccessor):
     """
 
     def __init__(self):
-        MongoDbAccessor.__init__(self, 'patient')
-        self.logger = logging.getLogger(__name__)
-
-    def find(self, query, projection):
-        """
-        Returns items from the collection using a query and a projection.
-        """
-        self.logger.debug('Retrieving Patient documents from database')
-        return MongoDbAccessor.find(self, query, projection)
-
-    def find_one(self, query, projection):
-        """
-        Returns one element found by filter
-        """
-        self.logger.debug('Retrieving one Patient document from database')
-        return MongoDbAccessor.find_one(self, query, projection)
-
-    def count(self, query):
-        """
-        Returns the number of items from the collection using a query.
-        """
-        self.logger.debug('Counting Patient documents in database')
-        return MongoDbAccessor.count(self, query)
-
-    def aggregate(self, pipeline):
-        """
-        Returns the aggregation defined by pipeline.
-        """
-        self.logger.debug('Retrieving Patient document aggregation from database')
-        return MongoDbAccessor.aggregate(self, pipeline)
+        MongoDbAccessor.__init__(self, 'patient', logging.getLogger(__name__))
+        # self.logger = logging.getLogger(__name__)
 
     def get_patients_by_treatment_arm_id(self, trtmt_id):
         """
