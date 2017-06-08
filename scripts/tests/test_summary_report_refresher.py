@@ -24,6 +24,7 @@ AREC_IDX = 4
 @ddt
 class RefresherTest(unittest.TestCase):
     @data(
+        ({PAT_STATUS_FLD: 'UNKNOWN_STATUS'}, DEFAULT_TA, [0, 0, 0, 0, []] ),
         ({PAT_STATUS_FLD: 'ON_TREATMENT_ARM'}, DEFAULT_TA, [1, 0, 0, 0, []] ),
         ({PAT_STATUS_FLD: 'PENDING_APPROVAL'}, DEFAULT_TA, [0, 1, 0, 0, []] ),
     )
