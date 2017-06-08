@@ -5,33 +5,21 @@ Main application module
 #!/usr/bin/env python3
 
 import logging
-import os
 
 from flask import Flask
 from flask_cors import CORS
-from flask_env import MetaFlaskEnv
 from flask_restful import Api
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from tornado.wsgi import WSGIContainer
 
+from config.flask_config import Configuration
 from config import log  # contains required log configuration; ignore Codacy complaints about unused code
 from resources.amois import AmoisResource
 from resources.healthcheck import HealthCheck
 from resources.treatment_arm import TreatmentArms
 from resources.treatment_arm import TreatmentArmsById
 from resources.version import Version
-
-
-class Configuration(metaclass=MetaFlaskEnv):
-    """
-    Service configuration
-    """
-    DEBUG = True
-    PORT = 5010
-    MONGODB_URI = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/Match')
-    # Some instances of the DB are named 'Match' and others 'match'.
-    DB_NAME = 'match' if '/match' in MONGODB_URI else 'Match'
 
 
 # Logging functionality
