@@ -1,6 +1,6 @@
 
 
-class SummaryReport:
+class SummaryReport(object):
     # Patient Type Constants
     NOT_ENROLLED = 'numNotEnrolledPatient'
     FORMER = 'numFormerPatients'
@@ -41,7 +41,7 @@ class SummaryReport:
         else:
             return self.ta[item]
 
-    def add_patient_by_type(self, pat_type):
+    def add_patient_by_type(self, pat_type, assignment_rec):
         """
 
         :param pat_type: patient type (must be one of the patient type constants defined above)
@@ -50,6 +50,8 @@ class SummaryReport:
         if pat_type not in SummaryReport._SR_COUNT_FIELDS:
             raise Exception("Invalid patient type '{t}'".format(t=pat_type))
         self.sr[pat_type] += 1
+        assignment_rec_json = assignment_rec.get_json(len(self.sr[SummaryReport.ASSNMNT_RECS]))
+        self.sr[SummaryReport.ASSNMNT_RECS].append(assignment_rec_json)
 
     def get_json(self):
         """
