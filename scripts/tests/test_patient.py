@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-from datetime import datetime
-from bson.objectid import ObjectId
-
 import unittest
-from ddt import ddt, data, unpack
-from mock import patch
+from datetime import datetime
 
-from scripts.summary_report_refresher.patient import Patient
+from bson.objectid import ObjectId
+from ddt import ddt, data, unpack
 
 TREATMENT_ARM = {
     "_id": "EAY131-B",
@@ -19,6 +16,15 @@ TREATMENT_ARM = {
     "maxPatientsAllowed": 35,
     "treatmentArmStatus": "OPEN",
 }
+
+def create_default_patient_assignment_logic(trtmtId):
+    return  {
+                "treatmentArmId": trtmtId,
+                "treatmentArmVersion": "2015-08-06",
+                "reason": "The patient contains no matching variant.",
+                "patientAssignmentReasonCategory": "NO_VARIANT_MATCH"
+            }
+
 
 TEST_PATIENT = {
     "_id": ObjectId("55e9e33600929ab89f5499a1"),
@@ -72,60 +78,20 @@ TEST_PATIENT = {
                 "reason": "The patient is excluded from this treatment arm because the patient has disease(s) Invasive breast carcinoma.",
                 "patientAssignmentReasonCategory": "RECORD_BASED_EXCLUSION"
             },
-            {
-                "treatmentArmId": "EAY131-U",
-                "treatmentArmVersion": "2015-08-06",
-                "reason": "The patient contains no matching variant.",
-                "patientAssignmentReasonCategory": "NO_VARIANT_MATCH"
-            },
-            {
-                "treatmentArmId": "EAY131-F",
-                "treatmentArmVersion": "2015-08-06",
-                "reason": "The patient contains no matching variant.",
-                "patientAssignmentReasonCategory": "NO_VARIANT_MATCH"
-            },
-            {
-                "treatmentArmId": "EAY131-G",
-                "treatmentArmVersion": "2015-08-06",
-                "reason": "The patient contains no matching variant.",
-                "patientAssignmentReasonCategory": "NO_VARIANT_MATCH"
-            },
-            {
-                "treatmentArmId": "EAY131-H",
-                "treatmentArmVersion": "2015-08-06",
-                "reason": "The patient contains no matching variant.",
-                "patientAssignmentReasonCategory": "NO_VARIANT_MATCH"
-            },
-            {
-                "treatmentArmId": "EAY131-R",
-                "treatmentArmVersion": "2015-08-06",
-                "reason": "The patient contains no matching variant.",
-                "patientAssignmentReasonCategory": "NO_VARIANT_MATCH"
-            },
-            {
-                "treatmentArmId": "EAY131-E",
-                "treatmentArmVersion": "2015-08-06",
-                "reason": "The patient contains no matching variant.",
-                "patientAssignmentReasonCategory": "NO_VARIANT_MATCH"
-            },
-            {
-                "treatmentArmId": "EAY131-A",
-                "treatmentArmVersion": "2015-08-06",
-                "reason": "The patient contains no matching variant.",
-                "patientAssignmentReasonCategory": "NO_VARIANT_MATCH"
-            },
+            create_default_patient_assignment_logic("EAY131-U"),
+            create_default_patient_assignment_logic("EAY131-F"),
+            create_default_patient_assignment_logic("EAY131-G"),
+            create_default_patient_assignment_logic("EAY131-H"),
+            create_default_patient_assignment_logic("EAY131-R"),
+            create_default_patient_assignment_logic("EAY131-E"),
+            create_default_patient_assignment_logic("EAY131-A"),
             {
                 "treatmentArmId": "EAY131-B",
                 "treatmentArmVersion": "2015-08-06",
                 "reason": "The patient and treatment arm match on variant identifier [COSM94225,COSM14062].",
                 "patientAssignmentReasonCategory": "SELECTED"
             },
-            {
-                "treatmentArmId": "EAY131-V",
-                "treatmentArmVersion": "2015-08-06",
-                "reason": "The patient contains no matching variant.",
-                "patientAssignmentReasonCategory": "NO_VARIANT_MATCH"
-            }
+            create_default_patient_assignment_logic("EAY131-V"),
         ],
         "patientAssignmentStatusMessage": "Patient registration to assigned treatment arm EAY131-B",
         "stepNumber": "0",
