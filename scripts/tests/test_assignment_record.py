@@ -70,10 +70,10 @@ class TestAssignmentRecord(unittest.TestCase):
     @unpack
     @patch('scripts.summary_report_refresher.assignment_record.datetime')
     def test_get_json(self, contructor_args, date_off_arm, index, mock_datetime):
-        # The following mocks ONLY the now() method of datetime.
-        # See https://docs.python.org/3/library/unittest.mock-examples.html#partial-mocking for more info.)
+        # The following mocks ONLY the now() method of datetime; other methods work normally.
+        # (See https://docs.python.org/3/library/unittest.mock-examples.html#partial-mocking for more info.)
         mock_datetime.now.return_value = DATE_NOW
-        mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
+        mock_datetime.side_effect = datetime
 
         contructor_args.append(date_off_arm)
         assignment_rec = AssignmentRecord(*contructor_args)
