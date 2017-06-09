@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
 import unittest
+from datetime import datetime
 from ddt import ddt, data, unpack
 
+from scripts.summary_report_refresher.assignment_record import AssignmentRecord
 from scripts.summary_report_refresher.summary_report import SummaryReport
 
+# ******** TEST DATA CONSTANTS ******** #
 DEFAULT_SR = {'assignmentRecords': []}
 for f in SummaryReport._SR_COUNT_FIELDS:
     DEFAULT_SR[f] = 0
@@ -14,6 +17,32 @@ DEFAULT_TA = {'_id': '1234567890',
               'treatmentArmStatus': 'OPEN'}
 ALL_FIELDS = SummaryReport._REQ_JSON_FIELDS
 
+# AssignmentRecords data constants
+PAT_SEQ_NUM = '112244'
+TA_VERSION = '2016-04-25'
+ASSNMNT_STATUS = 'ON_TREATMENT_ARM'
+ASSNMNT_REASON = 'Because I said so'
+STEP_NUM = 1
+DISEASES = [
+    {
+        "_id": "10044409",
+        "ctepCategory": "Urothelial Tract Neoplasm",
+        "ctepSubCategory": "Urothelial Tract/Bladder Cancer",
+        "ctepTerm": "Transitional cell carcinoma of the urothelial tract",
+        "shortName": "Transitional cell car. - uroth."
+    }
+]
+ANALYSIS_ID = "AnalysisId"
+DATE_SEL = datetime(2016, 4, 1)
+DATE_ON_ARM = datetime(2016, 4, 4)
+DATE_OFF_ARM = datetime(2016, 5, 1)
+
+
+# ******** Helper functions to build data structures used in test cases ******** #
+
+def create_assignment_rec():
+    return AssignmentRecord(PAT_SEQ_NUM, TA_VERSION, ASSNMNT_STATUS, ASSNMNT_REASON, STEP_NUM,
+                            DISEASES, ANALYSIS_ID, DATE_SEL, DATE_ON_ARM, None)
 
 def create_json(omit_flds=None):
     if omit_flds is None:
@@ -23,7 +52,7 @@ def create_json(omit_flds=None):
 
 
 @ddt
-class TestSummaryReport(unittest.TestCase):
+class TestSummaryReportConstruction(unittest.TestCase):
 
     @data(
         (['ALL']),
@@ -60,7 +89,7 @@ class TestSummaryReport(unittest.TestCase):
 
 
 @ddt
-class self(unittest.TestCase):
+class TestSummaryReport(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -77,7 +106,7 @@ class self(unittest.TestCase):
     )
     @unpack
     def test_normal_add(self, patient_type, not_enrolled_cnt, former_cnt, current_cnt, pending_cnt):
-        self.test_sr.add_patient_by_type(patient_type)
+        self.test_sr.add_patient_by_type(patient_type, create_assignment_rec())
         self.assertEqual(self.test_sr.numNotEnrolledPatient, not_enrolled_cnt)
         self.assertEqual(self.test_sr.numPendingArmApproval, pending_cnt)
         self.assertEqual(self.test_sr.numFormerPatients, former_cnt)
@@ -85,7 +114,7 @@ class self(unittest.TestCase):
 
     def test_add_with_exc(self):
         with self.assertRaises(Exception) as cm:
-            self.test_sr.add_patient_by_type('invalidType')
+            self.test_sr.add_patient_by_type('invalidType', create_assignment_rec())
         exc_str = str(cm.exception)
         self.assertEqual(exc_str, "Invalid patient type 'invalidType'")
 
