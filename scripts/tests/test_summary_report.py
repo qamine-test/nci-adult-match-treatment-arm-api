@@ -9,8 +9,8 @@ from scripts.summary_report_refresher.summary_report import SummaryReport
 
 # ******** TEST DATA CONSTANTS ******** #
 DEFAULT_SR = {'assignmentRecords': []}
-for f in SummaryReport._SR_COUNT_FIELDS:
-    DEFAULT_SR[f] = 0
+for fld in SummaryReport._SR_COUNT_FIELDS:
+    DEFAULT_SR[fld] = 0
 DEFAULT_TA = {'_id': '1234567890',
               'treatmentId': 'EAY131-A',
               'version': '2016-08-14',
@@ -44,6 +44,7 @@ def create_assignment_rec():
     return AssignmentRecord(PAT_SEQ_NUM, TA_VERSION, ASSNMNT_STATUS, ASSNMNT_REASON, STEP_NUM,
                             DISEASES, ANALYSIS_ID, DATE_SEL, DATE_ON_ARM, None)
 
+
 def create_json(omit_flds=None):
     if omit_flds is None:
         return DEFAULT_TA
@@ -51,12 +52,13 @@ def create_json(omit_flds=None):
         return dict([(f, DEFAULT_TA[f]) for f in DEFAULT_TA if f not in omit_flds])
 
 
+# ******** Test the SummaryReport class's constructors and get methods in summary_report.py. ******** #
 @ddt
 class TestSummaryReportConstruction(unittest.TestCase):
 
     @data(
         (['ALL']),
-        (['version','treatmentId']),
+        (['version', 'treatmentId']),
         (['version']),
     )
     def test_constructor_with_exc(self, missing_field_list):
@@ -85,9 +87,10 @@ class TestSummaryReportConstruction(unittest.TestCase):
         self.assertEqual(sr.numPendingArmApproval, DEFAULT_SR['numPendingArmApproval'])
         self.assertEqual(sr.numFormerPatients, DEFAULT_SR['numFormerPatients'])
         self.assertEqual(sr.numCurrentPatientsOnArm, DEFAULT_SR['numCurrentPatientsOnArm'])
+        self.assertEqual(sr.get_json(), DEFAULT_SR)
 
 
-
+# ******** Test the SummaryReport class's other methods in summary_report.py. ******** #
 @ddt
 class TestSummaryReport(unittest.TestCase):
 
@@ -118,11 +121,6 @@ class TestSummaryReport(unittest.TestCase):
         exc_str = str(cm.exception)
         self.assertEqual(exc_str, "Invalid patient type 'invalidType'")
 
+
 if __name__ == '__main__':
-    # import pprint
-    # pprint.pprint(DEFAULT_SR)
-    # pprint.pprint(DEFAULT_TA)
-    # pprint.pprint(create_json())
-    # pprint.pprint(create_json(['version','treatmentId']))
-    # pprint.pprint(create_json(['version']))
     unittest.main()
