@@ -6,8 +6,13 @@ from ddt import ddt, data, unpack
 from scripts.summary_report_refresher.patient import Patient
 from scripts.summary_report_refresher.refresher import Refresher
 from scripts.summary_report_refresher.summary_report import SummaryReport
+from scripts.tests.test_patient import TEST_PATIENT
 
 PAT_STATUS_FLD = 'currentPatientStatus'
+def create_patient(status):
+    patient_json = TEST_PATIENT
+    patient_json[PAT_STATUS_FLD] = status
+    return Patient(patient_json)
 
 # Default TreatmentArm
 DEFAULT_TA = {'_id': '1234567890',
@@ -26,15 +31,18 @@ AREC_IDX = 4
 @ddt
 class RefresherTest(unittest.TestCase):
     @data(
-        ({PAT_STATUS_FLD: 'UNKNOWN_STATUS'}, DEFAULT_TA, [0, 0, 0, 0, []] ),
-        ({PAT_STATUS_FLD: 'ON_TREATMENT_ARM'}, DEFAULT_TA, [1, 0, 0, 0, []] ),
-        ({PAT_STATUS_FLD: 'PENDING_APPROVAL'}, DEFAULT_TA, [0, 1, 0, 0, []] ),
+        ('UNKNOWN_STATUS', DEFAULT_TA, [0, 0, 0, 0, 0] ),
+        ('ON_TREATMENT_ARM', DEFAULT_TA, [1, 0, 0, 0, 1] ),
+        ('PENDING_APPROVAL', DEFAULT_TA, [0, 1, 0, 0, 1] ),
     )
     @unpack
-    def test_match(self, patient, sum_rpt_data, exp_results):
+    def test_match(self, patient_status, sum_rpt_data, exp_results):
         sr = SummaryReport(sum_rpt_data)
-        Refresher._match(Patient(patient), sr)
-        self.assertEqual(sr.assignmentRecords, exp_results[AREC_IDX])
+        patient = create_patient(patient_status)
+        Refresher._match(patient, sr)
+
+        self.maxDiff = None
+        self.assertEqual(len(sr.assignmentRecords), exp_results[AREC_IDX])
         self.assertEqual(sr.numNotEnrolledPatient, exp_results[NOEN_IDX])
         self.assertEqual(sr.numPendingArmApproval, exp_results[PEND_IDX])
         self.assertEqual(sr.numFormerPatients, exp_results[FORM_IDX])
