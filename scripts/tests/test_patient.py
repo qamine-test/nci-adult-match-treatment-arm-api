@@ -17,51 +17,29 @@ def create_default_patient_assignment_logic(trtmt_id):
         "patientAssignmentReasonCategory": "NO_VARIANT_MATCH"
     }
 
+
+def create_patient_trigger(patient_status, message=None):
+    trigger = {
+        "studyId": "EAY131",
+        "patientSequenceNumber": "10065",
+        "stepNumber": "0",
+        "patientStatus": patient_status,
+        "dateCreated": datetime(2015, 9, 4, 18, 22, 0),
+        "auditDate": datetime(2015, 9, 4, 18, 30, 14)
+    }
+    if message is not None:
+        trigger['message'] = message
+    return trigger
+
+
 TEST_PATIENT_NO_TA = {
     "_id": ObjectId("55e9e33600929ab89f5499a1"),
     "patientTriggers": [
-        {
-            "studyId": "EAY131",
-            "patientSequenceNumber": "10065",
-            "stepNumber": "0",
-            "patientStatus": "REGISTRATION",
-            "message": "Patient registration to step 0.",
-            "dateCreated": datetime(2015, 9, 4, 18, 22, 0),
-            "auditDate": datetime(2015, 9, 4, 18, 30, 14)
-        },
-        {
-            "studyId": "EAY131",
-            "patientSequenceNumber": "10065",
-            "stepNumber": "0",
-            "patientStatus": "PENDING_CONFIRMATION",
-            "dateCreated": datetime(2015, 9, 29, 21, 00, 11),
-            "auditDate": datetime(2015, 9, 29, 21, 00, 12)
-        },
-        {
-            "studyId": "EAY131",
-            "patientSequenceNumber": "10065",
-            "stepNumber": "0",
-            "patientStatus": "PENDING_APPROVAL",
-            "dateCreated": datetime(2015, 9, 30, 12, 34, 55),
-            "auditDate": datetime(2015, 9, 30, 12, 34, 56)
-        },
-        {
-            "studyId": "EAY131",
-            "patientSequenceNumber": "10065",
-            "stepNumber": "0",
-            "patientStatus": "PENDING_APPROVAL",
-            "dateCreated": datetime(2015, 10, 1, 9, 34, 55),
-            "auditDate": datetime(2015, 10, 1, 9, 34, 56)
-        },
-        {
-            "studyId": "EAY131",
-            "patientSequenceNumber": "10065",
-            "stepNumber": "1",
-            "patientStatus": "ON_TREATMENT_ARM",
-            "message": "Patient registration to assigned treatment arm EAY131-B",
-            "dateCreated": datetime(2015, 10, 5, 21, 0, 11),
-            "auditDate": datetime(2015, 10, 5, 21, 0, 12)
-        }
+        create_patient_trigger("REGISTRATION", "Patient registration to step 0."),
+        create_patient_trigger("PENDING_CONFIRMATION"),
+        create_patient_trigger("PENDING_APPROVAL"),
+        create_patient_trigger("PENDING_APPROVAL"),
+        create_patient_trigger("ON_TREATMENT_ARM", "Patient registration to assigned treatment arm EAY131-B"),
     ],
     "currentStepNumber": "1",
     "currentPatientStatus": "ON_TREATMENT_ARM",
