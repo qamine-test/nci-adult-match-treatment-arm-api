@@ -1,30 +1,23 @@
 #!/usr/bin/env python3
 
 import unittest
+
 from ddt import ddt, data, unpack
+from mock import patch
 
 from scripts.summary_report_refresher.patient import Patient
 from scripts.summary_report_refresher.refresher import Refresher
 from scripts.summary_report_refresher.summary_report import SummaryReport
 from scripts.tests.test_patient import TEST_PATIENT, create_patient_trigger
+from scripts.tests.test_summary_report import DEFAULT_SR
 
-TRIGGERS_FOR_NOT_ENROLLED = ['REGISTRATION', 'PENDING_CONFIRMATION', 'PENDING_APPROVAL', 'NOT_ELIGIBLE']
-
-PAT_STATUS_FLD = 'currentPatientStatus'
-def create_patient(status, patient_trigger_types=None):
-    patient_json = dict(TEST_PATIENT)
-    patient_json[PAT_STATUS_FLD] = status
-    # overwrite the default patientTriggers in TEST_PATIENT if caller needed something specific.
-    if patient_trigger_types is not None:
-        patient_json['patientTriggers'] = [create_patient_trigger(t) for t in patient_trigger_types]
-    return Patient(patient_json)
+# ******** Test Data Constants and Helper Functions to build data structures used in test cases ******** #
 
 # Default TreatmentArm
-DEFAULT_TA = {'_id': '1234567890',
+DEFAULT_TA = {'_id': '2234567890',
               'treatmentId': 'EAY131-A',
-              'version': '2016-08-14',
+              'version': '2016-08-15',
               'treatmentArmStatus': 'OPEN'}
-
 
 # Indices for the expected results in test cases below
 CURR_IDX = 0
@@ -33,8 +26,22 @@ FORM_IDX = 2
 NOEN_IDX = 3
 AREC_IDX = 4
 
+TRIGGERS_FOR_NOT_ENROLLED = ['REGISTRATION', 'PENDING_CONFIRMATION', 'PENDING_APPROVAL', 'NOT_ELIGIBLE']
+
+
+def create_patient(status, patient_trigger_types=None):
+    patient_json = dict(TEST_PATIENT)
+    patient_json['currentPatientStatus'] = status
+    # overwrite the default patientTriggers in TEST_PATIENT if caller needed something specific.
+    if patient_trigger_types is not None:
+        patient_json['patientTriggers'] = [create_patient_trigger(t) for t in patient_trigger_types]
+    return Patient(patient_json)
+
+
+# ******** Test the Refresher class in refresher.py. ******** #
 @ddt
 class RefresherTest(unittest.TestCase):
+    # Test the Refresher._match method.
     @data(
         ('UNKNOWN_STATUS', DEFAULT_TA, [0, 0, 0, 0, 0]),
         ('ON_TREATMENT_ARM', DEFAULT_TA, [1, 0, 0, 0, 1]),
@@ -53,6 +60,7 @@ class RefresherTest(unittest.TestCase):
         self.assertEqual(sr.numFormerPatients, exp_results[FORM_IDX])
         self.assertEqual(sr.numCurrentPatientsOnArm, exp_results[CURR_IDX])
 
+    # Test the Refresher.create_assignment_record method.
     # @data(
     #
     # )
@@ -61,6 +69,27 @@ class RefresherTest(unittest.TestCase):
     #     pass
     #
     #
+
+    # Test the Refresher._update_summary_report method.
+    @data(
+        ([], DEFAULT_TA, DEFAULT_SR),  # no patients associated with treatmentArm
+    )
+    @unpack
+    @patch('scripts.summary_report_refresher.refresher.PatientAccessor')
+    @patch('scripts.summary_report_refresher.refresher.TreatmentArmsAccessor')
+    def test_update_summary_report(self, patients, ta_data_for_sum_rpt, expected_sum_rpt_json,
+                                   mock_ta_accessor, mock_patient_accessor):
+        taa_instance = mock_ta_accessor.return_value
+        taa_instance.get_patients_by_treatment_arm_id.return_value = patients
+
+        pa_instance = mock_patient_accessor.return_value
+        pa_instance.update_summary_report = lambda s, _id, json: self.assertEqual(json, expected_sum_rpt_json)
+
+        sum_rpt = SummaryReport(ta_data_for_sum_rpt)
+        r = Refresher()
+        r._update_summary_report(sum_rpt)
+
+    # Test the Refresher._determine_patient_classification method.
     @data(
         ('REGISTRATION', None, None),
         ('OFF_TRIAL_REGISTRATION_ERROR', None, None),
