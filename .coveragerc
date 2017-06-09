@@ -3,6 +3,7 @@ omit =
     */tests/*
     */accessors/*
     */scripts/*
+    */data_setup/match/*
 
 include =
    */common/*
