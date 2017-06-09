@@ -23,6 +23,7 @@ install: pip install -r requirements.txt
 
 script:
   - coverage run -m unittest discover tests
+  - coverage run -a -m unittest discover scripts/tests
   - coverage xml
   - python-codacy-coverage -r coverage.xml
   #Build Docker image
@@ -35,8 +36,8 @@ after_success:
   # - docker images
   - docker push $DOCKER_IMAGE # Pushes both date and latest
   #Deploy both services to AWS IntTest
-  - docker run -it --rm -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY 
-    -e AWS_DEFAULT_REGION=us-east-1 silintl/ecs-deploy 
+  - docker run -it --rm -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    -e AWS_DEFAULT_REGION=us-east-1 silintl/ecs-deploy
     --cluster AdultMatch-IntTest-Backend  --service-name AdultMATCH-treatment-arm-api-INTTEST
     -i $DOCKER_IMAGE:$DATE
   #Trigger Travis bdd tests

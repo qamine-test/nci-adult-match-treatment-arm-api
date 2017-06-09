@@ -2,13 +2,13 @@
 omit =
     */tests/*
     */accessors/*
-    */scripts/*
     */data_setup/match/*
 
 include =
    */common/*
    */resource_helpers/*
    */resources/*
+   */scripts/*
 
 [report]
 exclude_lines =
