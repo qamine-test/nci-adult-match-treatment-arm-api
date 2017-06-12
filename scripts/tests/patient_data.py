@@ -67,8 +67,15 @@ PATIENT_TREATMENT_ARM = {
     "treatmentArmStatus": "OPEN",
 }
 
-def create_patient(triggers=DEFAULT_TRIGGERS, assignment_logics=DEFAULT_ASSIGNMENT_LOGICS,
+def create_patient(triggers=None, assignment_logics=None,
                    current_patient_status='ON_TREATMENT_ARM', treatment_arm=PATIENT_TREATMENT_ARM):
+    if triggers is None:
+        triggers = DEFAULT_TRIGGERS
+    if assignment_logics is None:
+        assignment_logics = DEFAULT_ASSIGNMENT_LOGICS
+    # if treatment_arm is None:
+    #     treatment_arm = PATIENT_TREATMENT_ARM
+
     patient = {
         "_id": ObjectId("55e9e33600929ab89f5499a1"),
         "patientTriggers": triggers,
