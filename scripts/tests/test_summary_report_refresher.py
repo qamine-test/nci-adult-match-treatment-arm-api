@@ -8,8 +8,9 @@ from mock import patch
 from scripts.summary_report_refresher.patient import Patient
 from scripts.summary_report_refresher.refresher import Refresher
 from scripts.summary_report_refresher.summary_report import SummaryReport
-from scripts.tests.patient_data import create_patient_trigger, TEST_PATIENT
+from scripts.tests.patient_data import create_patient_trigger, TEST_PATIENT, TEST_PATIENT_NO_TA, TREATMENT_ARM
 from scripts.tests.test_summary_report import DEFAULT_SR
+from config import log  # contains required log configuration; ignore Codacy complaints about unused code
 
 # ******** Test Data Constants and Helper Functions to build data structures used in test cases ******** #
 
@@ -18,6 +19,13 @@ DEFAULT_TA = {'_id': '2234567890',
               'treatmentId': 'EAY131-A',
               'version': '2016-08-15',
               'treatmentArmStatus': 'OPEN'}
+
+MATCHING_TA = {
+    "_id": "2234567899",
+    'treatmentId': 'EAY131-B',
+    "version": "2015-08-06",
+    "treatmentArmStatus": "OPEN",
+}
 
 # Indices for the expected results in test cases below
 CURR_IDX = 0
@@ -73,17 +81,23 @@ class RefresherTest(unittest.TestCase):
     # Test the Refresher._update_summary_report method.
     @data(
         ([], DEFAULT_TA, DEFAULT_SR),  # no patients associated with treatmentArm
+        # ([TEST_PATIENT_NO_TA], DEFAULT_TA, DEFAULT_SR),  # only patients with no treatmentArm
+        # ([TEST_PATIENT], DEFAULT_TA, DEFAULT_SR),  # only patient with treatmentArm that doesn't match
+        # ([TEST_PATIENT], MATCHING_TA, DEFAULT_SR),  # only patient with treatmentArm that matches
     )
     @unpack
     @patch('scripts.summary_report_refresher.refresher.PatientAccessor')
     @patch('scripts.summary_report_refresher.refresher.TreatmentArmsAccessor')
     def test_update_summary_report(self, patients, ta_data_for_sum_rpt, expected_sum_rpt_json,
                                    mock_ta_accessor, mock_patient_accessor):
-        taa_instance = mock_ta_accessor.return_value
-        taa_instance.get_patients_by_treatment_arm_id.return_value = patients
 
+        print( "test_update_summary_report patient count = {c}".format(c=len(patients)))
+        print(str(mock_patient_accessor))
         pa_instance = mock_patient_accessor.return_value
-        pa_instance.update_summary_report = lambda s, _id, json: self.assertEqual(json, expected_sum_rpt_json)
+        pa_instance.get_patients_by_treatment_arm_id.return_value = patients
+
+        taa_instance = mock_ta_accessor.return_value
+        taa_instance.update_summary_report = lambda _id, json: self.assertEqual(json, expected_sum_rpt_json)
 
         sum_rpt = SummaryReport(ta_data_for_sum_rpt)
         r = Refresher()
