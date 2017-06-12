@@ -28,7 +28,6 @@ ANALYSIS_ID = "TheAnalysisId"
 DATE_SEL = datetime(2016, 5, 1)
 DATE_ON_ARM = datetime(2016, 5, 4)
 DATE_OFF_ARM = datetime(2016, 6, 1)
-DATE_NOW = datetime(2016, 7, 1)  # used for mocking datetime.now()
 
 
 # ******** Helper functions to build data structures used in test cases ******** #
@@ -39,11 +38,6 @@ def create_assignment_rec_args():
 
 
 def create_expected_json(date_off_arm, index):
-    if date_off_arm is None:
-        time_on_arm = DATE_NOW - DATE_ON_ARM
-    else:
-        time_on_arm = date_off_arm - DATE_ON_ARM
-
     return {
         "patientSequenceNumber": PAT_SEQ_NUM,
         "treatmentArmVersion": TA_VERSION,
@@ -52,7 +46,6 @@ def create_expected_json(date_off_arm, index):
         "dateSelected": DATE_SEL,
         "dateOnArm": DATE_ON_ARM,
         "dateOffArm": date_off_arm,
-        "timeOnArm": time_on_arm.total_seconds(),
         "stepNumber": STEP_NUM,
         "diseases": DISEASES,
         "assignmentReason": ASSNMNT_REASON,
@@ -68,12 +61,7 @@ class TestAssignmentRecord(unittest.TestCase):
         (create_assignment_rec_args(), None, 3),
     )
     @unpack
-    @patch('scripts.summary_report_refresher.assignment_record.datetime')
-    def test_get_json(self, contructor_args, date_off_arm, index, mock_datetime):
-        # The following mocks ONLY the now() method of datetime; other methods work normally.
-        # (See https://docs.python.org/3/library/unittest.mock-examples.html#partial-mocking for more info.)
-        mock_datetime.now.return_value = DATE_NOW
-        mock_datetime.side_effect = datetime
+    def test_get_json(self, contructor_args, date_off_arm, index):
 
         contructor_args.append(date_off_arm)
         assignment_rec = AssignmentRecord(*contructor_args)
