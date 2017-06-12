@@ -17,7 +17,6 @@ class AssignmentRecord:
         self.date_selected = date_selected
         self.date_on_arm = date_on_arm
         self.date_off_arm = date_off_arm
-        self.time_on_arm = ((datetime.now() if date_off_arm is None else date_off_arm) - date_on_arm).total_seconds()
         self.step_number = step_num
         self.diseases = diseases
         self.assignment_reason = assnmnt_reason
@@ -37,7 +36,6 @@ class AssignmentRecord:
             "dateSelected": self.date_selected,
             "dateOnArm": self.date_on_arm,
             "dateOffArm": self.date_off_arm,
-            "timeOnArm": self.time_on_arm,
             "stepNumber": self.step_number,
             "diseases": self.diseases,
             "assignmentReason": self.assignment_reason,
