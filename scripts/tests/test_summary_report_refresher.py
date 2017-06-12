@@ -8,7 +8,7 @@ from mock import patch
 from scripts.summary_report_refresher.patient import Patient
 from scripts.summary_report_refresher.refresher import Refresher
 from scripts.summary_report_refresher.summary_report import SummaryReport
-from scripts.tests.test_patient import TEST_PATIENT, create_patient_trigger
+from scripts.tests.patient_data import create_patient_trigger, TEST_PATIENT
 from scripts.tests.test_summary_report import DEFAULT_SR
 
 # ******** Test Data Constants and Helper Functions to build data structures used in test cases ******** #
