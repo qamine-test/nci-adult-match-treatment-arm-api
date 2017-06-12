@@ -45,7 +45,7 @@ def create_assignment_rec():
                             DISEASES, ANALYSIS_ID, DATE_SEL, DATE_ON_ARM, None)
 
 
-def create_json(omit_flds=None):
+def create_ta_json(omit_flds=None):
     if omit_flds is None:
         return DEFAULT_TA
     else:
@@ -66,7 +66,7 @@ class TestSummaryReportConstruction(unittest.TestCase):
             sr_json_doc = None
             missing_field_list = ALL_FIELDS
         else:
-            sr_json_doc = create_json(missing_field_list)
+            sr_json_doc = create_ta_json(missing_field_list)
 
         with self.assertRaises(Exception) as cm:
             SummaryReport(sr_json_doc)
@@ -77,7 +77,7 @@ class TestSummaryReportConstruction(unittest.TestCase):
             self.assertTrue(f in exc_str)
 
     def test_get_after_normal_construction(self):
-        sr = SummaryReport(create_json())
+        sr = SummaryReport(create_ta_json())
         self.assertEqual(sr._id, DEFAULT_TA['_id'])
         self.assertEqual(sr.treatmentId, DEFAULT_TA['treatmentId'])
         self.assertEqual(sr.version, DEFAULT_TA['version'])
@@ -96,7 +96,7 @@ class TestSummaryReport(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_sr = SummaryReport(create_json())
+        cls.test_sr = SummaryReport(create_ta_json())
 
     @data(
         (SummaryReport.NOT_ENROLLED, 1, 0, 0, 0),
