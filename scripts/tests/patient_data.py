@@ -67,14 +67,14 @@ PATIENT_TREATMENT_ARM = {
     "treatmentArmStatus": "OPEN",
 }
 
+
 def create_patient(triggers=None, assignment_logics=None,
-                   current_patient_status='ON_TREATMENT_ARM', treatment_arm=PATIENT_TREATMENT_ARM):
+                   current_patient_status='ON_TREATMENT_ARM', treatment_arm=None):
     if triggers is None:
         triggers = DEFAULT_TRIGGERS
     if assignment_logics is None:
         assignment_logics = DEFAULT_ASSIGNMENT_LOGICS
-    # if treatment_arm is None:
-    #     treatment_arm = PATIENT_TREATMENT_ARM
+    # NOTE:  No default value for treatment_arm because it is sometimes missing from Patient records.
 
     patient = {
         "_id": ObjectId("55e9e33600929ab89f5499a1"),
@@ -119,9 +119,5 @@ def create_patient(triggers=None, assignment_logics=None,
     return patient
 
 
-
 TEST_PATIENT_NO_TA = create_patient(current_patient_status='OFF_TRIAL', treatment_arm=None)
 TEST_PATIENT = create_patient(DEFAULT_TRIGGERS, DEFAULT_ASSIGNMENT_LOGICS, 'ON_TREATMENT_ARM', PATIENT_TREATMENT_ARM)
-# TEST_PATIENT_NO_TA = create_patient(DEFAULT_TRIGGERS, DEFAULT_ASSIGNMENT_LOGICS, 'OFF_TRIAL', None)
-# TEST_PATIENT = create_patient(DEFAULT_TRIGGERS, DEFAULT_ASSIGNMENT_LOGICS, 'ON_TREATMENT_ARM', PATIENT_TREATMENT_ARM)
-
