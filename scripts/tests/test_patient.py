@@ -5,7 +5,7 @@ from ddt import ddt, data, unpack
 
 from scripts.summary_report_refresher.patient import Patient
 # ******** Test Data Constants and Helper Functions to build data structures used in test cases ******** #
-from scripts.tests.patient_data import TEST_PATIENT_NO_TA, TREATMENT_ARM, TEST_PATIENT
+from scripts.tests.patient_data import TEST_PATIENT_NO_TA, PATIENT_TREATMENT_ARM, TEST_PATIENT
 
 
 # ******** Test the Patient class in patient.py. ******** #
@@ -21,7 +21,7 @@ class TestPatient(unittest.TestCase):
         self.assertEqual(p.patientAssignments, TEST_PATIENT['patientAssignments'])
 
     @data(
-        (TEST_PATIENT, TREATMENT_ARM['version']),
+        (TEST_PATIENT, PATIENT_TREATMENT_ARM['version']),
         (TEST_PATIENT_NO_TA, None),
     )
     @unpack
