@@ -36,7 +36,7 @@ TEST_PATIENT_NO_TA = {
         create_patient_trigger("ON_TREATMENT_ARM", "Patient registration to assigned treatment arm EAY131-B"),
     ],
     "currentStepNumber": "1",
-    "currentPatientStatus": "ON_TREATMENT_ARM",
+    "currentPatientStatus": "OFF_TRIAL",
     "patientAssignments": {
         "dateAssigned": datetime(2015, 9, 29, 21, 00, 11),
         "biopsySequenceNumber": "T-15-000078",
@@ -104,3 +104,4 @@ TREATMENT_ARM = {
 TEST_PATIENT = dict(TEST_PATIENT_NO_TA)
 TEST_PATIENT['treatmentArm'] = TREATMENT_ARM
 TEST_PATIENT['patientAssignments']['treatmentArm'] = TREATMENT_ARM
+TEST_PATIENT['currentPatientStatus'] =  "ON_TREATMENT_ARM"
