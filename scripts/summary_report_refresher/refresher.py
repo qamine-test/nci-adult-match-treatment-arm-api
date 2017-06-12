@@ -58,6 +58,8 @@ class Refresher:
     def _match(patient, sum_rpt):
         patient_type = Refresher._determine_patient_classification(patient)
 
+        # print("patient_type = {pt}".format(pt=str(patient_type)))
+
         if patient_type is not None:
             assignment_rec = Refresher._create_assignment_record(patient, sum_rpt.treatmentId)
             sum_rpt.add_patient_by_type(patient_type, assignment_rec)
@@ -80,7 +82,7 @@ class Refresher:
         elif patient_status in Refresher.OTHER_STATUSES:
             if patient.find_trigger_by_status('ON_TREATMENT_ARM') is not None:
                 match_type = SummaryReport.FORMER
-            elif patient.find_trigger_by_status('PENDING_CONFIRMATION') is not None:
+            elif patient.find_trigger_by_status('PENDING_APPROVAL') is not None:
                 match_type = SummaryReport.NOT_ENROLLED
 
         return match_type
