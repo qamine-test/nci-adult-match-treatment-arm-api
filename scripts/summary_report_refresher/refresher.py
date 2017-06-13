@@ -9,7 +9,8 @@ from scripts.summary_report_refresher.summary_report import SummaryReport
 
 
 PATIENT_STATUS_FIELD = 'currentPatientStatus'
-
+ON_ARM_STATUS = 'ON_TREATMENT_ARM'
+PENDING_STATUS = 'PENDING_APPROVAL'
 
 class Refresher:
     OTHER_STATUSES = [
@@ -43,13 +44,9 @@ class Refresher:
         self.logger.debug("{cnt} patients returned for '{trtmt_id}"
                           .format(cnt=len(patients), trtmt_id=sum_rpt.treatmentId))
 
-        # Update the summary report for any patients that meet the criteria.
+        # Update the summary report object for any patients that meet the criteria.
         for pat in patients:
             Refresher._match(pat, sum_rpt)
-
-        # import pprint
-        # pprint.pprint(sum_rpt.sr)
-        # pprint.pprint(sum_rpt.ta)
 
         # Update the summary report in the treatmentArms collection on the database
         self.ta_accessor.update_summary_report(sum_rpt._id, sum_rpt.get_json())
@@ -75,14 +72,14 @@ class Refresher:
         match_type = None
 
         patient_status = patient.currentPatientStatus
-        if patient_status == 'ON_TREATMENT_ARM':
+        if patient_status == ON_ARM_STATUS:
             match_type = SummaryReport.CURRENT
-        elif patient_status == 'PENDING_APPROVAL':
+        elif patient_status == PENDING_STATUS:
             match_type = SummaryReport.PENDING
         elif patient_status in Refresher.OTHER_STATUSES:
-            if patient.find_trigger_by_status('ON_TREATMENT_ARM') is not None:
+            if patient.find_trigger_by_status(ON_ARM_STATUS) is not None:
                 match_type = SummaryReport.FORMER
-            elif patient.find_trigger_by_status('PENDING_APPROVAL') is not None:
+            elif patient.find_trigger_by_status(PENDING_STATUS) is not None:
                 match_type = SummaryReport.NOT_ENROLLED
 
         return match_type
@@ -98,17 +95,18 @@ class Refresher:
         :return:
         """
         patient_status = patient.currentPatientStatus
-        trigger = patient.find_trigger_by_status(patient_status)
+        # trigger = patient.find_trigger_by_status(patient_status)
         ta_version = patient.treatment_arm_version()
+        (date_on_arm, date_off_arm) = patient.get_dates_on_off_arm()
 
-        return AssignmentRecord(trigger['patientSequenceNumber'],
+        return AssignmentRecord(patient.patientSequenceNumber,
                                 ta_version,
                                 patient_status,
                                 patient.get_assignment_reason(ta_id, ta_version),
                                 patient.currentStepNumber,
                                 patient.diseases,
                                 "todo: analysisId",  # TODO find out where this comes from
-                                datetime(2001, 1, 1),  # TODO get dateSelected from patientTriggers
-                                trigger['dateCreated'],  # TODO get dateOnArm from patientTriggers
-                                None,  # TODO get dateOffArm
+                                patient.get_date_assigned(),
+                                date_on_arm,
+                                date_off_arm
                                 )
