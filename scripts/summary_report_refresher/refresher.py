@@ -94,18 +94,16 @@ class Refresher:
         :param ta_id:
         :return:
         """
-        patient_status = patient.currentPatientStatus
-        # trigger = patient.find_trigger_by_status(patient_status)
         ta_version = patient.treatment_arm_version()
         (date_on_arm, date_off_arm) = patient.get_dates_on_off_arm()
 
         return AssignmentRecord(patient.patientSequenceNumber,
                                 ta_version,
-                                patient_status,
+                                patient.currentPatientStatus,
                                 patient.get_assignment_reason(ta_id, ta_version),
                                 patient.currentStepNumber,
                                 patient.diseases,
-                                "todo: analysisId",  # TODO find out where this comes from
+                                patient.get_analysis_id(),
                                 patient.get_date_assigned(),
                                 date_on_arm,
                                 date_off_arm
