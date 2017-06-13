@@ -2,84 +2,18 @@
 
 import unittest
 from datetime import datetime
+
 from ddt import ddt, data, unpack
 from mock import patch
 
 from scripts.summary_report_refresher.patient import Patient
 from scripts.summary_report_refresher.refresher import Refresher
 from scripts.summary_report_refresher.summary_report import SummaryReport
-from scripts.tests.patient_data import create_patient, create_patient_trigger, create_patient_assignment_logic, TEST_PATIENT, PATIENT_TREATMENT_ARM, MATCHING_LOGIC
-from config import log  # contains required log configuration; ignore Codacy complaints about unused code
+from scripts.tests.patient_data import create_patient, create_patient_trigger, NOT_ENROLLED_PATIENT, FORMER_PATIENT, \
+    PENDING_PATIENT, CURRENT_PATIENT, NONE_PATIENT, REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER
+
 
 # ******** Test Data Constants and Helper Functions to build data structures used in test cases ******** #
-REGISTRATION_TRIGGER = create_patient_trigger("REGISTRATION", "Patient registration to step 0.")
-PENDING_CONF_TRIGGER = create_patient_trigger("PENDING_CONFIRMATION")
-PENDING_APPR_TRIGGER = create_patient_trigger("PENDING_APPROVAL")
-DECEASED_TRIGGER = create_patient_trigger("OFF_TRIAL_DECEASED")
-ON_ARM_TRIGGER = create_patient_trigger("ON_TREATMENT_ARM", "Patient registration to assigned treatment arm EAY131-B")
-
-NOT_ENROLLED_PATIENT = create_patient(
-    [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, DECEASED_TRIGGER],
-    [
-        create_patient_assignment_logic("EAY131-E"),
-        MATCHING_LOGIC,
-        create_patient_assignment_logic("EAY131-R"),
-        create_patient_assignment_logic("EAY131-U"),
-    ],
-    'OFF_TRIAL_DECEASED',
-    PATIENT_TREATMENT_ARM
-)
-
-FORMER_PATIENT = create_patient(
-    [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, ON_ARM_TRIGGER, DECEASED_TRIGGER],
-    [
-        create_patient_assignment_logic("EAY131-A"),
-        MATCHING_LOGIC,
-        create_patient_assignment_logic("EAY131-R"),
-        create_patient_assignment_logic("EAY131-E"),
-    ],
-    'OFF_TRIAL_DECEASED',
-    PATIENT_TREATMENT_ARM
-)
-
-PENDING_PATIENT = create_patient(
-    [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER],
-    [
-        create_patient_assignment_logic("EAY131-S"),
-        MATCHING_LOGIC,
-        create_patient_assignment_logic("EAY131-E"),
-        create_patient_assignment_logic("EAY131-U"),
-    ],
-    'PENDING_APPROVAL',
-    PATIENT_TREATMENT_ARM
-)
-
-CURRENT_PATIENT = create_patient(
-    [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, ON_ARM_TRIGGER],
-    [
-        create_patient_assignment_logic("EAY131-H"),
-        MATCHING_LOGIC,
-        create_patient_assignment_logic("EAY131-G"),
-        create_patient_assignment_logic("EAY131-E"),
-    ],
-    'ON_TREATMENT_ARM',
-    PATIENT_TREATMENT_ARM
-)
-NONE_PATIENT = create_patient(
-    [
-        REGISTRATION_TRIGGER,
-        PENDING_CONF_TRIGGER,
-        create_patient_trigger("PENDING_OFF_STUDY"),
-        create_patient_trigger("OFF_TRIAL_NO_TA_AVAILABLE"),
-    ],
-    [
-        create_patient_assignment_logic("EAY131-A"),
-        create_patient_assignment_logic("EAY131-R"),
-        create_patient_assignment_logic("EAY131-E"),
-    ],
-    'OFF_TRIAL_NO_TA_AVAILABLE',
-    None
-)
 
 
 def create_sr_json(**kwargs):
