@@ -41,3 +41,22 @@ class Patient(object):
                assignment_logic['treatmentArmVersion'] == trtmtVersion):
                 return assignment_logic['reason']
         return None
+
+    def get_dates_on_off_arm(self):
+
+        date_on_arm = None
+        date_off_arm = None
+        for i, trigger in reversed([(i, trigger) for i, trigger in enumerate(self._pat['patientTriggers'])]):
+            if trigger['patientStatus'] == "ON_TREATMENT_ARM":
+                date_on_arm = trigger['dateCreated']
+                if i + 1 < len(self._pat['patientTriggers']):
+                    date_off_arm = self._pat['patientTriggers'][i+1]['dateCreated']
+                break
+
+        return (date_on_arm, date_off_arm)
+
+    def get_date_assigned(self):
+        if 'dateAssigned' in self._pat['patientAssignments']:
+            return self._pat['patientAssignments']['dateAssigned']
+        else:
+            return None
