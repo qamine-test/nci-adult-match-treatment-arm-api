@@ -14,7 +14,6 @@ class PatientAccessor(MongoDbAccessor):
 
     def __init__(self):
         MongoDbAccessor.__init__(self, 'patient', logging.getLogger(__name__))
-        # self.logger = logging.getLogger(__name__)
 
     def get_patients_by_treatment_arm_id(self, trtmt_id):
         """
@@ -28,9 +27,10 @@ class PatientAccessor(MongoDbAccessor):
                                 {"$match": {"patientAssignments.treatmentArm._id": trtmt_id}},
                                 {"$project": {"currentPatientStatus": 1,
                                               "patientAssignments": 1,
-                                              "pattientSequenceNumber": 1,
+                                              "patientSequenceNumber": 1,
                                               "currentStepNumber": 1,
                                               "patientTriggers": 1,
                                               "diseases": 1,
+                                              "biopsies": 1,
                                               "treatmentArm": "$patientAssignments.treatmentArm"}},
                                 ])]
