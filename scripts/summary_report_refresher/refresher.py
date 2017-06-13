@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 
 from accessors.patient_accessor import PatientAccessor
 from accessors.treatment_arm_accessor import TreatmentArmsAccessor
@@ -7,10 +6,10 @@ from scripts.summary_report_refresher.assignment_record import AssignmentRecord
 from scripts.summary_report_refresher.patient import Patient
 from scripts.summary_report_refresher.summary_report import SummaryReport
 
-
 PATIENT_STATUS_FIELD = 'currentPatientStatus'
 ON_ARM_STATUS = 'ON_TREATMENT_ARM'
 PENDING_STATUS = 'PENDING_APPROVAL'
+
 
 class Refresher:
     OTHER_STATUSES = [

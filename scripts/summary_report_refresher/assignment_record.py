@@ -1,6 +1,3 @@
-from datetime import datetime
-
-
 class AssignmentRecord:
     """
     An object to store all of the data required in the AssignmentRecords field of the summaryReport
