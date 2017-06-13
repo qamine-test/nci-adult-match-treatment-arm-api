@@ -60,3 +60,21 @@ class Patient(object):
             return self._pat['patientAssignments']['dateAssigned']
         else:
             return None
+
+    def get_analysis_id(self):
+        analysis_id = None
+        biopsy_seq_num = self._pat['patientAssignments']['biopsySequenceNumber']
+
+        for biopsy in self._pat['biopsies']:
+            if(not biopsy['failure'] and
+               biopsy['biopsySequenceNumber'] == biopsy_seq_num and
+               biopsy['nextGenerationSequences'] != []):
+
+                for seq in reversed(biopsy['nextGenerationSequences']):
+                    if seq['status'] == 'CONFIRMED':
+                        analysis_id = seq['ionReporterResults']['jobName']
+                        break
+                if analysis_id:
+                    break
+
+        return analysis_id
