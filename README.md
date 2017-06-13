@@ -5,7 +5,7 @@
 
 ## Prerequisites
 
-* [Install Python3.5](http://www.marinamele.com/2014/07/install-python3-on-mac-os-x-and-use-virtualenv-and-virtualenvwrapper.html)
+* [Install Python3.6.1](http://www.marinamele.com/2014/07/install-python3-on-mac-os-x-and-use-virtualenv-and-virtualenvwrapper.html)
 * [Setup Virtual Environments](https://realpython.com/blog/python/python-virtual-environments-a-primer/)
 * Required Python modules:  pymongo, flask, flask_env, flask_cors, flask_restful
 
