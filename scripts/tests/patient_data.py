@@ -76,18 +76,72 @@ OFF_ARM_DATE = datetime(2016, 3, 1)
 ASSIGNMENT_DATE = datetime(2015, 9, 29)
 
 
+def create_next_generation_sequence(status, job_name):
+    return {
+        'status': status,
+        'ionReporterResults': {'jobName': job_name}
+    }
+MATCHING_ANALYSIS_ID = "Confirmed Analysis ID"
+CONFIRMED_NEXT_GEN_SEQ = create_next_generation_sequence("CONFIRMED", MATCHING_ANALYSIS_ID)
+NOT_CONFIRMED_NEXT_GEN_SEQ = create_next_generation_sequence("not confirmed", "unconfirmed analysis ID")
+
+
+def create_biopsy(biopsy_seq_num, failure, next_gen_seqs):
+    """Only create the fields of the biopsy that we care about."""
+    return {
+        'biopsySequenceNumber': biopsy_seq_num,
+        'failure': failure,
+        'nextGenerationSequences': next_gen_seqs,
+    }
+
+
+MATCHING_BIOPSY_SEQ_NUM = "T-15-000078"
+NON_MATCHING_BIOPSY_SEQ_NUM = "T-15-nomatch"
+# These will be returned from Patient._select_biopsy and an analysis ID will be found in Patient.get_analysis_id
+MATCHING_GOOD_BIOPSY1 = create_biopsy(MATCHING_BIOPSY_SEQ_NUM, False, [CONFIRMED_NEXT_GEN_SEQ])
+MATCHING_GOOD_BIOPSY2 = create_biopsy(MATCHING_BIOPSY_SEQ_NUM, False,
+                                      [CONFIRMED_NEXT_GEN_SEQ, NOT_CONFIRMED_NEXT_GEN_SEQ])
+MATCHING_GOOD_BIOPSY3 = create_biopsy(MATCHING_BIOPSY_SEQ_NUM, False,
+                                      [NOT_CONFIRMED_NEXT_GEN_SEQ, CONFIRMED_NEXT_GEN_SEQ])
+# These will not even be returned by Patient._select_biopsy
+NOMATCH_GOOD_BIOPSY1 = create_biopsy(NON_MATCHING_BIOPSY_SEQ_NUM, False, [CONFIRMED_NEXT_GEN_SEQ])
+NOMATCH_GOOD_BIOPSY2 = create_biopsy(NON_MATCHING_BIOPSY_SEQ_NUM, False,
+                                     [CONFIRMED_NEXT_GEN_SEQ, NOT_CONFIRMED_NEXT_GEN_SEQ])
+NOMATCH_GOOD_BIOPSY3 = create_biopsy(NON_MATCHING_BIOPSY_SEQ_NUM, False,
+                                     [NOT_CONFIRMED_NEXT_GEN_SEQ, CONFIRMED_NEXT_GEN_SEQ])
+MATCHING_FAILED_BIOPSY1 = create_biopsy(MATCHING_BIOPSY_SEQ_NUM, True, [CONFIRMED_NEXT_GEN_SEQ])
+MATCHING_FAILED_BIOPSY2 = create_biopsy(MATCHING_BIOPSY_SEQ_NUM, True,
+                                        [CONFIRMED_NEXT_GEN_SEQ, NOT_CONFIRMED_NEXT_GEN_SEQ])
+MATCHING_FAILED_BIOPSY3 = create_biopsy(MATCHING_BIOPSY_SEQ_NUM, True,
+                                        [NOT_CONFIRMED_NEXT_GEN_SEQ, CONFIRMED_NEXT_GEN_SEQ])
+NOMATCH_FAILED_BIOPSY1 = create_biopsy(NON_MATCHING_BIOPSY_SEQ_NUM, True, [CONFIRMED_NEXT_GEN_SEQ])
+NOMATCH_FAILED_BIOPSY2 = create_biopsy(NON_MATCHING_BIOPSY_SEQ_NUM, True,
+                                       [CONFIRMED_NEXT_GEN_SEQ, NOT_CONFIRMED_NEXT_GEN_SEQ])
+NOMATCH_FAILED_BIOPSY3 = create_biopsy(NON_MATCHING_BIOPSY_SEQ_NUM, True,
+                                       [NOT_CONFIRMED_NEXT_GEN_SEQ, CONFIRMED_NEXT_GEN_SEQ])
+# These will be returned from Patient._select_biopsy, but no analysis ID will be found in Patient.get_analysis_id
+MATCHING_BAD_BIOPSY1 = create_biopsy(MATCHING_BIOPSY_SEQ_NUM, False, [])
+MATCHING_BAD_BIOPSY2 = create_biopsy(MATCHING_BIOPSY_SEQ_NUM, False, [NOT_CONFIRMED_NEXT_GEN_SEQ])
+NOMATCH_BAD_BIOPSY1 = create_biopsy(NON_MATCHING_BIOPSY_SEQ_NUM, False, [])
+NOMATCH_BAD_BIOPSY2 = create_biopsy(NON_MATCHING_BIOPSY_SEQ_NUM, False, [NOT_CONFIRMED_NEXT_GEN_SEQ])
+
+
 def create_patient(triggers=None, assignment_logics=None,
-                   current_patient_status='ON_TREATMENT_ARM', treatment_arm=None):
+                   current_patient_status='ON_TREATMENT_ARM',
+                   treatment_arm=None, biopsies=None):
     if triggers is None:
         triggers = DEFAULT_TRIGGERS
     if assignment_logics is None:
         assignment_logics = DEFAULT_ASSIGNMENT_LOGICS
+    if biopsies is None:
+        biopsies = []
     # NOTE:  No default value for treatment_arm because it is sometimes missing from Patient records.
 
     patient = {
         "_id": ObjectId("55e9e33600929ab89f5499a1"),
         "patientSequenceNumber": "14400",
         "patientTriggers": triggers,
+        "biopsies": biopsies,
         "currentStepNumber": "1",
         "currentPatientStatus": current_patient_status,
         "patientAssignments": {},
@@ -102,10 +156,10 @@ def create_patient(triggers=None, assignment_logics=None,
         ],
     }
 
-    if assignment_logics != []:
+    if len(assignment_logics):
         patient['patientAssignments'] = {
             "dateAssigned": ASSIGNMENT_DATE,
-            "biopsySequenceNumber": "T-15-000078",
+            "biopsySequenceNumber": MATCHING_BIOPSY_SEQ_NUM,
             "patientAssignmentStatus": "AVAILABLE",
             "patientAssignmentLogic": assignment_logics,
             "patientAssignmentStatusMessage": "Patient registration to assigned treatment arm EAY131-B",
