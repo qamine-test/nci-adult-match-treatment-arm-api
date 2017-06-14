@@ -111,10 +111,11 @@ class Refresher:
                                 ta_version,
                                 patient.currentPatientStatus,
                                 patient.get_assignment_reason(ta_id, ta_version),
-                                patient.currentStepNumber,
+                                patient.get_patient_assignment_step_number(),
                                 patient.diseases,
                                 patient.get_analysis_id(),
                                 patient.get_date_assigned(),
                                 date_on_arm,
-                                date_off_arm
+                                date_off_arm,
+                                patient.patientAssignmentIdx
                                 )
