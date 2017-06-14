@@ -29,9 +29,21 @@ class Refresher:
                              for ta_data in self.ta_accessor.get_arms_for_summary_report_refresh()]
 
     def run(self):
-        self.logger.info("{cnt} summary reports selected for update".format(cnt=len(self.summary_rpts)))
+        sum_rpt_cnt = len(self.summary_rpts)
+        self.logger.info("{cnt} summary reports selected for update".format(cnt=sum_rpt_cnt))
+
+        upd_cnt = 0
         for sr in self.summary_rpts:
-            self._update_summary_report(sr)
+            if self._update_summary_report(sr):
+                upd_cnt += 1
+            else:
+                self.logger.error("Failed to update Summary Report for {trtmtId}:{version}"
+                                  .format(trtmtId=sr.treatmentId, version=sr.version))
+
+        if upd_cnt != sum_rpt_cnt:
+            self.logger.exception("Only {cnt}/{total} summary reports updated".format(cnt=upd_cnt, total=sum_rpt_cnt))
+        else:
+            self.logger.info("All {cnt} summary reports were updated.".format(cnt=sum_rpt_cnt))
 
     def _update_summary_report(self, sum_rpt):
         """
@@ -48,12 +60,11 @@ class Refresher:
             Refresher._match(pat, sum_rpt)
 
         # Update the summary report in the treatmentArms collection on the database
-        self.ta_accessor.update_summary_report(sum_rpt._id, sum_rpt.get_json())
+        return self.ta_accessor.update_summary_report(sum_rpt._id, sum_rpt.get_json())
 
     @staticmethod
     def _match(patient, sum_rpt):
         patient_type = Refresher._determine_patient_classification(patient)
-
         # print("patient_type = {pt}".format(pt=str(patient_type)))
 
         if patient_type is not None:
