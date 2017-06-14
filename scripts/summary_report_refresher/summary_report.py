@@ -50,7 +50,7 @@ class SummaryReport(object):
         if pat_type not in SummaryReport._SR_COUNT_FIELDS:
             raise Exception("Invalid patient type '{t}'".format(t=pat_type))
         self.sr[pat_type] += 1
-        assignment_rec_json = assignment_rec.get_json(len(self.sr[SummaryReport.ASSNMNT_RECS]))
+        assignment_rec_json = assignment_rec.get_json()
         self.sr[SummaryReport.ASSNMNT_RECS].append(assignment_rec_json)
 
     def get_json(self):
