@@ -4,7 +4,7 @@ import unittest
 from datetime import datetime
 
 from ddt import ddt, data, unpack
-from mock import patch
+from mock import patch, MagicMock
 
 from scripts.summary_report_refresher.patient import Patient
 from scripts.summary_report_refresher.refresher import Refresher
@@ -20,7 +20,7 @@ def create_sr_json(**kwargs):
     sum_rpt = {'assignmentRecords': []}
     for fld in SummaryReport._SR_COUNT_FIELDS:
         sum_rpt[fld] = 0
-    for (k,v) in kwargs.items():
+    for (k, v) in kwargs.items():
         if k in sum_rpt:
             sum_rpt[k] = v
         else:
@@ -54,15 +54,6 @@ TRIGGERS_FOR_NOT_ENROLLED = [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING
 DATE_NOW = datetime(2016, 11, 1)  # used for mocking datetime.now()
 
 
-# def create_patient(status, patient_trigger_types=None):
-#     patient_json = dict(TEST_PATIENT)
-#     patient_json['currentPatientStatus'] = status
-#     # overwrite the default patientTriggers in TEST_PATIENT if caller needed something specific.
-#     if patient_trigger_types is not None:
-#         patient_json['patientTriggers'] = [create_patient_trigger(t) for t in patient_trigger_types]
-#     return Patient(patient_json)
-
-
 # ******** Test the Refresher class in refresher.py. ******** #
 @ddt
 class RefresherTest(unittest.TestCase):
@@ -85,25 +76,15 @@ class RefresherTest(unittest.TestCase):
         self.assertEqual(sr.numFormerPatients, exp_results[FORM_IDX])
         self.assertEqual(sr.numCurrentPatientsOnArm, exp_results[CURR_IDX])
 
-    # Test the Refresher.create_assignment_record method.
-    # @data(
-    #
-    # )
-    # @unpack
-    # def test_create_assignment_record(self):
-    #     pass
-    #
-    #
-
     # Test the Refresher._update_summary_report method.
     @data(
-        #1. no patients associated with treatmentArm
+        # 1. no patients associated with treatmentArm
         ([], DEFAULT_TA, create_sr_json(), []),
-        #2. only patients with no treatmentArm
+        # 2. only patients with no treatmentArm
         ([NONE_PATIENT], DEFAULT_TA, create_sr_json(), []),
-        #3. a matching patient that was considered but not enrolled
+        # 3. a matching patient that was considered but not enrolled
         ([NOT_ENROLLED_PATIENT], DEFAULT_TA, create_sr_json(numNotEnrolledPatient=1), [NOT_ENROLLED_PATIENT]),
-        #4. a matching former patient
+        # 4. a matching former patient
         ([FORMER_PATIENT], DEFAULT_TA, create_sr_json(numFormerPatients=1), [FORMER_PATIENT]),
         # 5. a matching pending patient
         ([PENDING_PATIENT], DEFAULT_TA, create_sr_json(numPendingArmApproval=1), [PENDING_PATIENT]),
@@ -134,8 +115,6 @@ class RefresherTest(unittest.TestCase):
             ar_records.append(assmt_rec.get_json(i))
         expected_sum_rpt_json['assignmentRecords'] = ar_records
 
-        #print( "test_update_summary_report patient count = {c}".format(c=len(patients)))
-
         pa_instance = mock_patient_accessor.return_value
         pa_instance.get_patients_by_treatment_arm_id.return_value = patients
 
@@ -145,6 +124,33 @@ class RefresherTest(unittest.TestCase):
         sum_rpt = SummaryReport(ta_data_for_sum_rpt)
         r = Refresher()
         r._update_summary_report(sum_rpt)
+
+    # Test the Refresher.run method.
+    @data(
+        ([True, True, True]),
+        ([True, False, True, True]),
+    )
+    @patch('scripts.summary_report_refresher.refresher.logging')
+    @patch('scripts.summary_report_refresher.refresher.PatientAccessor')
+    @patch('scripts.summary_report_refresher.refresher.TreatmentArmsAccessor')
+    def test_run(self, update_summary_rpt_rets, mock_ta_accessor, mock_patient_accessor, mock_logging):
+        self.maxDiff = None
+
+        taa_instance = mock_ta_accessor.return_value
+        taa_instance.get_arms_for_summary_report_refresh.return_value = [DEFAULT_TA] * len(update_summary_rpt_rets)
+
+        r = Refresher()
+        r._update_summary_report = MagicMock(side_effect=update_summary_rpt_rets)
+        r.run()
+
+        mock_logger = mock_logging.getLogger()
+        mock_logger.info.assert_called()
+        if False in update_summary_rpt_rets:
+            mock_logger.error.assert_called()
+            mock_logger.exception.assert_called()
+        else:
+            mock_logger.error.assert_not_called()
+            mock_logger.exception.assert_not_called()
 
     # Test the Refresher._determine_patient_classification method.
     @data(
