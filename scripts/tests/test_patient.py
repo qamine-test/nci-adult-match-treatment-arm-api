@@ -19,6 +19,8 @@ class TestPatient(unittest.TestCase):
         self.assertEqual(p.currentStepNumber, pd.TEST_PATIENT['currentStepNumber'])
         self.assertEqual(p.patientTriggers, pd.TEST_PATIENT['patientTriggers'])
         self.assertEqual(p.patientAssignments, pd.TEST_PATIENT['patientAssignments'])
+        self.assertEqual(p.patientAssignmentIdx, pd.TEST_PATIENT['patientAssignmentIdx'])
+        self.assertEqual(p.get_patient_assignment_step_number(), pd.DEFAULT_PAT_ASSNMNT_STEP_NUM)
 
     # Test the Patient.treatment_arm_version method.
     @data(

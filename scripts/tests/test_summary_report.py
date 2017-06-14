@@ -32,6 +32,7 @@ DISEASES = [
         "shortName": "Transitional cell car. - uroth."
     }
 ]
+ASSNMNT_IDX = 2
 ANALYSIS_ID = "AnalysisId"
 DATE_SEL = datetime(2016, 4, 1)
 DATE_ON_ARM = datetime(2016, 4, 4)
@@ -42,7 +43,7 @@ DATE_OFF_ARM = datetime(2016, 5, 1)
 
 def create_assignment_rec():
     return AssignmentRecord(PAT_SEQ_NUM, TA_VERSION, ASSNMNT_STATUS, ASSNMNT_REASON, STEP_NUM,
-                            DISEASES, ANALYSIS_ID, DATE_SEL, DATE_ON_ARM, None)
+                            DISEASES, ASSNMNT_IDX, ANALYSIS_ID, DATE_SEL, DATE_ON_ARM, None)
 
 
 def create_ta_json(omit_flds=None):

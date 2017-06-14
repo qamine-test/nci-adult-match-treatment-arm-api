@@ -125,10 +125,12 @@ MATCHING_BAD_BIOPSY2 = create_biopsy(MATCHING_BIOPSY_SEQ_NUM, False, [NOT_CONFIR
 NOMATCH_BAD_BIOPSY1 = create_biopsy(NON_MATCHING_BIOPSY_SEQ_NUM, False, [])
 NOMATCH_BAD_BIOPSY2 = create_biopsy(NON_MATCHING_BIOPSY_SEQ_NUM, False, [NOT_CONFIRMED_NEXT_GEN_SEQ])
 
+DEFAULT_ASSIGNMENT_IDX = 2
+DEFAULT_PAT_ASSNMNT_STEP_NUM = "0"
 
 def create_patient(triggers=None, assignment_logics=None,
                    current_patient_status='ON_TREATMENT_ARM',
-                   treatment_arm=None, biopsies=None):
+                   treatment_arm=None, biopsies=None, patient_assmnt_idx=DEFAULT_ASSIGNMENT_IDX):
     if triggers is None:
         triggers = DEFAULT_TRIGGERS
     if assignment_logics is None:
@@ -157,13 +159,14 @@ def create_patient(triggers=None, assignment_logics=None,
     }
 
     if len(assignment_logics):
+        patient['patientAssignmentIdx'] = patient_assmnt_idx
         patient['patientAssignments'] = {
             "dateAssigned": ASSIGNMENT_DATE,
             "biopsySequenceNumber": MATCHING_BIOPSY_SEQ_NUM,
             "patientAssignmentStatus": "AVAILABLE",
             "patientAssignmentLogic": assignment_logics,
             "patientAssignmentStatusMessage": "Patient registration to assigned treatment arm EAY131-B",
-            "stepNumber": "0",
+            "stepNumber": DEFAULT_PAT_ASSNMNT_STEP_NUM,
             "patientAssignmentMessages": [
                 {
                     "patientSequenceNumber": "10065",

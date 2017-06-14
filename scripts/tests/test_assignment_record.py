@@ -24,6 +24,7 @@ DISEASES = [
     }
 ]
 ANALYSIS_ID = "TheAnalysisId"
+ASSNMNT_IDX = 3
 DATE_SEL = datetime(2016, 5, 1)
 DATE_ON_ARM = datetime(2016, 5, 4)
 DATE_OFF_ARM = datetime(2016, 6, 1)
@@ -33,10 +34,10 @@ DATE_OFF_ARM = datetime(2016, 6, 1)
 
 def create_assignment_rec_args():
     return [PAT_SEQ_NUM, TA_VERSION, ASSNMNT_STATUS, ASSNMNT_REASON, STEP_NUM,
-            DISEASES, ANALYSIS_ID, DATE_SEL, DATE_ON_ARM]
+            DISEASES, ANALYSIS_ID, ASSNMNT_IDX, DATE_SEL, DATE_ON_ARM]
 
 
-def create_expected_json(date_off_arm, index):
+def create_expected_json(date_off_arm):
     return {
         "patientSequenceNumber": PAT_SEQ_NUM,
         "treatmentArmVersion": TA_VERSION,
@@ -48,7 +49,7 @@ def create_expected_json(date_off_arm, index):
         "stepNumber": STEP_NUM,
         "diseases": DISEASES,
         "assignmentReason": ASSNMNT_REASON,
-        "assignmentReportIdx": index
+        "assignmentReportIdx": ASSNMNT_IDX,
     }
 
 
@@ -56,18 +57,18 @@ def create_expected_json(date_off_arm, index):
 @ddt
 class TestAssignmentRecord(unittest.TestCase):
     @data(
-        (create_assignment_rec_args(), DATE_OFF_ARM, 2),
-        (create_assignment_rec_args(), None, 3),
+        (create_assignment_rec_args(), DATE_OFF_ARM),
+        (create_assignment_rec_args(), None),
     )
     @unpack
-    def test_get_json(self, contructor_args, date_off_arm, index):
+    def test_get_json(self, contructor_args, date_off_arm):
 
         contructor_args.append(date_off_arm)
         assignment_rec = AssignmentRecord(*contructor_args)
-        exp_json = create_expected_json(date_off_arm, index)
+        exp_json = create_expected_json(date_off_arm)
 
         self.maxDiff = None
-        self.assertEqual(assignment_rec.get_json(index), exp_json)
+        self.assertEqual(assignment_rec.get_json(), exp_json)
 
 
 if __name__ == '__main__':

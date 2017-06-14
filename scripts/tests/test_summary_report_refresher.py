@@ -110,9 +110,9 @@ class RefresherTest(unittest.TestCase):
         self.maxDiff = None
 
         ar_records = []
-        for i, patient in enumerate(ar_patients):
+        for patient in ar_patients:
             assmt_rec = Refresher._create_assignment_record(Patient(patient), ta_data_for_sum_rpt['treatmentId'])
-            ar_records.append(assmt_rec.get_json(i))
+            ar_records.append(assmt_rec.get_json())
         expected_sum_rpt_json['assignmentRecords'] = ar_records
 
         pa_instance = mock_patient_accessor.return_value
