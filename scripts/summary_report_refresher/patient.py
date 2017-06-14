@@ -15,6 +15,7 @@ class Patient(object):
         """
         Provides easy "getter" access to the following items:
             currentPatientStatus
+            patientAssignmentIdx
             patientAssignments
             patientSequenceNumber
             currentStepNumber
@@ -108,3 +109,6 @@ class Patient(object):
                     break
 
         return analysis_id
+
+    def get_patient_assignment_step_number(self):
+        return self._pat['patientAssignments']['stepNumber']
