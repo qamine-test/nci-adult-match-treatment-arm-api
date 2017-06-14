@@ -23,7 +23,8 @@ class PatientAccessor(MongoDbAccessor):
         """
         self.logger.debug('Retrieving Patient documents for Summary Report Refresh analysis')
         return [pat for pat in
-                self.aggregate([{"$unwind": {path: "$patientAssignments", includeArrayIndex: "patientAssignmentIdx"}},
+                self.aggregate([{"$unwind": {"path": "$patientAssignments",
+                                             "includeArrayIndex": "patientAssignmentIdx"}},
                                 {"$match": {"patientAssignments.treatmentArm._id": trtmt_id}},
                                 {"$project": {"currentPatientStatus": 1,
                                               "patientAssignmentIdx": 1,
