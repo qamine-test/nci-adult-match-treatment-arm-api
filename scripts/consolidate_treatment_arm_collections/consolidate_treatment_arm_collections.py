@@ -35,12 +35,13 @@ import os
 import sys
 import uuid
 
+from config import log  # pylint: disable=unused-import
 from scripts.consolidate_treatment_arm_collections.consolidate_ta_mongo_db_accessor import MongoDbAccessor
 
 # Logging functionality
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.DEBUG)
-LOGGER.addHandler(logging.StreamHandler())
+# LOGGER.setLevel(logging.DEBUG)
+# LOGGER.addHandler(logging.StreamHandler())
 
 
 class ConverterBase(object):
@@ -170,7 +171,7 @@ def main(db_accessor):
         LOGGER.info("\n%d total documents inserted into treatmentArms.", doc_cnt)
 
     except Exception as e:
-        print("Unexpected error:", str(e))
+        LOGGER.exception("Unexpected error:", str(e))
         return -1
 
     return 0
