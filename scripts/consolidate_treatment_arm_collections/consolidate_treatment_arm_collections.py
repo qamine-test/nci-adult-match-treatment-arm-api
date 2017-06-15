@@ -171,7 +171,7 @@ def main(db_accessor):
         LOGGER.info("\n%d total documents inserted into treatmentArms.", doc_cnt)
 
     except Exception as e:
-        LOGGER.exception("Unexpected error:", str(e))
+        LOGGER.exception("Unexpected error:" + str(e))
         return -1
 
     return 0
