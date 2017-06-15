@@ -252,16 +252,21 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
           ]
          )
     )
+    @patch('scripts.consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.LOGGER')
     @patch('scripts.consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.MongoDbAccessor')
-    def test_convert_to_treatment_arms(self, indata, mock_db_accessor):
+    def test_convert_to_treatment_arms(self, indata, mock_db_accessor, mock_logger):
         mock_db_accessor.get_documents = lambda n: indata
         cnt = ctac.convert_to_treatment_arms(mock_db_accessor, ctac.TAConverter())
         self.assertEqual(cnt, len(indata))
 
+        mock_logger.debug.assert_called()
+        mock_logger.info.assert_called()
+
     @data([82], [0])
     @unpack
+    @patch('scripts.consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.LOGGER')
     @patch('scripts.consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.MongoDbAccessor')
-    def test_prepare_treatment_arms_collection(self, initial_doc_cnt, mock_db_accessor):
+    def test_prepare_treatment_arms_collection(self, initial_doc_cnt, mock_db_accessor, mock_logger):
         mock_db_accessor.get_document_count = lambda n: initial_doc_cnt
 
         def mock_clear():
@@ -270,6 +275,9 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
 
         cnt = ctac.prepare_treatment_arms_collection(mock_db_accessor)
         self.assertEqual(cnt, 0)
+
+        if initial_doc_cnt != 0:
+            mock_logger.info.assert_called()
 
     @data(
         # 1. Expected normal execution: both tables contain data with no errors
@@ -414,12 +422,17 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         )
     )
     @unpack
+    @patch('scripts.consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.LOGGER')
     @patch('scripts.consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.MongoDbAccessor')
-    def test_main(self, ta_data, tah_data, exp_ret_val, mock_db_accessor):
+    def test_main(self, ta_data, tah_data, exp_ret_val, mock_db_accessor, mock_logger):
         mock_db_accessor.get_documents = lambda n: ta_data if n == 'treatmentArm' else tah_data
         mock_db_accessor.get_document_count = lambda n: 0
         ret_val = ctac.main(mock_db_accessor)
         self.assertEqual(ret_val, exp_ret_val)
+        mock_logger.info.assert_called()
+        if ret_val != 0:
+            mock_logger.exception.assert_called_once()
+
 
 if __name__ == '__main__':
     unittest.main()
