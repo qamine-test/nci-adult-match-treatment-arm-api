@@ -23,21 +23,23 @@ class TreatmentArmMessageManager(object):
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.sqs = boto3.client('sqs', region_name=REGION)
+        self.sqs_client = boto3.client('sqs', region_name=REGION)
+        # print("self.sqs_client Type = "+str(type(self.sqs_client)))
         self._create_queue()
 
     def _create_queue(self):
-        response = self.sqs.create_queue(QueueName=TA_QUEUE_NAME)
+        response = self.sqs_client.create_queue(QueueName=TA_QUEUE_NAME)
+        # print("response Type = "+str(type(self.sqs_client)))
         self.queue_url = response['QueueUrl']
         self.logger.info("SQS queue {qn} created at {url}".format(qn=TA_QUEUE_NAME, url=self.queue_url))
 
     def _delete_queue(self):
-        self.sqs.delete_queue(QueueUrl=self.queue_url)
+        self.sqs_client.delete_queue(QueueUrl=self.queue_url)
 
     def run(self):
         time_to_stop = False
         while not time_to_stop:
-            response = self.sqs.receive_message(
+            response = self.sqs_client.receive_message(
                 QueueUrl=self.queue_url,
                 AttributeNames=[
                     'SentTimestamp'
@@ -58,7 +60,7 @@ class TreatmentArmMessageManager(object):
         self.logger.info("Message received: {msg}".format(msg=msg_body))
 
         # Delete received message from queue
-        self.sqs.delete_message(
+        self.sqs_client.delete_message(
             QueueUrl=self.queue_url,
             ReceiptHandle=message['ReceiptHandle']
         )
