@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-
+"""
+A script to run the Summary Report Refresh process manually.
+The primary use of this script is for development.  (Ordinarily, it will be executed via SQS message.)
+"""
 import logging
+
 from flask import Flask
 
 from config.flask_config import Configuration
 from config import log  # contains required log configuration; ignore Codacy complaints about unused code
 from scripts.summary_report_refresher.refresher import Refresher
-
 
 # Logging functionality
 LOGGER = logging.getLogger(__name__)
