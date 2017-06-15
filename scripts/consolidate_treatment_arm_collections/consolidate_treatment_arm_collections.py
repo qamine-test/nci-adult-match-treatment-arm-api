@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Consolidate collections treatmentArm and treatmentArmHistory into a single
 treatmentArms collection.
@@ -34,31 +35,12 @@ import os
 import sys
 import uuid
 
-import pymongo
+from scripts.consolidate_treatment_arm_collections.consolidate_ta_mongo_db_accessor import MongoDbAccessor
 
 # Logging functionality
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 LOGGER.addHandler(logging.StreamHandler())
-
-
-class MongoDbAccessor(object):
-
-    def __init__(self, uri, db):
-        mongo_client = pymongo.MongoClient(uri)
-        self.database = mongo_client[db]
-
-    def get_documents(self, coll_name):
-        return self.database[coll_name].find()
-
-    def get_document_count(self, coll_name):
-        return self.database[coll_name].find().count()
-
-    def put_treatment_arms_documents(self, doc):
-        return self.database.treatmentArms.insert_one(doc).inserted_id
-
-    def clear_treatment_arms(self):
-        self.database.treatmentArms.remove({})
 
 
 class ConverterBase(object):
@@ -200,7 +182,7 @@ def get_mongo_accessor():
         uri = os.environ['MONGODB_URI']
     else:
         LOGGER.debug("Connecting to local MongoDB")
-        uri = 'mongodb://localhost:27017/match'
+        uri = 'mongodb://localhost:27017/Match'
 
     # Some instances of the DB are named 'Match' and others 'match'.
     db = 'match' if '/match' in uri else 'Match'
@@ -209,7 +191,6 @@ def get_mongo_accessor():
 
 if __name__ == '__main__':
     if sys.version_info >= (3, 6, 0):
-        LOGGER.error("Script will not run with python 3.6; please use python 3.5\n")
-        exit(1)
+        LOGGER.warning("Script may not run with python 3.6; please try python 3.5 if you have problems.\n")
 
     exit(main(get_mongo_accessor()))
