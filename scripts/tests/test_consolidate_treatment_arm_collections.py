@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import datetime
 import unittest
 
@@ -17,7 +19,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
           '_id': 'EAY131-Q',
           'dateCreated': datetime.datetime(2016, 6, 2, 14, 56, 52, 704000),
           'exclusionCriterias': [],
-         'name': 'TDM1 in HER2 Amplification',
+          'name': 'TDM1 in HER2 Amplification',
           'version': '2016-05-31'},
          {'_class': 'gov.match.model.TreatmentArm',
           'treatmentId': 'EAY131-Q',
