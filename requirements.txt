@@ -22,7 +22,6 @@ pytz==2017.2
 six==1.10.0
 stevedore==1.21.0
 tornado==4.4.2
-urllib2
 virtualenv==15.1.0
 virtualenv-clone==0.2.6
 virtualenvwrapper==4.7.2
