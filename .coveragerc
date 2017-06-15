@@ -3,6 +3,7 @@ omit =
     */tests/*
     */accessors/*
     */data_setup/match/*
+    *accessor.py
 
 include =
    */common/*
