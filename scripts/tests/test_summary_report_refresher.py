@@ -102,10 +102,11 @@ class RefresherTest(unittest.TestCase):
          [CURRENT_PATIENT, PENDING_PATIENT, CURRENT_PATIENT]),
     )
     @unpack
+    @patch('scripts.summary_report_refresher.refresher.logging')
     @patch('scripts.summary_report_refresher.refresher.PatientAccessor')
     @patch('scripts.summary_report_refresher.refresher.TreatmentArmsAccessor')
     def test_update_summary_report(self, patients, ta_data_for_sum_rpt, expected_sum_rpt_json, ar_patients,
-                                   mock_ta_accessor, mock_patient_accessor):
+                                   mock_ta_accessor, mock_patient_accessor, mock_logging):
 
         self.maxDiff = None
 
