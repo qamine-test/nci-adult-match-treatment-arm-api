@@ -9,7 +9,6 @@ from flask import Flask
 
 from config.flask_config import Configuration
 from config import log  # pylint: disable=unused-import
-# from config import log  # contains required log configuration; ignore Codacy complaints about unused code
 from scripts.summary_report_refresher.refresher import Refresher
 
 # Logging functionality
