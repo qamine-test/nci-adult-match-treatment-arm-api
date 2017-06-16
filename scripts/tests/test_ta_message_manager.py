@@ -5,22 +5,22 @@ import unittest
 
 from ddt import ddt
 from mock import patch
-from moto import mock_sqs
+# from moto import mock_sqs
 
 from scripts.ta_message_manager import ta_message_manager as mm
 
-logging.getLogger('botocore').setLevel(logging.CRITICAL)  # Disable boto logging for unit tests.
+logging.getLogger('botocore').propagate = False # Disable boto logging for unit tests.
 
 # TEST_QUEUE_URL = 'https://queue.amazonaws.com/127516845550/TreatmentArmQueue'
 
 @ddt
 class MyTestCase(unittest.TestCase):
 
-    @mock_sqs
-    @patch('scripts.ta_message_manager.ta_message_manager.logging')
-    def test_constructor(self, mock_logging):
-        tamm = mm.TreatmentArmMessageManager()
-        self.assertRegex(tamm.queue_url, "https:\/\/queue.amazonaws.com\/\d+\/"+mm.TA_QUEUE_NAME)
+    # @mock_sqs
+    # @patch('scripts.ta_message_manager.ta_message_manager.logging')
+    # def test_constructor(self, mock_logging):
+    #     tamm = mm.TreatmentArmMessageManager()
+    #     self.assertRegex(tamm.queue_url, "https:\/\/queue.amazonaws.com\/\d+\/"+mm.TA_QUEUE_NAME)
 
 # @patch('scripts.ta_message_manager.ta_message_manager.boto3')
     # def test_constructor(self, mock_boto3):
