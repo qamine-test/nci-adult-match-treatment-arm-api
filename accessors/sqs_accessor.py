@@ -1,3 +1,7 @@
+"""
+Implements the SqsAccessor class, a wrapper around the Amazon Simple Queue Service (SQS):
+https://boto3.readthedocs.io/en/latest/reference/services/sqs.html
+"""
 import boto3
 
 REGION = 'us-east-1'
