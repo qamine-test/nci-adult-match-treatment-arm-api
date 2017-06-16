@@ -15,7 +15,7 @@ logging.getLogger('botocore').propagate = False # Disable boto logging for unit 
 
 @ddt
 class MyTestCase(unittest.TestCase):
-
+    pass
     # @mock_sqs
     # @patch('scripts.ta_message_manager.ta_message_manager.logging')
     # def test_constructor(self, mock_logging):
