@@ -3,67 +3,50 @@
 import logging
 import time
 
-import boto3
 from flask import Flask
 
-from config.flask_config import Configuration
+from accessors.sqs_accessor import SqsAccessor
 from config import log  # pylint: disable=unused-import
+from config.flask_config import Configuration
 from scripts.summary_report_refresher.refresher import Refresher
 
 APP = Flask(__name__)
 APP.config.from_object(Configuration)
 
 TA_QUEUE_NAME = "TreatmentArmQueue"
-REGION = 'us-east-1'
+DEFAULT_SLEEP_TIME = 10  # Time to sleep between checking for messages; in seconds.
 REFRESH_MSG = "RefreshSummaryReport"
 STOP_MSG = "STOP"
 
 
 class TreatmentArmMessageManager(object):
 
-    def __init__(self):
+    def __init__(self, sleep_time=DEFAULT_SLEEP_TIME):
         self.logger = logging.getLogger(__name__)
-        self.sqs_client = boto3.client('sqs', region_name=REGION)
-        # print("self.sqs_client Type = "+str(type(self.sqs_client)))
-        self._create_queue()
-
-    def _create_queue(self):
-        response = self.sqs_client.create_queue(QueueName=TA_QUEUE_NAME)
-        # print("response Type = "+str(type(self.sqs_client)))
-        self.queue_url = response['QueueUrl']
-        self.logger.info("SQS queue {qn} created at {url}".format(qn=TA_QUEUE_NAME, url=self.queue_url))
-
-    def _delete_queue(self):
-        self.sqs_client.delete_queue(QueueUrl=self.queue_url)
+        self.sleep_time = sleep_time
+        self.queue = SqsAccessor(TA_QUEUE_NAME)
+        self.logger.info("SQS queue {qn} created at {url}".format(qn=TA_QUEUE_NAME, url=self.queue.queue_url))
 
     def run(self):
         time_to_stop = False
         while not time_to_stop:
-            response = self.sqs_client.receive_message(
-                QueueUrl=self.queue_url,
-                AttributeNames=[
-                    'SentTimestamp'
-                ],
-                MaxNumberOfMessages=1,)
+            response = self.queue.receive_message(['SentTimestamp'])
 
-            import pprint
-            pprint.pprint(response)
+            # import pprint
+            # pprint.pprint(response)
 
             if 'Messages' in response and len(response['Messages']):
                 message = response['Messages'][0]
                 time_to_stop = self._handle_message(message)
 
-            time.sleep(10)
+            time.sleep(self.sleep_time)
 
     def _handle_message(self, message):
         msg_body = message['Body']
         self.logger.info("Message received: {msg}".format(msg=msg_body))
 
         # Delete received message from queue
-        self.sqs_client.delete_message(
-            QueueUrl=self.queue_url,
-            ReceiptHandle=message['ReceiptHandle']
-        )
+        self.queue.delete_message(message)
 
         # Now handle the message
         rcvd_stop_msg = False
@@ -71,7 +54,7 @@ class TreatmentArmMessageManager(object):
             self._refresh_summary_report()
         elif msg_body == STOP_MSG:
             rcvd_stop_msg = True
-            self._delete_queue()
+            # self._delete_queue()
         else:
             self.logger.error("Unknown message received: {}".format(msg_body))
 
@@ -84,20 +67,16 @@ class TreatmentArmMessageManager(object):
         try:
             with APP.app_context():
                 Refresher().run()
-        except Exception as exc:
-            self.logger.exception(str(exc))
+        except Exception as e:
+            self.logger.exception(str(e))
             return_code = 1
 
-            self.logger.info("Summary Report Refresher completed with exit code {}".format(return_code))
+            self.logger.info("Summary Report Refresher completed with return code {}".format(return_code))
         return return_code
 
 
 def send_message_to_ta_queue(msg):
-    sqs = boto3.client('sqs', region_name=REGION)
-    queue = sqs.get_queue_url(QueueName=TA_QUEUE_NAME)
-    response = sqs.send_message(
-        QueueUrl=queue['QueueUrl'],
-        MessageBody=msg,)
+    response = SqsAccessor(TA_QUEUE_NAME).send_message(msg)
     print(str(response))
 
 if __name__ == '__main__':
