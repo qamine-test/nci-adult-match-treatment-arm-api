@@ -13,8 +13,10 @@ logging.getLogger('botocore').propagate = False # Disable boto logging for unit 
 TEST_QUEUE_URL = 'https://queue.amazonaws.com/127516845550/TreatmentArmQueue'
 
 @ddt
-class MyTestCase(unittest.TestCase):
+class TreatmentArmsMessageManagerTestCase(unittest.TestCase):
 
+    # All of the test methods required patched SqsAccessor and logger objects, so those
+    # are created here.
     def setUp(self):
         queue_patcher = patch('scripts.ta_message_manager.ta_message_manager.SqsAccessor')
         self.addCleanup(queue_patcher.stop)
@@ -23,6 +25,7 @@ class MyTestCase(unittest.TestCase):
         self.addCleanup(logging_patcher.stop)
         self.mock_logger = logging_patcher.start().getLogger()
 
+    # Test the TreatmentArmsMessageManager constructor method.
     def test_constructor(self):
         queue_instance = self.mock_queue.return_value
         queue_instance.queue_name = mm.TA_QUEUE_NAME
@@ -34,9 +37,12 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(tamm.sleep_time, mm.DEFAULT_SLEEP_TIME)
         self.mock_logger.info.assert_called_once()
 
+    # Test the TreatmentArmsMessageManager run method.
     def test_run(self):
         queue_instance = self.mock_queue.return_value
-        queue_instance.receive_message.side_effect = [{}, {'Messages':['1']}, {'Messages':['1']}, {}, {'Messages':['1']}]
+        MESSAGE = {'Messages': ['1']}
+        NO_MESSAGE = {}
+        queue_instance.receive_message.side_effect = [NO_MESSAGE, MESSAGE, MESSAGE, NO_MESSAGE, NO_MESSAGE, MESSAGE]
 
         mock_handle_message = MagicMock(side_effect=[False, False, True])
 
@@ -46,6 +52,7 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(mock_handle_message.call_count, 3)
 
+    # Test the TreatmentArmsMessageManager _handle_message method.
     @data(
         (mm.REFRESH_MSG, False, False),
         (mm.STOP_MSG, True, False),
@@ -67,6 +74,7 @@ class MyTestCase(unittest.TestCase):
         else:
             self.mock_logger.error.assert_not_called()
 
+    # Test the TreatmentArmsMessageManager _refresh_summary_report method with normal execution.
     @patch('scripts.ta_message_manager.ta_message_manager.Refresher')
     def test_refresh_summary_report(self, mock_refresher):
         tamm = mm.TreatmentArmMessageManager()
@@ -74,6 +82,7 @@ class MyTestCase(unittest.TestCase):
         ret_code = tamm._refresh_summary_report()
         self.assertEqual(ret_code, 0)
 
+    # Test the TreatmentArmsMessageManager _refresh_summary_report method with exception.
     @patch('scripts.ta_message_manager.ta_message_manager.Refresher')
     def test_refresh_summary_report_with_exc(self, mock_refresher):
         tamm = mm.TreatmentArmMessageManager()
@@ -83,6 +92,7 @@ class MyTestCase(unittest.TestCase):
         ret_code = tamm._refresh_summary_report()
         self.assertEqual(ret_code, 1)
 
+    # Test the send_message_to_ta_queue function.
     def test_send_message_ta_queue(self):
         mm.send_message_to_ta_queue(mm.STOP_MSG)
         self.mock_queue.return_value.send_message.assert_called_with(mm.STOP_MSG)
