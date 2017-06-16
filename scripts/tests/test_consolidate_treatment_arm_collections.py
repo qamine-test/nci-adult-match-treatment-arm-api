@@ -8,6 +8,7 @@ from mock import patch
 
 from scripts.consolidate_treatment_arm_collections import consolidate_treatment_arm_collections as ctac
 
+SCRIPT_PATH = 'scripts.consolidate_treatment_arm_collections.consolidate_treatment_arm_collections'
 
 @ddt
 class TestConsolidateTreatmentArmCollections(unittest.TestCase):
@@ -254,8 +255,8 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
           ]
          )
     )
-    @patch('scripts.consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.LOGGER')
-    @patch('scripts.consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.MongoDbAccessor')
+    @patch(SCRIPT_PATH + '.LOGGER')
+    @patch(SCRIPT_PATH + '.MongoDbAccessor')
     def test_convert_to_treatment_arms(self, indata, mock_db_accessor, mock_logger):
         mock_db_accessor.get_documents = lambda n: indata
         cnt = ctac.convert_to_treatment_arms(mock_db_accessor, ctac.TAConverter())
@@ -266,8 +267,8 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
 
     @data([82], [0])
     @unpack
-    @patch('scripts.consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.LOGGER')
-    @patch('scripts.consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.MongoDbAccessor')
+    @patch(SCRIPT_PATH + '.LOGGER')
+    @patch(SCRIPT_PATH + '.MongoDbAccessor')
     def test_prepare_treatment_arms_collection(self, initial_doc_cnt, mock_db_accessor, mock_logger):
         mock_db_accessor.get_document_count = lambda n: initial_doc_cnt
 
@@ -424,8 +425,8 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         )
     )
     @unpack
-    @patch('scripts.consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.LOGGER')
-    @patch('scripts.consolidate_treatment_arm_collections.consolidate_treatment_arm_collections.MongoDbAccessor')
+    @patch(SCRIPT_PATH + '.LOGGER')
+    @patch(SCRIPT_PATH + '.MongoDbAccessor')
     def test_main(self, ta_data, tah_data, exp_ret_val, mock_db_accessor, mock_logger):
         mock_db_accessor.get_documents = lambda n: ta_data if n == 'treatmentArm' else tah_data
         mock_db_accessor.get_document_count = lambda n: 0
@@ -435,6 +436,21 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         if ret_val != 0:
             mock_logger.exception.assert_called_once()
 
+
+    # Test the get_mongo_accessor() function
+    @data(
+        ({}, ctac.LOCAL_DB_DEBUG_LOG_MSG),
+        ({'MONGODB_URI': 'mongodb://www.abcdefg.com/Match'}, ctac.ENV_VAR_DEBUG_LOG_MSG),
+    )
+    @unpack
+    @patch(SCRIPT_PATH + '.LOGGER')
+    @patch(SCRIPT_PATH + '.MongoDbAccessor')
+    def test_get_mongo_accessor(self, env_dict, exp_log_msg, mock_db_accessor, mock_logger):
+        with patch.dict(SCRIPT_PATH + '.os.environ', env_dict):
+            db_accessor = ctac.get_mongo_accessor()
+
+            mock_logger.debug.assert_called_with(exp_log_msg)
+            self.assertIs(db_accessor, mock_db_accessor.return_value)
 
 if __name__ == '__main__':
     unittest.main()
