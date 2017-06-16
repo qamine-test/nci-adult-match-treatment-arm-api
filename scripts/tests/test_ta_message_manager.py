@@ -15,7 +15,7 @@ TEST_QUEUE_URL = 'https://queue.amazonaws.com/127516845550/TreatmentArmQueue'
 @ddt
 class TreatmentArmsMessageManagerTestCase(unittest.TestCase):
 
-    # All of the test methods required patched SqsAccessor and logger objects, so those
+    # All of the test methods require patched SqsAccessor and logger objects, so those
     # are created here.
     def setUp(self):
         queue_patcher = patch('scripts.ta_message_manager.ta_message_manager.SqsAccessor')
@@ -42,7 +42,7 @@ class TreatmentArmsMessageManagerTestCase(unittest.TestCase):
         queue_instance = self.mock_queue.return_value
         MESSAGE = {'Messages': ['1']}
         NO_MESSAGE = {}
-        queue_instance.receive_message.side_effect = [NO_MESSAGE, MESSAGE, MESSAGE, NO_MESSAGE, NO_MESSAGE, MESSAGE]
+        queue_instance.receive_message.side_effect = [NO_MESSAGE, MESSAGE, MESSAGE, NO_MESSAGE, MESSAGE]
 
         mock_handle_message = MagicMock(side_effect=[False, False, True])
 
@@ -50,7 +50,7 @@ class TreatmentArmsMessageManagerTestCase(unittest.TestCase):
         tamm._handle_message = mock_handle_message
         tamm.run()
 
-        self.assertEqual(mock_handle_message.call_count, 3)
+        self.assertEqual(mock_handle_message.call_count, 3) # should only be called when there is a message
 
     # Test the TreatmentArmsMessageManager _handle_message method.
     @data(
