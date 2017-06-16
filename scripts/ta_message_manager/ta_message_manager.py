@@ -15,6 +15,8 @@ APP.config.from_object(Configuration)
 
 TA_QUEUE_NAME = "TreatmentArmQueue"
 DEFAULT_SLEEP_TIME = 10  # Time to sleep between checking for messages; in seconds.
+
+# Recoginized messages:
 REFRESH_MSG = "RefreshSummaryReport"
 STOP_MSG = "STOP"
 
@@ -22,12 +24,20 @@ STOP_MSG = "STOP"
 class TreatmentArmMessageManager(object):
 
     def __init__(self, sleep_time=DEFAULT_SLEEP_TIME):
+        """
+        Creates the Treatment Arms API message queue.
+        :param sleep_time: interval, in seconds, for checking the queue for messages.
+        """
         self.logger = logging.getLogger(__name__)
         self.sleep_time = sleep_time
         self.queue = SqsAccessor(TA_QUEUE_NAME)
+
         self.logger.info("SQS queue {qn} created at {url}".format(qn=TA_QUEUE_NAME, url=self.queue.queue_url))
 
     def run(self):
+        """
+        Runs continually, periodically checking the queue for messages, until a STOP message is received.
+        """
         time_to_stop = False
         while not time_to_stop:
             response = self.queue.receive_message(['SentTimestamp'])
@@ -42,6 +52,11 @@ class TreatmentArmMessageManager(object):
             time.sleep(self.sleep_time)
 
     def _handle_message(self, message):
+        """
+        Takes the proper actions based on the passed in message.
+        :param message: the 'Body' should be one of the recognized messages
+        :return: True if the STOP message was received; otherwise False
+        """
         msg_body = message['Body']
         self.logger.info("Message received: {msg}".format(msg=msg_body))
 
@@ -61,6 +76,10 @@ class TreatmentArmMessageManager(object):
         return rcvd_stop_msg
 
     def _refresh_summary_report(self):
+        """
+        Runs the Summary Report Refresh.
+        :return: 0 if successful; otherwise 1.
+        """
         self.logger.info("Starting the Summary Report Refresher")
 
         return_code = 0
@@ -76,6 +95,11 @@ class TreatmentArmMessageManager(object):
 
 
 def send_message_to_ta_queue(msg):
+    """
+    Convenience function to make simple the send of a message.
+    :param msg: the message body string
+    :return: the response dict returned from SQS
+    """
     response = SqsAccessor(TA_QUEUE_NAME).send_message(msg)
     # print(str(response))
     return response
