@@ -177,13 +177,17 @@ def main(db_accessor):
     return 0
 
 
+LOCAL_DB_DEBUG_LOG_MSG = "Connecting to local MongoDB"
+ENV_VAR_DEBUG_LOG_MSG = "Connecting to MongoDB specified in MONGODB_URI"
+DEFAULT_URI = 'mongodb://localhost:27017/Match'
+
 def get_mongo_accessor():
     if 'MONGODB_URI' in os.environ:
-        LOGGER.debug("Connecting to MongoDB specified in MONGODB_URI")
+        LOGGER.debug(ENV_VAR_DEBUG_LOG_MSG)
         uri = os.environ['MONGODB_URI']
     else:
-        LOGGER.debug("Connecting to local MongoDB")
-        uri = 'mongodb://localhost:27017/Match'
+        LOGGER.debug(LOCAL_DB_DEBUG_LOG_MSG)
+        uri = DEFAULT_URI
 
     # Some instances of the DB are named 'Match' and others 'match'.
     db = 'match' if '/match' in uri else 'Match'
