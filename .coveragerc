@@ -4,8 +4,8 @@ omit =
     */accessors/*
     */data_setup/match/*
     *accessor.py
-    /Library/Frameworks/Python.framework/Versions/3.5/lib/python3.5/site-packages/boto3/*
-
+    */boto3/*
+    
 include =
    */common/*
    */resource_helpers/*
