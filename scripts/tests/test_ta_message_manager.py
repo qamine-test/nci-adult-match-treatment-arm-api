@@ -14,6 +14,8 @@ logging.getLogger('botocore').propagate = False # Disable boto logging for unit 
 TEST_QUEUE_URL = 'https://queue.amazonaws.com/127516845550/TreatmentArmQueue'
 
 @ddt
+@patch('scripts.ta_message_manager.ta_message_manager.logging')
+@patch('scripts.ta_message_manager.ta_message_manager.SqsAccessor')
 class MyTestCase(unittest.TestCase):
     # @mock_sqs
     # @patch('scripts.ta_message_manager.ta_message_manager.logging')
@@ -21,8 +23,7 @@ class MyTestCase(unittest.TestCase):
     #     tamm = mm.TreatmentArmMessageManager()
     #     self.assertRegex(tamm.queue_url, "https:\/\/queue.amazonaws.com\/\d+\/"+mm.TA_QUEUE_NAME)
 
-    @patch('scripts.ta_message_manager.ta_message_manager.logging')
-    @patch('scripts.ta_message_manager.ta_message_manager.SqsAccessor')
+
     def test_constructor(self, mock_queue, mock_logging):
         queue_instance = mock_queue.return_value
         queue_instance.queue_name = mm.TA_QUEUE_NAME
@@ -36,8 +37,6 @@ class MyTestCase(unittest.TestCase):
         mock_logger = mock_logging.getLogger()
         mock_logger.info.assert_called_once()
 
-    @patch('scripts.ta_message_manager.ta_message_manager.logging')
-    @patch('scripts.ta_message_manager.ta_message_manager.SqsAccessor')
     def test_run(self, mock_queue, mock_logging):
         queue_instance = mock_queue.return_value
         queue_instance.receive_message.side_effect = [{}, {'Messages':['1']}, {'Messages':['1']}, {}, {'Messages':['1']}]
@@ -56,8 +55,6 @@ class MyTestCase(unittest.TestCase):
         ("UnknownMessage", False, True),
     )
     @unpack
-    @patch('scripts.ta_message_manager.ta_message_manager.logging')
-    @patch('scripts.ta_message_manager.ta_message_manager.SqsAccessor')
     def test_handle_message(self, msg, exp_ret_val, exp_error, mock_queue, mock_logging):
         queue_instance = mock_queue.return_value
 
@@ -74,14 +71,26 @@ class MyTestCase(unittest.TestCase):
         else:
             mock_logger.error.assert_not_called()
 
-    @patch('scripts.ta_message_manager.ta_message_manager.logging')
-    @patch('scripts.ta_message_manager.ta_message_manager.SqsAccessor')
     @patch('scripts.ta_message_manager.ta_message_manager.Refresher')
     def test_refresh_summary_report(self, mock_refresher, mock_queue, mock_logging):
         tamm = mm.TreatmentArmMessageManager()
 
         ret_code = tamm._refresh_summary_report()
         self.assertEqual(ret_code, 0)
+
+    @patch('scripts.ta_message_manager.ta_message_manager.Refresher')
+    def test_refresh_summary_report_with_exc(self, mock_refresher, mock_queue, mock_logging):
+        tamm = mm.TreatmentArmMessageManager()
+
+        instance = mock_refresher
+        mock_refresher.return_value.run.side_effect = Exception()
+
+        ret_code = tamm._refresh_summary_report()
+        self.assertEqual(ret_code, 1)
+
+    def test_send_message_ta_queue(self, mock_queue, mock_logging):
+        mm.send_message_to_ta_queue(mm.STOP_MSG)
+        mock_queue.return_value.send_message.assert_called_with(mm.STOP_MSG)
 
             # @patch('scripts.ta_message_manager.ta_message_manager.boto3')
     # def test_constructor(self, mock_queue):
