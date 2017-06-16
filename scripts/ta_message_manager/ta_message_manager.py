@@ -77,7 +77,8 @@ class TreatmentArmMessageManager(object):
 
 def send_message_to_ta_queue(msg):
     response = SqsAccessor(TA_QUEUE_NAME).send_message(msg)
-    print(str(response))
+    # print(str(response))
+    return response
 
 if __name__ == '__main__':
     logger = logging.getLogger(__name__)
