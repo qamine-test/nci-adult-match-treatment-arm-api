@@ -7,7 +7,7 @@
 
 * [Install Python3.6.1](http://www.marinamele.com/2014/07/install-python3-on-mac-os-x-and-use-virtualenv-and-virtualenvwrapper.html)
 * [Setup Virtual Environments](https://realpython.com/blog/python/python-virtual-environments-a-primer/)
-* Required Python modules:  pymongo, flask, flask_env, flask_cors, flask_restful
+* Required Python modules:  pymongo, flask, flask_env, flask_cors, flask_restful, boto3
 
 ## Development Setup
 
@@ -127,17 +127,38 @@ coverage run -m unittest discover tests; coverage report -m
 ```
 
 ## Scripts
+To run the scripts from their source directory, make sure that the path to the TreatmentArmAPI root directory is included in the PYTHONPATH
+environment variable.  Otherwise, they can be run from the root directory as shown below.
+
+The scripts require the following:
+
+* python 3
+* pymongo 3.4 python module
+
+Defaults to connect to the MongoDB at ```mongodb://localhost:27017/Match```; can be overwritten by setting the MONGODB_URI 
+environment variable to the desired URI.
 
 ####consolidate_treatment_arms
 Merge the treatmentArm and treatmentArm collections in MongoDB Match database into single treatmentArms collection.
 
- 
-* python 3 (must be 3.5 or earlier)
-* pymongo 3.4 python module
-
-Defaults to connect to the MongoDB at ```mongodb://localhost:27017/match```; can be overwritten by setting the MONGODB_URI 
-environment variable to the desired URI.
-
 ```#!/bin/bash
 python3 scripts/consolidate_treatment_arm_collections/consolidate_treatment_arm_collections.py
 ```
+
+####refresh_summary_report.py
+Refreshes the summaryReport field of the active arms in the treatmentArms collection.  Ordinarily this process will be 
+started via message to the TreatmentArmQueue in SQS.  Running the script manually as shown below is provided primarily 
+to make development and testing easier.
+
+```#!/bin/bash
+python3 scripts/summary_report_refresher/refresh_summary_report.py
+```
+
+####ta_message_manager.py
+Creates and monitors the TreatmentArmQueue in SQS.
+```#!/bin/bash
+python3 scripts/ta_message_manager/ta_message_manager.py
+```
+Currently only responds to two messages:
+* "RefreshSummaryReport":  runs the summary report refresh process.
+* "STOP":  shuts down the ta_message_manager.
