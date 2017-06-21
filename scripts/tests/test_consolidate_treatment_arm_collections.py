@@ -443,14 +443,16 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         ({'MONGODB_URI': 'mongodb://www.abcdefg.com/Match'}, ctac.ENV_VAR_DEBUG_LOG_MSG),
     )
     @unpack
+    @patch(SCRIPT_PATH + '.os')
     @patch(SCRIPT_PATH + '.LOGGER')
     @patch(SCRIPT_PATH + '.MongoDbAccessor')
-    def test_get_mongo_accessor(self, env_dict, exp_log_msg, mock_db_accessor, mock_logger):
-        with patch.dict(SCRIPT_PATH + '.os.environ', env_dict):
-            db_accessor = ctac.get_mongo_accessor()
+    def test_get_mongo_accessor(self, env_dict, exp_log_msg, mock_db_accessor, mock_logger, mock_os):
+        mock_os.environ = env_dict
 
-            mock_logger.debug.assert_called_with(exp_log_msg)
-            self.assertIs(db_accessor, mock_db_accessor.return_value)
+        db_accessor = ctac.get_mongo_accessor()
+
+        mock_logger.debug.assert_called_with(exp_log_msg)
+        self.assertIs(db_accessor, mock_db_accessor.return_value)
 
 if __name__ == '__main__':
     unittest.main()
