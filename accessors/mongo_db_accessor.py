@@ -17,7 +17,8 @@ class MongoDbAccessor(object):
         uri = flask.current_app.config["MONGODB_URI"]
         db = flask.current_app.config["DB_NAME"]
 
-        logger.debug("Connecting to database at {}".format(uri))
+        # Commented out because pw is in URI in INT environment
+        # logger.debug("Connecting to database at {}".format(uri))
         self.mongo_client = MongoClient(uri)
         self.database = self.mongo_client[db]
         self.collection = self.database[collection_name]
