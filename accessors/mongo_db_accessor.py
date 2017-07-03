@@ -43,7 +43,7 @@ class MongoDbAccessor(object):
         """
         Returns the number of items from the collection using a query.
         """
-        self.logger.debug('Counting  documents in database'.format(cn=self.collection_name))
+        self.logger.debug('Counting {cn} documents in database'.format(cn=self.collection_name))
         return self.collection.count(query)
 
     def aggregate(self, pipeline):
