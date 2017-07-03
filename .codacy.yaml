@@ -6,5 +6,5 @@ engines:
 
 exclude_paths:
   - data_setup/*
+  - data_setup/match/*
   - .vscode/*
-  
