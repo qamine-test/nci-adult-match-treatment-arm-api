@@ -80,7 +80,7 @@ After you've restored the backup you may check the restored data (while still at
 ```bash
 mongo shell
 show dbs
-use match
+use Match
 show collections
 db.treatmentArms.count()
 ```
