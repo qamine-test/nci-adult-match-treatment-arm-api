@@ -10,4 +10,4 @@ duplication:
     - scripts/tests/test_consolidate_treatment_arm_collections.py
 
 exclude_paths:
-  - '*.json'
+  - '**.json'
