@@ -4,11 +4,10 @@ engines:
     enabled: true
     python_version: 3
 
-exclude_paths:
-  - **.json
-
 duplication:
   enabled: true
   exclude_paths:
     - scripts/tests/test_consolidate_treatment_arm_collections.py
 
+exclude_paths:
+  - '*.json'
