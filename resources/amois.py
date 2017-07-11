@@ -284,7 +284,7 @@ class AmoisResource(Resource):
         return args
 
     # @staticmethod
-    def get(self):
+    def patch(self):
         """
         Gets the AMOIS data and annotates the given Variant Report with it in the following format:
 
