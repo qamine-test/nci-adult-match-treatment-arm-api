@@ -6,12 +6,11 @@ from datetime import datetime
 from ddt import ddt, data, unpack
 from mock import patch, MagicMock
 
+from scripts.summary_report_refresher.assignment_record import AssignmentRecord
 from scripts.summary_report_refresher.patient import Patient
 from scripts.summary_report_refresher.refresher import Refresher
 from scripts.summary_report_refresher.summary_report import SummaryReport
-from scripts.tests.patient_data import create_patient, create_patient_trigger, NOT_ENROLLED_PATIENT, FORMER_PATIENT, \
-    PENDING_PATIENT, CURRENT_PATIENT, NONE_PATIENT, REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER
-
+from scripts.tests import patient_data as pd
 
 # ******** Test Data Constants and Helper Functions to build data structures used in test cases ******** #
 
@@ -48,8 +47,8 @@ FORM_IDX = 2
 NOEN_IDX = 3
 AREC_IDX = 4
 
-TRIGGERS_FOR_NOT_ENROLLED = [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER,
-                             create_patient_trigger('NOT_ELIGIBLE')]
+TRIGGERS_FOR_NOT_ENROLLED = [pd.REGISTRATION_TRIGGER, pd.PENDING_CONF_TRIGGER, pd.PENDING_APPR_TRIGGER,
+                             pd.create_patient_trigger('NOT_ELIGIBLE')]
 
 DATE_NOW = datetime(2016, 11, 1)  # used for mocking datetime.now()
 
@@ -66,7 +65,7 @@ class RefresherTest(unittest.TestCase):
     @unpack
     def test_match(self, patient_status, sum_rpt_data, exp_results):
         sr = SummaryReport(sum_rpt_data)
-        patient = Patient(create_patient(current_patient_status=patient_status))
+        patient = Patient(pd.create_patient(current_patient_status=patient_status))
         Refresher._match(patient, sr)
 
         self.maxDiff = None
@@ -81,25 +80,25 @@ class RefresherTest(unittest.TestCase):
         # 1. no patients associated with treatmentArm
         ([], DEFAULT_TA, create_sr_json(), []),
         # 2. only patients with no treatmentArm
-        ([NONE_PATIENT], DEFAULT_TA, create_sr_json(), []),
+        ([pd.NONE_PATIENT], DEFAULT_TA, create_sr_json(), []),
         # 3. a matching patient that was considered but not enrolled
-        ([NOT_ENROLLED_PATIENT], DEFAULT_TA, create_sr_json(numNotEnrolledPatient=1), [NOT_ENROLLED_PATIENT]),
+        ([pd.NOT_ENROLLED_PATIENT], DEFAULT_TA, create_sr_json(numNotEnrolledPatient=1), [pd.NOT_ENROLLED_PATIENT]),
         # 4. a matching former patient
-        ([FORMER_PATIENT], DEFAULT_TA, create_sr_json(numFormerPatients=1), [FORMER_PATIENT]),
+        ([pd.FORMER_PATIENT], DEFAULT_TA, create_sr_json(numFormerPatients=1), [pd.FORMER_PATIENT]),
         # 5. a matching pending patient
-        ([PENDING_PATIENT], DEFAULT_TA, create_sr_json(numPendingArmApproval=1), [PENDING_PATIENT]),
+        ([pd.PENDING_PATIENT], DEFAULT_TA, create_sr_json(numPendingArmApproval=1), [pd.PENDING_PATIENT]),
         # 6. a matching current patient
-        ([CURRENT_PATIENT], DEFAULT_TA, create_sr_json(numCurrentPatientsOnArm=1), [CURRENT_PATIENT]),
+        ([pd.CURRENT_PATIENT], DEFAULT_TA, create_sr_json(numCurrentPatientsOnArm=1), [pd.CURRENT_PATIENT]),
         # 7. a matching current and former patient, plus one non-matching patient
-        ([CURRENT_PATIENT, NONE_PATIENT, FORMER_PATIENT],
+        ([pd.CURRENT_PATIENT, pd.NONE_PATIENT, pd.FORMER_PATIENT],
          DEFAULT_TA,
          create_sr_json(numCurrentPatientsOnArm=1, numFormerPatients=1),
-         [CURRENT_PATIENT, FORMER_PATIENT]),
+         [pd.CURRENT_PATIENT, pd.FORMER_PATIENT]),
         # 8. two matching current patients, one pending patient, plus two non-matching patients
-        ([NONE_PATIENT, CURRENT_PATIENT, PENDING_PATIENT, CURRENT_PATIENT, NONE_PATIENT],
+        ([pd.NONE_PATIENT, pd.CURRENT_PATIENT, pd.PENDING_PATIENT, pd.CURRENT_PATIENT, pd.NONE_PATIENT],
          DEFAULT_TA,
          create_sr_json(numCurrentPatientsOnArm=2, numPendingArmApproval=1),
-         [CURRENT_PATIENT, PENDING_PATIENT, CURRENT_PATIENT]),
+         [pd.CURRENT_PATIENT, pd.PENDING_PATIENT, pd.CURRENT_PATIENT]),
     )
     @unpack
     @patch('scripts.summary_report_refresher.refresher.logging')
@@ -174,11 +173,53 @@ class RefresherTest(unittest.TestCase):
     @unpack
     def test_determine_patient_classification(self, patient_status, trigger_types, expected_patient_type):
         if trigger_types is not None:
-            patient = create_patient(current_patient_status=patient_status, triggers=trigger_types)
+            patient = pd.create_patient(current_patient_status=patient_status, triggers=trigger_types)
         else:
-            patient = create_patient(current_patient_status=patient_status)
+            patient = pd.create_patient(current_patient_status=patient_status)
         patient_type = Refresher._determine_patient_classification(Patient(patient))
         self.assertEqual(patient_type, expected_patient_type)
+
+    @data(
+        (pd.PENDING_PATIENT, pd.MATCHING_LOGIC['treatmentArmId'],
+         [pd.PENDING_PATIENT['patientSequenceNumber'], pd.MATCHING_LOGIC['treatmentArmVersion'],
+          pd.PENDING_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
+          pd.PENDING_PATIENT['patientAssignments']['stepNumber'], pd.PENDING_PATIENT['diseases'],
+          pd.MATCHING_ANALYSIS_ID, pd.PENDING_PATIENT['patientAssignmentIdx'],
+          pd.PENDING_PATIENT['patientAssignments']['dateAssigned'], None, None
+          ]),
+        (pd.CURRENT_PATIENT, pd.MATCHING_LOGIC['treatmentArmId'],
+         [pd.CURRENT_PATIENT['patientSequenceNumber'], pd.MATCHING_LOGIC['treatmentArmVersion'],
+          pd.CURRENT_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
+          pd.CURRENT_PATIENT['patientAssignments']['stepNumber'], pd.CURRENT_PATIENT['diseases'],
+          pd.MATCHING_ANALYSIS_ID, pd.CURRENT_PATIENT['patientAssignmentIdx'],
+          pd.CURRENT_PATIENT['patientAssignments']['dateAssigned'],
+          pd.ON_ARM_DATE, None
+          ]),
+        (pd.FORMER_PATIENT, pd.MATCHING_LOGIC['treatmentArmId'],
+         [pd.FORMER_PATIENT['patientSequenceNumber'], pd.MATCHING_LOGIC['treatmentArmVersion'],
+          pd.FORMER_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
+          pd.FORMER_PATIENT['patientAssignments']['stepNumber'], pd.FORMER_PATIENT['diseases'],
+          pd.MATCHING_ANALYSIS_ID, pd.FORMER_PATIENT['patientAssignmentIdx'],
+          pd.FORMER_PATIENT['patientAssignments']['dateAssigned'],
+          pd.ON_ARM_DATE, pd.OFF_ARM_DATE
+          ])
+    )
+    @unpack
+    def test_create_assignment_record(self, patient, trtmtId, ar_constructor_args):
+        exp_ar = AssignmentRecord(*ar_constructor_args)
+        ar = Refresher._create_assignment_record(Patient(patient), trtmtId)
+
+        self.assertEqual(ar.patient_sequence_number, exp_ar.patient_sequence_number)
+        self.assertEqual(ar.treatment_arm_version, exp_ar.treatment_arm_version)
+        self.assertEqual(ar.assignment_status_outcome, exp_ar.assignment_status_outcome)
+        self.assertEqual(ar.analysis_id, exp_ar.analysis_id)
+        self.assertEqual(ar.patient_assmt_idx, exp_ar.patient_assmt_idx)
+        self.assertEqual(ar.date_selected, exp_ar.date_selected)
+        self.assertEqual(ar.date_on_arm, exp_ar.date_on_arm)
+        self.assertEqual(ar.date_off_arm, exp_ar.date_off_arm)
+        self.assertEqual(ar.step_number, exp_ar.step_number)
+        self.assertEqual(ar.diseases, exp_ar.diseases)
+        self.assertEqual(ar.assignment_reason, exp_ar.assignment_reason)
 
 
 if __name__ == '__main__':

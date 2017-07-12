@@ -1,4 +1,4 @@
-class AssignmentRecord:
+class AssignmentRecord(object):
     """
     An object to store all of the data required in the AssignmentRecords field of the summaryReport
     subcollection of the TreatmentArms collection in the match MongoDb database.

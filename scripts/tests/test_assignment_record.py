@@ -61,10 +61,10 @@ class TestAssignmentRecord(unittest.TestCase):
         (create_assignment_rec_args(), None),
     )
     @unpack
-    def test_get_json(self, contructor_args, date_off_arm):
+    def test_get_json(self, constructor_args, date_off_arm):
 
-        contructor_args.append(date_off_arm)
-        assignment_rec = AssignmentRecord(*contructor_args)
+        constructor_args.append(date_off_arm)
+        assignment_rec = AssignmentRecord(*constructor_args)
         exp_json = create_expected_json(date_off_arm)
 
         self.maxDiff = None

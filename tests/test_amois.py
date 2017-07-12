@@ -159,7 +159,7 @@ class TestAmoisAnnotator(unittest.TestCase):
          {'CURRENT': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}]}),
         ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', True, "OPEN"),
           ta_nh_rule("1", "1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
-          ta_id_rule("EDBCA", 'EAY131-P', '2016-11-11', True),],
+          ta_id_rule("EDBCA", 'EAY131-P', '2016-11-11', True)],
          {'CURRENT': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True, 'type': 'Both'},
                       {'treatmentId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False, 'type': 'NonHotspot'}]}),
         ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN", True),
@@ -419,7 +419,8 @@ class TestAmoisResource(unittest.TestCase):
             "unifiedGeneFusions": [],
           },
          {'PRIOR': [{'treatmentId': 'SNVARM-A', 'version': '2016-12-20', 'inclusion': True, 'type': 'Hotspot'}],
-          'CURRENT': [{'treatmentId': 'NONHOTSPOTARM-B', 'version': '2016-11-20', 'inclusion': True, 'type': 'NonHotspot'}],
+          'CURRENT': [{'treatmentId': 'NONHOTSPOTARM-B', 'version': '2016-11-20',
+                       'inclusion': True, 'type': 'NonHotspot'}],
           },
          [snv_rules[0], nh_rules[2]]),
         ({
@@ -443,7 +444,7 @@ class TestAmoisResource(unittest.TestCase):
 
         )
     @unpack
-    def test_get(self, vr_json, exp_anno_amois, mock_find_amois_ret_val, mock_find_amois, mock_ta_accessor):
+    def test_patch(self, vr_json, exp_anno_amois, mock_find_amois_ret_val, mock_find_amois, mock_ta_accessor):
         self.maxDiff = None
 
         mock_find_amois.return_value = mock_find_amois_ret_val
@@ -454,9 +455,9 @@ class TestAmoisResource(unittest.TestCase):
             if exp_anno_amois:
                 exp_result['amois'] = exp_anno_amois
 
-            response = self.app.get('/amois',
-                                    data=json.dumps(vr_json),
-                                    content_type='application/json')
+            response = self.app.patch('/amois',
+                                      data=json.dumps(vr_json),
+                                      content_type='application/json')
             result = json.loads(response.get_data().decode("utf-8"))
 
             self.assertEqual(result, exp_result)
@@ -478,16 +479,16 @@ class TestAmoisResource(unittest.TestCase):
         )
     @unpack
     @patch('resources.amois.logging')
-    def test_get_with_error(self, vr_json, exp_anno_amois, mock_logging, mock_find_amois, mock_ta_accessor):
+    def test_patch_with_error(self, vr_json, exp_anno_amois, mock_logging, mock_find_amois, mock_ta_accessor):
         with APP.test_request_context(''):
             exp_result = vr_json
             if exp_anno_amois:
                 exp_result['amois'] = exp_anno_amois
             self.maxDiff = None
 
-            response = self.app.get('/amois',
-                                    data=json.dumps(vr_json),
-                                    content_type='application/json')
+            response = self.app.patch('/amois',
+                                      data=json.dumps(vr_json),
+                                      content_type='application/json')
             # self.assertEqual(json.loads(response.get_data().decode("utf-8")), exp_result)
             self.assertEqual(response.status_code, 404)
 

@@ -11,7 +11,7 @@ ON_ARM_STATUS = 'ON_TREATMENT_ARM'
 PENDING_STATUS = 'PENDING_APPROVAL'
 
 
-class Refresher:
+class Refresher(object):
     OTHER_STATUSES = [
         'OFF_TRIAL_NO_TA_AVAILABLE',
         'OFF_TRIAL_DECEASED',
@@ -94,15 +94,13 @@ class Refresher:
 
         return match_type
 
-    # def __init__(self, pat_seq_num, ta_version, assnmnt_status, assnmnt_reason, step_num, diseases, analysis_id,
-    #              date_selected, date_on_arm, date_off_arm=None):
     @staticmethod
     def _create_assignment_record(patient, ta_id):
         """
-
-        :param patient:
-        :param ta_id:
-        :return:
+        Creates an assignment record for the given patient based on the given Treatment Arm ID.
+        :param patient: the Patient object for the patient
+        :param ta_id: the treatment arm ID
+        :return: the created AssignmentRecord for patient and ta_id
         """
         ta_version = patient.treatment_arm_version()
         (date_on_arm, date_off_arm) = patient.get_dates_on_off_arm()
@@ -114,8 +112,8 @@ class Refresher:
                                 patient.get_patient_assignment_step_number(),
                                 patient.diseases,
                                 patient.get_analysis_id(),
+                                patient.patientAssignmentIdx,
                                 patient.get_date_assigned(),
                                 date_on_arm,
                                 date_off_arm,
-                                patient.patientAssignmentIdx
                                 )

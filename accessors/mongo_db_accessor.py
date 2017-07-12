@@ -17,7 +17,8 @@ class MongoDbAccessor(object):
         uri = flask.current_app.config["MONGODB_URI"]
         db = flask.current_app.config["DB_NAME"]
 
-        logger.debug("Connecting to database at {}".format(uri))
+        # Commented out because pw is in URI in INT environment
+        # logger.debug("Connecting to database at {}".format(uri))
         self.mongo_client = MongoClient(uri)
         self.database = self.mongo_client[db]
         self.collection = self.database[collection_name]
@@ -42,7 +43,7 @@ class MongoDbAccessor(object):
         """
         Returns the number of items from the collection using a query.
         """
-        self.logger.debug('Counting  documents in database'.format(cn=self.collection_name))
+        self.logger.debug('Counting {cn} documents in database'.format(cn=self.collection_name))
         return self.collection.count(query)
 
     def aggregate(self, pipeline):

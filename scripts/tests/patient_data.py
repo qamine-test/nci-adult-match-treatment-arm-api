@@ -207,7 +207,8 @@ NOT_ENROLLED_PATIENT = create_patient(
         create_patient_assignment_logic("EAY131-U"),
     ],
     'OFF_TRIAL_DECEASED',
-    PATIENT_TREATMENT_ARM
+    PATIENT_TREATMENT_ARM,
+    biopsies=[MATCHING_GOOD_BIOPSY1]
 )
 FORMER_PATIENT = create_patient(
     [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, ON_ARM_TRIGGER, DECEASED_TRIGGER],
@@ -218,7 +219,8 @@ FORMER_PATIENT = create_patient(
         create_patient_assignment_logic("EAY131-E"),
     ],
     'OFF_TRIAL_DECEASED',
-    PATIENT_TREATMENT_ARM
+    PATIENT_TREATMENT_ARM,
+    biopsies=[MATCHING_GOOD_BIOPSY1]
 )
 PENDING_PATIENT = create_patient(
     [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER],
@@ -229,7 +231,8 @@ PENDING_PATIENT = create_patient(
         create_patient_assignment_logic("EAY131-U"),
     ],
     'PENDING_APPROVAL',
-    PATIENT_TREATMENT_ARM
+    PATIENT_TREATMENT_ARM,
+    biopsies=[MATCHING_GOOD_BIOPSY1]
 )
 CURRENT_PATIENT = create_patient(
     [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, ON_ARM_TRIGGER],
@@ -240,7 +243,8 @@ CURRENT_PATIENT = create_patient(
         create_patient_assignment_logic("EAY131-E"),
     ],
     'ON_TREATMENT_ARM',
-    PATIENT_TREATMENT_ARM
+    PATIENT_TREATMENT_ARM,
+    biopsies=[MATCHING_GOOD_BIOPSY1]
 )
 NONE_PATIENT = create_patient(
     [
