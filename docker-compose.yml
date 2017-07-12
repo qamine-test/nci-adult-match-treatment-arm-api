@@ -10,6 +10,7 @@ services:
       - mongo
     environment:
       - MONGODB_URI=mongodb://mongo:27017/Match
+      - ENVIRONMENT=development
   mongo:
     image: mongo:3.4.0
     volumes:
