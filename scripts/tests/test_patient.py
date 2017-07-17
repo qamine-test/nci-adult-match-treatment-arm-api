@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import datetime
 import unittest
 
 from ddt import ddt, data, unpack
@@ -68,6 +69,36 @@ class TestPatient(unittest.TestCase):
         (date_on, date_off) = p.get_dates_on_off_arm()
         self.assertEqual(date_on, exp_date_on)
         self.assertEqual(date_off, exp_date_off)
+
+    # Test the Patient.get_dates_status_from_arm method.
+    @data(
+        # (pd.REGISTERED_PATIENT, None, None, None),
+        # (pd.PENDING_PATIENT, None, None, 'PENDING_APPROVAL'),
+        # (pd.CURRENT_PATIENT, pd.ON_ARM_DATE, None, 'ON_TREATMENT_ARM'),
+        # (pd.FORMER_PATIENT, pd.ON_ARM_DATE, pd.OFF_ARM_DATE, 'OFF_TRIAL_DECEASED'),
+        (pd.OFF_STUDY_REJOIN_PATIENT, None, None, 'PENDING_CONFIRMATION'),
+    )
+    @unpack
+    def test_get_dates_status_from_arm(self, patient_data, exp_date_on, exp_date_off, exp_status):
+        p = Patient(patient_data)
+        # import pprint
+        # pprint.pprint(p._pat)
+        (date_on, date_off, status) = p.get_dates_status_from_arm()
+        self.assertEqual(date_on, exp_date_on)
+        self.assertEqual(date_off, exp_date_off)
+        self.assertEqual(status, exp_status)
+
+    # Test Patient._trigger_belongs_to_assignment method.
+    @data(
+        (pd.PENDING_CONF_TRIGGER, pd.PENDING_CONF_DATE, True),
+        (pd.PENDING_CONF_TRIGGER, pd.PENDING_CONF_DATE - datetime.timedelta(seconds=299), True),
+        (pd.PENDING_CONF_TRIGGER, pd.PENDING_CONF_DATE - datetime.timedelta(seconds=300), False),
+        (pd.PENDING_CONF_TRIGGER, pd.PENDING_CONF_DATE + datetime.timedelta(seconds=1), False),
+    )
+    @unpack
+    def test_trigger_belongs_to_assignment(self, trigger, assignment_date, exp_result):
+        result = Patient._trigger_belongs_to_assignment(trigger, assignment_date)
+        self.assertEqual(result, exp_result)
 
     # Test the Patient.get_date_assigned method.
     @data(

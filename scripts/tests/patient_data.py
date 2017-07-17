@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from bson import ObjectId
 
@@ -11,6 +11,15 @@ def create_patient_assignment_logic(trtmt_id, ver="2015-08-06", reason="The pati
         "reason": reason,
         "patientAssignmentReasonCategory": category
     }
+
+
+ASSIGNMENT_DATE = datetime(2015, 9, 29)
+PENDING_CONF_DATE = datetime(2015, 9, 29, 0, 0, 1)
+PENDING_OFF_STUDY_DATE = datetime(2015, 9, 12, 10, 10, 10)
+PENDING_APPR_DATE = datetime(2015, 9, 30, 0, 1)
+PENDING_APPR_DATE2 = datetime(2015, 9, 30, 12, 1)
+ON_ARM_DATE = datetime(2015, 10, 1)
+OFF_ARM_DATE = datetime(2016, 3, 1)
 
 
 def create_patient_trigger(patient_status, message=None, date_created=None):
@@ -31,22 +40,32 @@ def create_patient_trigger(patient_status, message=None, date_created=None):
     return trigger
 
 
+REGISTRATION_TRIGGER = create_patient_trigger("REGISTRATION", message="Patient registration to step 0.")
+PENDING_CONF_TRIGGER = create_patient_trigger("PENDING_CONFIRMATION", date_created=PENDING_CONF_DATE)
+PENDING_OFF_STUDY_TRIGGER = create_patient_trigger("PENDING_OFF_STUDY", date_created=PENDING_OFF_STUDY_DATE)
+PENDING_APPR_TRIGGER = create_patient_trigger("PENDING_APPROVAL", date_created=PENDING_APPR_DATE)
+DECEASED_TRIGGER = create_patient_trigger("OFF_TRIAL_DECEASED", date_created=OFF_ARM_DATE)
+ON_ARM_TRIGGER = create_patient_trigger("ON_TREATMENT_ARM",
+                                        message="Patient registration to assigned treatment arm EAY131-B",
+                                        date_created=ON_ARM_DATE)
 DEFAULT_TRIGGERS = [
-        create_patient_trigger("REGISTRATION", "Patient registration to step 0."),
-        create_patient_trigger("PENDING_CONFIRMATION"),
-        create_patient_trigger("PENDING_APPROVAL"),
-        create_patient_trigger("PENDING_APPROVAL"),
-        create_patient_trigger("ON_TREATMENT_ARM", "Patient registration to assigned treatment arm EAY131-B"),
+        REGISTRATION_TRIGGER,
+        PENDING_CONF_TRIGGER,
+        PENDING_APPR_TRIGGER,
+        create_patient_trigger("PENDING_APPROVAL", date_created=PENDING_APPR_DATE2),
+        ON_ARM_TRIGGER,
     ]
 
 MATCHING_LOGIC = \
     create_patient_assignment_logic("EAY131-B",
-                                    reason="The patient and treatment arm match on variant identifier [COSM94225,COSM14062].",
+                                    reason="The patient and treatment arm match on variant identifier "
+                                           "[COSM94225,COSM14062].",
                                     category="SELECTED")
 
 DEFAULT_ASSIGNMENT_LOGICS = [
     create_patient_assignment_logic("EAY131-Q",
-                                    reason="The patient is excluded from this treatment arm because the patient has disease(s) Invasive breast carcinoma.",
+                                    reason="The patient is excluded from this treatment arm because the patient has "
+                                           "disease(s) Invasive breast carcinoma.",
                                     category="RECORD_BASED_EXCLUSION"),
     create_patient_assignment_logic("EAY131-U"),
     create_patient_assignment_logic("EAY131-F"),
@@ -70,10 +89,6 @@ PATIENT_TREATMENT_ARM = {
     "maxPatientsAllowed": 35,
     "treatmentArmStatus": "OPEN",
 }
-
-ON_ARM_DATE = datetime(2015, 10, 1)
-OFF_ARM_DATE = datetime(2016, 3, 1)
-ASSIGNMENT_DATE = datetime(2015, 9, 29)
 
 
 def create_next_generation_sequence(status, job_name):
@@ -130,7 +145,9 @@ DEFAULT_PAT_ASSNMNT_STEP_NUM = "0"
 
 def create_patient(triggers=None, assignment_logics=None,
                    current_patient_status='ON_TREATMENT_ARM',
-                   treatment_arm=None, biopsies=None, patient_assmnt_idx=DEFAULT_ASSIGNMENT_IDX):
+                   treatment_arm=None, biopsies=None, patient_assmnt_idx=DEFAULT_ASSIGNMENT_IDX,
+                   assignment_date=ASSIGNMENT_DATE
+                   ):
     if triggers is None:
         triggers = DEFAULT_TRIGGERS
     if assignment_logics is None:
@@ -161,7 +178,7 @@ def create_patient(triggers=None, assignment_logics=None,
     if len(assignment_logics):
         patient['patientAssignmentIdx'] = patient_assmnt_idx
         patient['patientAssignments'] = {
-            "dateAssigned": ASSIGNMENT_DATE,
+            "dateAssigned": assignment_date,
             "biopsySequenceNumber": MATCHING_BIOPSY_SEQ_NUM,
             "patientAssignmentStatus": "AVAILABLE",
             "patientAssignmentLogic": assignment_logics,
@@ -189,14 +206,6 @@ def create_patient(triggers=None, assignment_logics=None,
 
 TEST_PATIENT_NO_TA = create_patient(current_patient_status='OFF_TRIAL', treatment_arm=None)
 TEST_PATIENT = create_patient(DEFAULT_TRIGGERS, DEFAULT_ASSIGNMENT_LOGICS, 'ON_TREATMENT_ARM', PATIENT_TREATMENT_ARM)
-
-REGISTRATION_TRIGGER = create_patient_trigger("REGISTRATION", message="Patient registration to step 0.")
-PENDING_CONF_TRIGGER = create_patient_trigger("PENDING_CONFIRMATION")
-PENDING_APPR_TRIGGER = create_patient_trigger("PENDING_APPROVAL")
-DECEASED_TRIGGER = create_patient_trigger("OFF_TRIAL_DECEASED", date_created=OFF_ARM_DATE)
-ON_ARM_TRIGGER = create_patient_trigger("ON_TREATMENT_ARM",
-                                        message="Patient registration to assigned treatment arm EAY131-B",
-                                        date_created=ON_ARM_DATE)
 
 NOT_ENROLLED_PATIENT = create_patient(
     [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, DECEASED_TRIGGER],
@@ -234,16 +243,20 @@ PENDING_PATIENT = create_patient(
     PATIENT_TREATMENT_ARM,
     biopsies=[MATCHING_GOOD_BIOPSY1]
 )
+
+# current_patient_status = 'ON_TREATMENT_ARM',
+# treatment_arm = None, biopsies = None, patient_assmnt_idx = DEFAULT_ASSIGNMENT_IDX):
+
 CURRENT_PATIENT = create_patient(
-    [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, ON_ARM_TRIGGER],
-    [
+    triggers=[REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, ON_ARM_TRIGGER],
+    assignment_logics = [
         create_patient_assignment_logic("EAY131-H"),
         MATCHING_LOGIC,
         create_patient_assignment_logic("EAY131-G"),
         create_patient_assignment_logic("EAY131-E"),
     ],
-    'ON_TREATMENT_ARM',
-    PATIENT_TREATMENT_ARM,
+    current_patient_status='ON_TREATMENT_ARM',
+    treatment_arm=PATIENT_TREATMENT_ARM,
     biopsies=[MATCHING_GOOD_BIOPSY1]
 )
 NONE_PATIENT = create_patient(
@@ -268,4 +281,21 @@ REGISTERED_PATIENT = create_patient(
     [],  # No assignments yet
     'REGISTERED',
     None
+)
+REJOIN_DATE = PENDING_OFF_STUDY_DATE + timedelta(days=2)
+NEW_PENDING_CONF_DATE = PENDING_OFF_STUDY_DATE + timedelta(days=3)
+OFF_STUDY_REJOIN_PATIENT = create_patient(
+    triggers=[REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_OFF_STUDY_TRIGGER,
+              create_patient_trigger('REJOIN', date_created=REJOIN_DATE),
+              create_patient_trigger('PENDING_CONFIRMATION', date_created=NEW_PENDING_CONF_DATE),
+              ],
+    assignment_logics = [
+        create_patient_assignment_logic("EAY131-H"),
+        create_patient_assignment_logic("EAY131-G"),
+        create_patient_assignment_logic("EAY131-E"),
+    ],
+    current_patient_status='PENDING_CONFIRMATION',
+    treatment_arm=PATIENT_TREATMENT_ARM,
+    biopsies=[MATCHING_GOOD_BIOPSY1],
+    assignment_date=NEW_PENDING_CONF_DATE
 )
