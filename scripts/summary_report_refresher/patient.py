@@ -60,6 +60,65 @@ class Patient(object):
                 return assignment_logic['reason']
         return None
 
+    def get_dates_status_from_arm(self):
+        """
+        Determines the date the patient went on/off the arm along with the last status.
+        If the patient is still on the arm, the date the patient went off the arm will be None.
+        If the patient never went on the arm, both dates will be None.
+        :return: a three-item tuple: (date on arm, date off arm, last satus)
+        """
+        date_on_arm = None
+        date_off_arm = None
+        status = None
+        assignment_flag = False
+
+        for trigger in self._pat['patientTriggers']:
+            if trigger['patientStatus'] == "PENDING_CONFIRMATION":
+                if assignment_flag:
+                    if date_on_arm:
+                        date_off_arm = trigger['dateCreated']
+                    break
+
+                if self._trigger_belongs_to_assignment(trigger, self._pat['patientAssignments']['dateAssigned']):
+                    print("got here!")
+                    assignment_flag = True
+                    status = trigger['patientStatus']
+
+            elif assignment_flag:
+                status = trigger['patientStatus']
+                print("got here, too! {}".format(status))
+                if status == "ON_TREATMENT_ARM":
+                    date_on_arm = trigger['dateCreated']
+                elif status == "PENDING_OFF_STUDY":
+                    assignment_flag = False
+                    date_on_arm = None
+                    status = None
+                elif status != "PENDING_APPROVAL":
+                    if date_on_arm:
+                        date_off_arm = trigger['dateCreated']
+                    break
+
+        return (date_on_arm, date_off_arm, status)
+
+    @staticmethod
+    def _trigger_belongs_to_assignment(trigger, assignment_date):
+        """
+        Does the given trigger belong to the current assignment for the patient?  It will be considered so if
+        if it was created within five minutes of the the assignment_date.
+        :param trigger: the trigger being analyzed
+        :return: True/False
+        """
+        belongs = False
+        delta = trigger['dateCreated'] - assignment_date
+        # print('Trigger: (' + repr(trigger['dateCreated']) + ') vs (' +
+        #       repr(self._pat['patientAssignments']['dateAssigned']) +') delta (' + repr(delta.total_seconds()) + ')')
+
+        # let's give ourselves a 5 min window - is a bit large but ....
+        if delta.total_seconds() >= 0 and delta.total_seconds() < 300:
+            belongs = True
+
+        return belongs
+
     def get_dates_on_off_arm(self):
         """
         Determines the date the patient went on the arm and the date the patient went off the arm.
@@ -76,7 +135,7 @@ class Patient(object):
                     date_off_arm = self._pat['patientTriggers'][i+1]['dateCreated']
                 break
 
-        return (date_on_arm, date_off_arm)
+        return date_on_arm, date_off_arm
 
     def get_date_assigned(self):
         """
