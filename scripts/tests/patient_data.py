@@ -285,7 +285,7 @@ REGISTERED_PATIENT = create_patient(
 REJOIN_DATE = PENDING_OFF_STUDY_DATE + timedelta(days=2)
 NEW_PENDING_CONF_DATE = PENDING_OFF_STUDY_DATE + timedelta(days=3)
 OFF_STUDY_REJOIN_PATIENT = create_patient(
-    triggers=[REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_OFF_STUDY_TRIGGER,
+    triggers=[REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER,
               create_patient_trigger('REJOIN', date_created=REJOIN_DATE),
               create_patient_trigger('PENDING_CONFIRMATION', date_created=NEW_PENDING_CONF_DATE),
               ],
@@ -298,4 +298,39 @@ OFF_STUDY_REJOIN_PATIENT = create_patient(
     treatment_arm=PATIENT_TREATMENT_ARM,
     biopsies=[MATCHING_GOOD_BIOPSY1],
     assignment_date=NEW_PENDING_CONF_DATE
+)
+PENDING_CONF_APPR_CONF_PATIENT = create_patient(
+    triggers=[REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER,
+              # I don't think that in the real world a PENDING_CONFIRMATION trigger would follow a PENDING_APPROVAL
+              # trigger, but it is a case that the code handles and therefore it must be tested.
+              create_patient_trigger('PENDING_CONFIRMATION', date_created=PENDING_APPR_DATE + timedelta(minutes=2)),
+              ],
+    assignment_logics = [
+        create_patient_assignment_logic("EAY131-H"),
+        create_patient_assignment_logic("EAY131-G"),
+        create_patient_assignment_logic("EAY131-E"),
+        MATCHING_LOGIC,
+    ],
+    current_patient_status='PENDING_CONFIRMATION',
+    treatment_arm=PATIENT_TREATMENT_ARM,
+    biopsies=[MATCHING_GOOD_BIOPSY1],
+    assignment_date=PENDING_CONF_DATE
+)
+
+PENDING_ON_PENDING_PATIENT = create_patient(
+    triggers=[REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, ON_ARM_TRIGGER,
+              # I don't think that in the real world a PENDING_CONFIRMATION trigger would follow a ON_TREATMENT_ARM
+              # trigger, but it is a case that the code handles and therefore it must be tested.
+              create_patient_trigger('PENDING_CONFIRMATION', date_created=NEW_PENDING_CONF_DATE),
+              ],
+    assignment_logics = [
+        create_patient_assignment_logic("EAY131-H"),
+        create_patient_assignment_logic("EAY131-G"),
+        create_patient_assignment_logic("EAY131-E"),
+        MATCHING_LOGIC,
+    ],
+    current_patient_status='PENDING_CONFIRMATION',
+    treatment_arm=PATIENT_TREATMENT_ARM,
+    biopsies=[MATCHING_GOOD_BIOPSY1],
+    assignment_date=PENDING_CONF_DATE
 )

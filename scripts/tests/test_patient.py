@@ -72,17 +72,17 @@ class TestPatient(unittest.TestCase):
 
     # Test the Patient.get_dates_status_from_arm method.
     @data(
-        # (pd.REGISTERED_PATIENT, None, None, None),
-        # (pd.PENDING_PATIENT, None, None, 'PENDING_APPROVAL'),
-        # (pd.CURRENT_PATIENT, pd.ON_ARM_DATE, None, 'ON_TREATMENT_ARM'),
-        # (pd.FORMER_PATIENT, pd.ON_ARM_DATE, pd.OFF_ARM_DATE, 'OFF_TRIAL_DECEASED'),
+        (pd.REGISTERED_PATIENT, None, None, None),
+        (pd.PENDING_PATIENT, None, None, 'PENDING_APPROVAL'),
+        (pd.CURRENT_PATIENT, pd.ON_ARM_DATE, None, 'ON_TREATMENT_ARM'),
+        (pd.FORMER_PATIENT, pd.ON_ARM_DATE, pd.OFF_ARM_DATE, 'OFF_TRIAL_DECEASED'),
         (pd.OFF_STUDY_REJOIN_PATIENT, None, None, 'PENDING_CONFIRMATION'),
+        (pd.PENDING_CONF_APPR_CONF_PATIENT, None, None, 'PENDING_APPROVAL'),
+        (pd.PENDING_ON_PENDING_PATIENT, pd.ON_ARM_DATE, pd.NEW_PENDING_CONF_DATE, 'ON_TREATMENT_ARM'),
     )
     @unpack
     def test_get_dates_status_from_arm(self, patient_data, exp_date_on, exp_date_off, exp_status):
         p = Patient(patient_data)
-        # import pprint
-        # pprint.pprint(p._pat)
         (date_on, date_off, status) = p.get_dates_status_from_arm()
         self.assertEqual(date_on, exp_date_on)
         self.assertEqual(date_off, exp_date_off)
