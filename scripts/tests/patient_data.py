@@ -146,7 +146,7 @@ DEFAULT_PAT_ASSNMNT_STEP_NUM = "0"
 def create_patient(triggers=None, assignment_logics=None,
                    current_patient_status='ON_TREATMENT_ARM',
                    treatment_arm=None, biopsies=None, patient_assmnt_idx=DEFAULT_ASSIGNMENT_IDX,
-                   assignment_date=ASSIGNMENT_DATE
+                   assignment_date=ASSIGNMENT_DATE, patient_sequence_number="14400"
                    ):
     if triggers is None:
         triggers = DEFAULT_TRIGGERS
@@ -158,7 +158,7 @@ def create_patient(triggers=None, assignment_logics=None,
 
     patient = {
         "_id": ObjectId("55e9e33600929ab89f5499a1"),
-        "patientSequenceNumber": "14400",
+        "patientSequenceNumber": patient_sequence_number,
         "patientTriggers": triggers,
         "biopsies": biopsies,
         "currentStepNumber": "1",
@@ -217,7 +217,8 @@ NOT_ENROLLED_PATIENT = create_patient(
     ],
     'OFF_TRIAL_DECEASED',
     PATIENT_TREATMENT_ARM,
-    biopsies=[MATCHING_GOOD_BIOPSY1]
+    biopsies=[MATCHING_GOOD_BIOPSY1],
+    patient_sequence_number="14441"
 )
 FORMER_PATIENT = create_patient(
     [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, ON_ARM_TRIGGER, DECEASED_TRIGGER],
@@ -229,7 +230,8 @@ FORMER_PATIENT = create_patient(
     ],
     'OFF_TRIAL_DECEASED',
     PATIENT_TREATMENT_ARM,
-    biopsies=[MATCHING_GOOD_BIOPSY1]
+    biopsies=[MATCHING_GOOD_BIOPSY1],
+    patient_sequence_number = "14442"
 )
 PENDING_PATIENT = create_patient(
     [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER],
@@ -241,7 +243,8 @@ PENDING_PATIENT = create_patient(
     ],
     'PENDING_APPROVAL',
     PATIENT_TREATMENT_ARM,
-    biopsies=[MATCHING_GOOD_BIOPSY1]
+    biopsies=[MATCHING_GOOD_BIOPSY1],
+    patient_sequence_number = "14443"
 )
 
 # current_patient_status = 'ON_TREATMENT_ARM',
@@ -257,7 +260,8 @@ CURRENT_PATIENT = create_patient(
     ],
     current_patient_status='ON_TREATMENT_ARM',
     treatment_arm=PATIENT_TREATMENT_ARM,
-    biopsies=[MATCHING_GOOD_BIOPSY1]
+    biopsies=[MATCHING_GOOD_BIOPSY1],
+    patient_sequence_number = "14444"
 )
 NONE_PATIENT = create_patient(
     [
@@ -272,7 +276,8 @@ NONE_PATIENT = create_patient(
         create_patient_assignment_logic("EAY131-E"),
     ],
     'OFF_TRIAL_NO_TA_AVAILABLE',
-    None
+    None,
+    patient_sequence_number = "14445"
 )
 REGISTERED_PATIENT = create_patient(
     [
@@ -280,7 +285,8 @@ REGISTERED_PATIENT = create_patient(
     ],
     [],  # No assignments yet
     'REGISTERED',
-    None
+    None,
+    patient_sequence_number = "14446"
 )
 REJOIN_DATE = PENDING_OFF_STUDY_DATE + timedelta(days=2)
 NEW_PENDING_CONF_DATE = PENDING_OFF_STUDY_DATE + timedelta(days=3)
@@ -297,7 +303,8 @@ OFF_STUDY_REJOIN_PATIENT = create_patient(
     current_patient_status='PENDING_CONFIRMATION',
     treatment_arm=PATIENT_TREATMENT_ARM,
     biopsies=[MATCHING_GOOD_BIOPSY1],
-    assignment_date=NEW_PENDING_CONF_DATE
+    assignment_date=NEW_PENDING_CONF_DATE,
+    patient_sequence_number = "14447"
 )
 PENDING_CONF_APPR_CONF_PATIENT = create_patient(
     triggers=[REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER,
@@ -314,7 +321,8 @@ PENDING_CONF_APPR_CONF_PATIENT = create_patient(
     current_patient_status='PENDING_CONFIRMATION',
     treatment_arm=PATIENT_TREATMENT_ARM,
     biopsies=[MATCHING_GOOD_BIOPSY1],
-    assignment_date=PENDING_CONF_DATE
+    assignment_date=PENDING_CONF_DATE,
+    patient_sequence_number = "14448"
 )
 
 PENDING_ON_PENDING_PATIENT = create_patient(
@@ -332,5 +340,6 @@ PENDING_ON_PENDING_PATIENT = create_patient(
     current_patient_status='PENDING_CONFIRMATION',
     treatment_arm=PATIENT_TREATMENT_ARM,
     biopsies=[MATCHING_GOOD_BIOPSY1],
-    assignment_date=PENDING_CONF_DATE
+    assignment_date=PENDING_CONF_DATE,
+    patient_sequence_number = "14449"
 )
