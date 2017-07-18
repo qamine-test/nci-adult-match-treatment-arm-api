@@ -12,14 +12,15 @@ PENDING_STATUS = 'PENDING_APPROVAL'
 
 
 class Refresher(object):
-    OTHER_STATUSES = [
-        'OFF_TRIAL_NO_TA_AVAILABLE',
-        'OFF_TRIAL_DECEASED',
-        'OFF_TRIAL',
-        'OFF_TRIAL_BIOPSY_EXPIRED',
-        'OFF_TRIAL_NOT_CONSENTED',
-        'REJOIN_REQUESTED',
-    ]
+    # OTHER_STATUSES = [
+    #     'OFF_TRIAL_NO_TA_AVAILABLE',
+    #     'OFF_TRIAL_DECEASED',
+    #     'OFF_TRIAL',
+    #     'OFF_TRIAL_BIOPSY_EXPIRED',
+    #     'OFF_TRIAL_NOT_CONSENTED',
+    #     'REJOIN_REQUESTED',
+    #     'PROGRESSION_REBIOPSY',
+    # ]
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
@@ -52,6 +53,19 @@ class Refresher(object):
         """
         # Get all patients associated with the Treatment Arm of the given Summary Report
         patients = [Patient(p) for p in self.pat_accessor.get_patients_by_treatment_arm_id(sum_rpt.treatmentId)]
+
+        # since a patient can be assigned a arm more than once (different versions), we want to clean up this
+        # list prior to moving on... NOTE: a patient can only go ON the arm once
+        pat_id = []
+        for pat in patients:
+            if pat.patientSequenceNumber in pat_id:
+                # we need to remove the old pat from the list
+                i = pat_id.index(pat.patientSequenceNumber)
+                pat_id.pop(i)
+                patients.pop(i)
+            # add to our list
+            pat_id.append(pat.patientSequenceNumber)
+
         self.logger.debug("{cnt} patients returned for '{trtmt_id}"
                           .format(cnt=len(patients), trtmt_id=sum_rpt.treatmentId))
 
@@ -62,34 +76,66 @@ class Refresher(object):
         # Update the summary report in the treatmentArms collection on the database
         return self.ta_accessor.update_summary_report(sum_rpt._id, sum_rpt.get_json())
 
+    # @staticmethod
+    # def _matchOrig(patient, sum_rpt):
+    #     patient_type = Refresher._determine_patient_classification(patient)
+    #     # print("patient_type = {pt}".format(pt=str(patient_type)))
+    #
+    #     if patient_type is not None:
+    #         assignment_rec = Refresher._create_assignment_record(patient, sum_rpt.treatmentId)
+    #         sum_rpt.add_patient_by_type(patient_type, assignment_rec)
+    #
+    # @staticmethod
+    # def _determine_patient_classification(patient):
+    #     """
+    #     Determines if patient is a patient currently on the the Treatment Arm, pending for the Treatment Arm,
+    #     formerly on the Treatment Arm, or once considered but not enrolled on the Treatment Arm.
+    #     :param patient: a Patient
+    #     :return: SummaryReport.CURRENT, SummaryReport.PENDING, SummaryReport.FORMER,
+    #              SummaryReport.NOT_ENROLLED, or None
+    #     """
+    #     match_type = None
+    #
+    #     patient_status = patient.currentPatientStatus
+    #     if patient_status == ON_ARM_STATUS:
+    #         match_type = SummaryReport.CURRENT
+    #     elif patient_status == PENDING_STATUS:
+    #         match_type = SummaryReport.PENDING
+    #     elif patient_status in Refresher.OTHER_STATUSES:
+    #         if patient.find_trigger_by_status(ON_ARM_STATUS) is not None:
+    #             match_type = SummaryReport.FORMER
+    #         elif patient.find_trigger_by_status(PENDING_STATUS) is not None:
+    #             match_type = SummaryReport.NOT_ENROLLED
+    #
+    #     return match_type
+
     @staticmethod
     def _match(patient, sum_rpt):
-        patient_type = Refresher._determine_patient_classification(patient)
-        # print("patient_type = {pt}".format(pt=str(patient_type)))
+        assignment_rec = Refresher._create_assignment_record(patient, sum_rpt.treatmentId)
+        patient_type = Refresher._determine_patient_classification_by_dates(assignment_rec)
 
         if patient_type is not None:
-            assignment_rec = Refresher._create_assignment_record(patient, sum_rpt.treatmentId)
             sum_rpt.add_patient_by_type(patient_type, assignment_rec)
 
     @staticmethod
-    def _determine_patient_classification(patient):
+    def _determine_patient_classification_by_dates(assignment_rec):
         """
         Determines if patient is a patient currently on the the Treatment Arm, pending for the Treatment Arm,
         formerly on the Treatment Arm, or once considered but not enrolled on the Treatment Arm.
-        :param patient: a Patient
+        :param assignment_rec: an AssignmentRecord for a patient
         :return: SummaryReport.CURRENT, SummaryReport.PENDING, SummaryReport.FORMER, SummaryReport.NOT_ENROLLED, or None
         """
         match_type = None
 
-        patient_status = patient.currentPatientStatus
-        if patient_status == ON_ARM_STATUS:
-            match_type = SummaryReport.CURRENT
-        elif patient_status == PENDING_STATUS:
-            match_type = SummaryReport.PENDING
-        elif patient_status in Refresher.OTHER_STATUSES:
-            if patient.find_trigger_by_status(ON_ARM_STATUS) is not None:
-                match_type = SummaryReport.FORMER
-            elif patient.find_trigger_by_status(PENDING_STATUS) is not None:
+        if assignment_rec.date_selected:
+            if assignment_rec.date_on_arm:
+                if assignment_rec.date_off_arm:
+                    match_type = SummaryReport.FORMER
+                else:
+                    match_type = SummaryReport.CURRENT
+            elif assignment_rec.assignment_status_outcome == PENDING_STATUS:
+                match_type = SummaryReport.PENDING
+            else:
                 match_type = SummaryReport.NOT_ENROLLED
 
         return match_type
@@ -103,11 +149,13 @@ class Refresher(object):
         :return: the created AssignmentRecord for patient and ta_id
         """
         ta_version = patient.treatment_arm_version()
-        (date_on_arm, date_off_arm) = patient.get_dates_on_off_arm()
+        # (date_on_arm, date_off_arm) = patient.get_dates_on_off_arm()
+        (date_on_arm, date_off_arm, status) = patient.get_dates_status_from_arm ()
 
         return AssignmentRecord(patient.patientSequenceNumber,
                                 ta_version,
-                                patient.currentPatientStatus,
+                                status,
+                                # patient.currentPatientStatus,
                                 patient.get_assignment_reason(ta_id, ta_version),
                                 patient.get_patient_assignment_step_number(),
                                 patient.diseases,
