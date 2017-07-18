@@ -76,7 +76,6 @@ class Patient(object):
             if trigger['patientStatus'] == "PENDING_CONFIRMATION":
                 if assignment_flag:
                     if date_on_arm:
-                        print("pat seq #={}".format(self._pat['patientSequenceNumber']))
                         date_off_arm = trigger['dateCreated']
                     break
 
