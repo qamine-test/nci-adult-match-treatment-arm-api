@@ -62,43 +62,38 @@ class Patient(object):
 
     def get_dates_status_from_arm(self):
         """
-        Determines the date the patient went on/off the arm along with the last status.
+        Determines the date the patient went on/off the arm along with the last status that is associated with the arm.
         If the patient is still on the arm, the date the patient went off the arm will be None.
         If the patient never went on the arm, both dates will be None.
-        :return: a three-item tuple: (date on arm, date off arm, last satus)
+        :return: a three-item tuple: (date on arm, date off arm, last status associated with the arm)
         """
         date_on_arm = None
         date_off_arm = None
-        status = None
+        last_status = None
         assignment_flag = False
 
         for trigger in self._pat['patientTriggers']:
             if trigger['patientStatus'] == "PENDING_CONFIRMATION":
                 if assignment_flag:
                     if date_on_arm:
+                        print("pat seq #={}".format(self._pat['patientSequenceNumber']))
                         date_off_arm = trigger['dateCreated']
                     break
 
                 if self._trigger_belongs_to_assignment(trigger, self._pat['patientAssignments']['dateAssigned']):
-                    print("got here!")
                     assignment_flag = True
-                    status = trigger['patientStatus']
+                    last_status = trigger['patientStatus']
 
             elif assignment_flag:
-                status = trigger['patientStatus']
-                print("got here, too! {}".format(status))
-                if status == "ON_TREATMENT_ARM":
+                last_status = trigger['patientStatus']
+                if last_status == "ON_TREATMENT_ARM":
                     date_on_arm = trigger['dateCreated']
-                elif status == "PENDING_OFF_STUDY":
-                    assignment_flag = False
-                    date_on_arm = None
-                    status = None
-                elif status != "PENDING_APPROVAL":
+                elif last_status != "PENDING_APPROVAL":
                     if date_on_arm:
                         date_off_arm = trigger['dateCreated']
                     break
 
-        return (date_on_arm, date_off_arm, status)
+        return date_on_arm, date_off_arm, last_status
 
     @staticmethod
     def _trigger_belongs_to_assignment(trigger, assignment_date):
