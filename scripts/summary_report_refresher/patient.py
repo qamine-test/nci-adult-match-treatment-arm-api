@@ -54,10 +54,11 @@ class Patient(object):
         :param trtmtVersion: the version of the Treatment Arm
         :return: a string describing the reason the assignment was made.
         """
-        for assignment_logic in self._pat['patientAssignments']['patientAssignmentLogic']:
-            if(assignment_logic['treatmentArmId'] == trtmtId and
-               assignment_logic['treatmentArmVersion'] == trtmtVersion):
-                return assignment_logic['reason']
+        if 'patientAssignments' in self._pat and 'patientAssignmentLogic' in self._pat['patientAssignments']:
+            for assignment_logic in self._pat['patientAssignments']['patientAssignmentLogic']:
+                if(assignment_logic['treatmentArmId'] == trtmtId and
+                   assignment_logic['treatmentArmVersion'] == trtmtVersion):
+                    return assignment_logic['reason']
         return None
 
     def get_dates_status_from_arm(self):
@@ -147,21 +148,25 @@ class Patient(object):
         :return: a string containing the Analysis ID if one can be found; otherwise None
         """
         analysis_id = None
-        biopsy_seq_num = self._pat['patientAssignments']['biopsySequenceNumber']
+        if 'patientAssignments' in self._pat and 'biopsySequenceNumber' in self._pat['patientAssignments']:
+            biopsy_seq_num = self._pat['patientAssignments']['biopsySequenceNumber']
 
-        for biopsy in self._pat['biopsies']:
-            if(not biopsy['failure'] and
-               biopsy['biopsySequenceNumber'] == biopsy_seq_num and
-               biopsy['nextGenerationSequences'] != []):
+            for biopsy in self._pat['biopsies']:
+                if(not biopsy['failure'] and
+                   biopsy['biopsySequenceNumber'] == biopsy_seq_num and
+                   biopsy['nextGenerationSequences'] != []):
 
-                for seq in reversed(biopsy['nextGenerationSequences']):
-                    if seq['status'] == 'CONFIRMED':
-                        analysis_id = seq['ionReporterResults']['jobName']
+                    for seq in reversed(biopsy['nextGenerationSequences']):
+                        if seq['status'] == 'CONFIRMED':
+                            analysis_id = seq['ionReporterResults']['jobName']
+                            break
+                    if analysis_id:
                         break
-                if analysis_id:
-                    break
 
         return analysis_id
 
     def get_patient_assignment_step_number(self):
-        return self._pat['patientAssignments']['stepNumber']
+        if 'patientAssignments' in self._pat and 'stepNumber' in self._pat['patientAssignments']:
+            return self._pat['patientAssignments']['stepNumber']
+        else:
+            return None
