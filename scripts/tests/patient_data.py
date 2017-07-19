@@ -305,9 +305,9 @@ PENDING_CONF_APPR_CONF_PATIENT = create_patient(
         MATCHING_LOGIC,
     ],
     current_patient_status='PENDING_CONFIRMATION',
-    treatment_arm=PATIENT_TREATMENT_ARM,
-    biopsies=[MATCHING_GOOD_BIOPSY1],
     assignment_date=PENDING_CONF_DATE,
+    treatment_arm=PATIENT_TREATMENT_ARM,
+    biopsies=[MATCHING_GOOD_BIOPSY2],
     patient_sequence_number = "14448"
 )
 
