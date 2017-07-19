@@ -163,6 +163,7 @@ def create_patient(triggers=None, assignment_logics=None,
         "biopsies": biopsies,
         "currentStepNumber": "1",
         "currentPatientStatus": current_patient_status,
+        "patientAssignmentIdx": 1,
         "patientAssignments": {},
         "diseases": [
             {
@@ -262,22 +263,6 @@ CURRENT_PATIENT = create_patient(
     treatment_arm=PATIENT_TREATMENT_ARM,
     biopsies=[MATCHING_GOOD_BIOPSY1],
     patient_sequence_number = "14444"
-)
-NONE_PATIENT = create_patient(
-    [
-        REGISTRATION_TRIGGER,
-        PENDING_CONF_TRIGGER,
-        create_patient_trigger("PENDING_OFF_STUDY"),
-        create_patient_trigger("OFF_TRIAL_NO_TA_AVAILABLE"),
-    ],
-    [
-        create_patient_assignment_logic("EAY131-A"),
-        create_patient_assignment_logic("EAY131-R"),
-        create_patient_assignment_logic("EAY131-E"),
-    ],
-    'OFF_TRIAL_NO_TA_AVAILABLE',
-    None,
-    patient_sequence_number = "14445"
 )
 REGISTERED_PATIENT = create_patient(
     [
