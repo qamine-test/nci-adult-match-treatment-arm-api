@@ -275,13 +275,14 @@ REGISTERED_PATIENT = create_patient(
 )
 REJOIN_DATE = PENDING_OFF_STUDY_DATE + timedelta(days=2)
 NEW_PENDING_CONF_DATE = PENDING_OFF_STUDY_DATE + timedelta(days=3)
+NEW_PENDING_CONF_TRIGGER = create_patient_trigger('PENDING_CONFIRMATION', date_created=NEW_PENDING_CONF_DATE)
+REJOIN_TRIGGER = create_patient_trigger('REJOIN', date_created=REJOIN_DATE)
 OFF_STUDY_REJOIN_PATIENT = create_patient(
     triggers=[REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER,
-              create_patient_trigger('REJOIN', date_created=REJOIN_DATE),
-              create_patient_trigger('PENDING_CONFIRMATION', date_created=NEW_PENDING_CONF_DATE),
+              REJOIN_TRIGGER, NEW_PENDING_CONF_TRIGGER,
               ],
     assignment_logics = [
-        create_patient_assignment_logic("EAY131-H"),
+        create_patient_assignment_logic("EAY131-U"),
         create_patient_assignment_logic("EAY131-G"),
         create_patient_assignment_logic("EAY131-E"),
     ],
@@ -298,9 +299,9 @@ PENDING_CONF_APPR_CONF_PATIENT = create_patient(
               create_patient_trigger('PENDING_CONFIRMATION', date_created=PENDING_APPR_DATE + timedelta(minutes=2)),
               ],
     assignment_logics = [
-        create_patient_assignment_logic("EAY131-H"),
+        create_patient_assignment_logic("EAY131-C"),
         create_patient_assignment_logic("EAY131-G"),
-        create_patient_assignment_logic("EAY131-E"),
+        create_patient_assignment_logic("EAY131-A"),
         MATCHING_LOGIC,
     ],
     current_patient_status='PENDING_CONFIRMATION',
@@ -314,12 +315,12 @@ PENDING_ON_PENDING_PATIENT = create_patient(
     triggers=[REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, ON_ARM_TRIGGER,
               # I don't think that in the real world a PENDING_CONFIRMATION trigger would follow a ON_TREATMENT_ARM
               # trigger, but it is a case that the code handles and therefore it must be tested.
-              create_patient_trigger('PENDING_CONFIRMATION', date_created=NEW_PENDING_CONF_DATE),
+              NEW_PENDING_CONF_TRIGGER,
               ],
     assignment_logics = [
-        create_patient_assignment_logic("EAY131-H"),
+        create_patient_assignment_logic("EAY131-A"),
         create_patient_assignment_logic("EAY131-G"),
-        create_patient_assignment_logic("EAY131-E"),
+        create_patient_assignment_logic("EAY131-U"),
         MATCHING_LOGIC,
     ],
     current_patient_status='PENDING_CONFIRMATION',
@@ -334,15 +335,12 @@ PENDING_ON_PENDING_PATIENT = create_patient(
 # This data reflects the fact that the way the data is returned from the database, everything will be the
 # same except for the assignment records and patientAssignmentIdx.
 PATIENT_TWICE_SEQ_NUM = "10385"
-PATIENT_TWICE_TRTMT_ARM_ID = "EAY131-B"
+PATIENT_TWICE_TRTMT_ARM_ID = "EAY131-U"
 PATIENT_TWICE_TREATMENT_ARM = {
-    "_id": PATIENT_TWICE_TRTMT_ARM_ID,  # NOTE: This identifier is in the treatmentId field in the treatmentArms collection.
-    "name": "Afatinib-Her2 activating mutation",
-    "version": "2015-08-06",
-    "description": "Afatinib in HER2 activating mutation",
-    "targetId": "750691.0",
-    "targetName": "Afatinib",
-    "numPatientsAssigned": 0,
+    "_id": PATIENT_TWICE_TRTMT_ARM_ID,  # NOTE: This ID is in the treatmentId field in the treatmentArms collection.
+    "name": "VS-6063( defactinib) in tumor with NF2 loss",
+    "version": "2016-01-20",
+    "numPatientsAssigned": 2,
     "maxPatientsAllowed": 35,
     "treatmentArmStatus": "OPEN",
 }
