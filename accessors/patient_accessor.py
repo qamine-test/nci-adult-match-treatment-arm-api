@@ -18,6 +18,8 @@ class PatientAccessor(MongoDbAccessor):
     def get_patients_by_treatment_arm_id(self, trtmt_id):
         """
         Gets patient data for patients associated (currently or formerly) with the given TreatmentId.
+        The patients will be sorted by patientSequenceNumber (ascending) and patientAssignments.dateConfirmed
+        (descending).
         :param trtmt_id: a string containing the TreatmentArm ID
         :return: array of JSON documents containing required fields for Summary Report Refresh analysis
         """
@@ -35,4 +37,5 @@ class PatientAccessor(MongoDbAccessor):
                                               "diseases": 1,
                                               "biopsies": 1,
                                               "treatmentArm": "$patientAssignments.treatmentArm"}},
+                                {"$sort": {"patientSequenceNumber": 1, "patientAssignments.dateAssigned": -1}},
                                 ])]
