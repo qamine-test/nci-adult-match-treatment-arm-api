@@ -22,10 +22,10 @@ ON_ARM_DATE = datetime(2015, 10, 1)
 OFF_ARM_DATE = datetime(2016, 3, 1)
 
 
-def create_patient_trigger(patient_status, message=None, date_created=None):
+def create_patient_trigger(patient_status, message=None, date_created=None, patient_seq_num="10065"):
     trigger = {
         "studyId": "EAY131",
-        "patientSequenceNumber": "10065",
+        "patientSequenceNumber": patient_seq_num,
         "stepNumber": "0",
         "patientStatus": patient_status,
         "dateCreated": datetime(2015, 9, 4, 18, 22, 0),
@@ -146,7 +146,7 @@ DEFAULT_PAT_ASSNMNT_STEP_NUM = "0"
 def create_patient(triggers=None, assignment_logics=None,
                    current_patient_status='ON_TREATMENT_ARM',
                    treatment_arm=None, biopsies=None, patient_assmnt_idx=DEFAULT_ASSIGNMENT_IDX,
-                   assignment_date=ASSIGNMENT_DATE, patient_sequence_number="14400"
+                   assignment_date=ASSIGNMENT_DATE, patient_sequence_number="14400", pat_assignment_idx=0
                    ):
     if triggers is None:
         triggers = DEFAULT_TRIGGERS
@@ -163,7 +163,7 @@ def create_patient(triggers=None, assignment_logics=None,
         "biopsies": biopsies,
         "currentStepNumber": "1",
         "currentPatientStatus": current_patient_status,
-        "patientAssignmentIdx": 1,
+        "patientAssignmentIdx": pat_assignment_idx,
         "patientAssignments": {},
         "diseases": [
             {
@@ -327,4 +327,78 @@ PENDING_ON_PENDING_PATIENT = create_patient(
     biopsies=[MATCHING_GOOD_BIOPSY1],
     assignment_date=PENDING_CONF_DATE,
     patient_sequence_number = "14449"
+)
+
+# The data below is here to mimic an usual situation found in testing where a patient was assigned to the
+# same arm twice.  It resulted in the patient erroneously being counted twice in the summary report refresh.
+# This data reflects the fact that the way the data is returned from the database, everything will be the
+# same except for the assignment records and patientAssignmentIdx.
+PATIENT_TWICE_SEQ_NUM = "10385"
+PATIENT_TWICE_TRTMT_ARM_ID = "EAY131-B"
+PATIENT_TWICE_TREATMENT_ARM = {
+    "_id": PATIENT_TWICE_TRTMT_ARM_ID,  # NOTE: This identifier is in the treatmentId field in the treatmentArms collection.
+    "name": "Afatinib-Her2 activating mutation",
+    "version": "2015-08-06",
+    "description": "Afatinib in HER2 activating mutation",
+    "targetId": "750691.0",
+    "targetName": "Afatinib",
+    "numPatientsAssigned": 0,
+    "maxPatientsAllowed": 35,
+    "treatmentArmStatus": "OPEN",
+}
+
+PATIENT_TWICE_TRIGGERS = [
+    create_patient_trigger('REGISTRATION', date_created=datetime(2015, 9, 28, 19, 1, 38),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+    create_patient_trigger('PENDING_CONFIRMATION', date_created=datetime(2015, 12, 1, 14, 46, 13),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+    create_patient_trigger('PENDING_APPROVAL', date_created=datetime(2015, 12, 1, 17, 36, 13),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+    create_patient_trigger('NOT_ELIGIBLE', date_created=datetime(2015, 12, 16, 14, 23, 13),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+    create_patient_trigger('PENDING_CONFIRMATION', date_created=datetime(2015, 12, 16, 14, 23, 21),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+    create_patient_trigger('PENDING_OFF_STUDY', date_created=datetime(2015, 12, 16, 14, 26, 21),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+    create_patient_trigger('OFF_TRIAL_NO_TA_AVAILABLE', date_created=datetime(2015, 12, 16, 14, 28, 21),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+    create_patient_trigger('REJOIN_REQUESTED', date_created=datetime(2016, 2, 25, 18, 27, 21),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+    create_patient_trigger('REJOIN', date_created=datetime(2016, 2, 26, 16, 39, 21),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+    create_patient_trigger('PENDING_CONFIRMATION', date_created=datetime(2016, 2, 26, 16, 39, 55),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+    create_patient_trigger('PENDING_APPROVAL', date_created=datetime(2016, 2, 26, 19, 9, 55),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+    create_patient_trigger('NOT_ELIGIBLE', date_created=datetime(2016, 3, 18, 15, 17, 55),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+    create_patient_trigger('PENDING_CONFIRMATION', date_created=datetime(2016, 3, 18, 15, 14, 23, 21),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+    create_patient_trigger('PENDING_OFF_STUDY', date_created=datetime(2016, 3, 18, 15, 26, 21),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+    create_patient_trigger('OFF_TRIAL_NO_TA_AVAILABLE', date_created=datetime(2016, 3, 18, 15, 28, 21),
+                           patient_seq_num=PATIENT_TWICE_SEQ_NUM),
+]
+PATIENT_TWICE_MATCHING_LOGIC = \
+    create_patient_assignment_logic(PATIENT_TWICE_TRTMT_ARM_ID,
+                                    reason="The patient and treatment arm match on non-hotspot variant.",
+                                    category="SELECTED")
+
+PATIENT_ON_ARM_TWICE1 = create_patient(
+    pat_assignment_idx=0,
+    patient_sequence_number=PATIENT_TWICE_SEQ_NUM,
+    treatment_arm=PATIENT_TWICE_TREATMENT_ARM,
+    triggers=PATIENT_TWICE_TRIGGERS,
+    assignment_date=datetime(2015, 12, 1, 14, 46, 13),
+    assignment_logics=[PATIENT_TWICE_MATCHING_LOGIC],
+    current_patient_status="OFF_TRIAL_NO_TA_AVAILABLE"
+)
+PATIENT_ON_ARM_TWICE2 = create_patient(
+    pat_assignment_idx=2,
+    patient_sequence_number=PATIENT_TWICE_SEQ_NUM,
+    treatment_arm=PATIENT_TWICE_TREATMENT_ARM,
+    triggers=PATIENT_TWICE_TRIGGERS,
+    assignment_date=datetime(2016, 2, 26, 16, 39, 55),
+    assignment_logics=[PATIENT_TWICE_MATCHING_LOGIC],
+    current_patient_status="OFF_TRIAL_NO_TA_AVAILABLE"
 )
