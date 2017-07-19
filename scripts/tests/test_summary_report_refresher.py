@@ -80,6 +80,7 @@ class RefresherTest(unittest.TestCase):
             patient = Patient(pd.create_patient())
             Refresher._match(patient, sr)
 
+            self.maxDiff = None
             if add_patient_by_type_expected:
                 sr.add_patient_by_type.assert_called_once_with(patient_type, ar)
             else:
