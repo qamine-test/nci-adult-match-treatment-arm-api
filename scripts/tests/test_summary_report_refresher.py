@@ -78,13 +78,12 @@ class RefresherTest(unittest.TestCase):
 
         try:
             patient = Patient(pd.create_patient())
-            ret_val = Refresher._match(patient, sr)
+            Refresher._match(patient, sr)
 
             if add_patient_by_type_expected:
                 sr.add_patient_by_type.assert_called_once_with(patient_type, ar)
             else:
                 sr.add_patient_by_type.assert_not_called()
-            self.assertEqual(ret_val, None)
         finally:    # Because these are static methods, they must be reassigned to the original function or else
                     # their mocking will persist to other test cases.
             Refresher._create_assignment_record = orig_create_assignment_record
