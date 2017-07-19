@@ -128,13 +128,18 @@ class RefresherTest(unittest.TestCase):
          DEFAULT_TA,
          create_sr_json(numCurrentPatientsOnArm=1, numFormerPatients=1),
          [pd.CURRENT_PATIENT, pd.FORMER_PATIENT]),
-        # 8. two matching current patients, one pending patient, plus two non-matching patients
+        # 8. two matching current patients (same patient), one pending patient, plus two non-matching patients
         ([pd.REGISTERED_PATIENT, pd.CURRENT_PATIENT, pd.PENDING_PATIENT, pd.CURRENT_PATIENT, pd.REGISTERED_PATIENT],
          DEFAULT_TA,
          create_sr_json(numCurrentPatientsOnArm=1, numPendingArmApproval=1),
-         [pd.PENDING_PATIENT, pd.CURRENT_PATIENT]),
-         # create_sr_json(numCurrentPatientsOnArm=2, numPendingArmApproval=1),
-         # [pd.CURRENT_PATIENT, pd.PENDING_PATIENT, pd.CURRENT_PATIENT]),
+         [pd.CURRENT_PATIENT, pd.PENDING_PATIENT]),
+        # 9.
+        ([pd.PATIENT_ON_ARM_TWICE2, pd.PATIENT_ON_ARM_TWICE1, pd.CURRENT_PATIENT,
+          pd.PENDING_PATIENT, pd.FORMER_PATIENT],
+         DEFAULT_TA,
+         create_sr_json(numCurrentPatientsOnArm=1, numPendingArmApproval=1, numFormerPatients=1,
+                        numNotEnrolledPatient=1),
+         [pd.PATIENT_ON_ARM_TWICE2, pd.CURRENT_PATIENT, pd.PENDING_PATIENT, pd.FORMER_PATIENT]),
     )
     @unpack
     @patch('scripts.summary_report_refresher.refresher.logging')
@@ -263,9 +268,9 @@ class RefresherTest(unittest.TestCase):
           ])
     )
     @unpack
-    def test_create_assignment_record(self, patient, trtmtId, ar_constructor_args):
+    def test_create_assignment_record(self, patient, trtmt_id, ar_constructor_args):
         exp_ar = AssignmentRecord(*ar_constructor_args)
-        ar = Refresher._create_assignment_record(Patient(patient), trtmtId)
+        ar = Refresher._create_assignment_record(Patient(patient), trtmt_id)
 
         self.assertEqual(ar.patient_sequence_number, exp_ar.patient_sequence_number)
         self.assertEqual(ar.treatment_arm_version, exp_ar.treatment_arm_version)
