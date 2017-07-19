@@ -69,18 +69,26 @@ class RefresherTest(unittest.TestCase):
         sr = mock_sum_rpt.return_value
         ar = mock_assignment_record.return_value
 
+        orig_create_assignment_record = Refresher._create_assignment_record
+        orig_determine_patient_classification_by_dates = Refresher._determine_patient_classification_by_dates
         Refresher._determine_patient_classification_by_dates = \
             MagicMock(name='patient_type',
                       return_value=patient_type)
         Refresher._create_assignment_record = MagicMock(name='_create_assignment_record', return_value=ar)
-        patient = Patient(pd.create_patient())
-        ret_val = Refresher._match(patient, sr)
 
-        if add_patient_by_type_expected:
-            sr.add_patient_by_type.assert_called_once_with(patient_type, ar)
-        else:
-            sr.add_patient_by_type.assert_not_called()
-        self.assertEqual(ret_val, None)
+        try:
+            patient = Patient(pd.create_patient())
+            ret_val = Refresher._match(patient, sr)
+
+            if add_patient_by_type_expected:
+                sr.add_patient_by_type.assert_called_once_with(patient_type, ar)
+            else:
+                sr.add_patient_by_type.assert_not_called()
+            self.assertEqual(ret_val, None)
+        finally:    # Because these are static methods, they must be reassigned to the original function or else
+                    # their mocking will persist to other test cases.
+            Refresher._create_assignment_record = orig_create_assignment_record
+            Refresher._determine_patient_classification_by_dates = orig_determine_patient_classification_by_dates
 
     # # Test the Refresher._match method.
     # @data(
@@ -103,40 +111,42 @@ class RefresherTest(unittest.TestCase):
     #
     # Test the Refresher._update_summary_report method.
     @data(
-        # # 1. no patients associated with treatmentArm
-        # ([], DEFAULT_TA, create_sr_json(), []),
-        # # 2. only patients with no treatmentArm
-        # ([pd.NONE_PATIENT], DEFAULT_TA, create_sr_json(), []),
-        # # 3. a matching patient that was considered but not enrolled
-        # ([pd.NOT_ENROLLED_PATIENT], DEFAULT_TA, create_sr_json(numNotEnrolledPatient=1), [pd.NOT_ENROLLED_PATIENT]),
-        # # 4. a matching former patient
-        # ([pd.FORMER_PATIENT], DEFAULT_TA, create_sr_json(numFormerPatients=1), [pd.FORMER_PATIENT]),
-        # # 5. a matching pending patient
-        # ([pd.PENDING_PATIENT], DEFAULT_TA, create_sr_json(numPendingArmApproval=1), [pd.PENDING_PATIENT]),
-        # # 6. a matching current patient
-        # ([pd.CURRENT_PATIENT], DEFAULT_TA, create_sr_json(numCurrentPatientsOnArm=1), [pd.CURRENT_PATIENT]),
-        # # 7. a matching current and former patient, plus one non-matching patient
-        # ([pd.CURRENT_PATIENT, pd.NONE_PATIENT, pd.FORMER_PATIENT],
-        #  DEFAULT_TA,
-        #  create_sr_json(numCurrentPatientsOnArm=1, numFormerPatients=1),
-        #  [pd.CURRENT_PATIENT, pd.FORMER_PATIENT]),
-        # # 8. two matching current patients, one pending patient, plus two non-matching patients
-        # ([pd.NONE_PATIENT, pd.CURRENT_PATIENT, pd.PENDING_PATIENT, pd.CURRENT_PATIENT, pd.NONE_PATIENT],
-        #  DEFAULT_TA,
-        #  create_sr_json(numCurrentPatientsOnArm=2, numPendingArmApproval=1),
-        #  [pd.CURRENT_PATIENT, pd.PENDING_PATIENT, pd.CURRENT_PATIENT]),
+        # 1. no patients associated with treatmentArm
+        ([], DEFAULT_TA, create_sr_json(), []),
+        # 2. only patients with no treatmentArm
+        ([pd.REGISTERED_PATIENT], DEFAULT_TA, create_sr_json(), []),
+        # 3. a matching patient that was considered but not enrolled
+        ([pd.NOT_ENROLLED_PATIENT], DEFAULT_TA, create_sr_json(numNotEnrolledPatient=1), [pd.NOT_ENROLLED_PATIENT]),
+        # 4. a matching former patient
+        ([pd.FORMER_PATIENT], DEFAULT_TA, create_sr_json(numFormerPatients=1), [pd.FORMER_PATIENT]),
+        # 5. a matching pending patient
+        ([pd.PENDING_PATIENT], DEFAULT_TA, create_sr_json(numPendingArmApproval=1), [pd.PENDING_PATIENT]),
+        # 6. a matching current patient
+        ([pd.CURRENT_PATIENT], DEFAULT_TA, create_sr_json(numCurrentPatientsOnArm=1), [pd.CURRENT_PATIENT]),
+        # 7. a matching current and former patient, plus one non-matching patient
+        ([pd.CURRENT_PATIENT, pd.REGISTERED_PATIENT, pd.FORMER_PATIENT],
+         DEFAULT_TA,
+         create_sr_json(numCurrentPatientsOnArm=1, numFormerPatients=1),
+         [pd.CURRENT_PATIENT, pd.FORMER_PATIENT]),
+        # 8. two matching current patients, one pending patient, plus two non-matching patients
+        ([pd.REGISTERED_PATIENT, pd.CURRENT_PATIENT, pd.PENDING_PATIENT, pd.CURRENT_PATIENT, pd.REGISTERED_PATIENT],
+         DEFAULT_TA,
+         create_sr_json(numCurrentPatientsOnArm=1, numPendingArmApproval=1),
+         [pd.PENDING_PATIENT, pd.CURRENT_PATIENT]),
+         # create_sr_json(numCurrentPatientsOnArm=2, numPendingArmApproval=1),
+         # [pd.CURRENT_PATIENT, pd.PENDING_PATIENT, pd.CURRENT_PATIENT]),
     )
     @unpack
     @patch('scripts.summary_report_refresher.refresher.logging')
     @patch('scripts.summary_report_refresher.refresher.PatientAccessor')
     @patch('scripts.summary_report_refresher.refresher.TreatmentArmsAccessor')
-    def test_update_summary_report(self, patients, ta_data_for_sum_rpt, expected_sum_rpt_json, ar_patients,
+    def test_update_summary_report(self, patients, ta_data_for_sum_rpt, expected_sum_rpt_json, expected_ar_patients,
                                    mock_ta_accessor, mock_patient_accessor, mock_logging):
 
         self.maxDiff = None
 
         ar_records = []
-        for patient in ar_patients:
+        for patient in expected_ar_patients:
             assmt_rec = Refresher._create_assignment_record(Patient(patient), ta_data_for_sum_rpt['treatmentId'])
             ar_records.append(assmt_rec.get_json())
         expected_sum_rpt_json['assignmentRecords'] = ar_records
