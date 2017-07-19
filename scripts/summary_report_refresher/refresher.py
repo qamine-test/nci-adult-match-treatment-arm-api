@@ -49,29 +49,22 @@ class Refresher(object):
     def _update_summary_report(self, sum_rpt):
         """
         Update the given summary report with counts and assignment records.
-        :param sum_rpt: The summary report of a treatment that requires updating.
+        :param sum_rpt: The summary report of a treatment arm that requires updating.
         """
-        # Get all patients associated with the Treatment Arm of the given Summary Report
+        # Get all patients associated with the Treatment Arm of the given Summary Report.
+        # Patients are sorted by patientSequenceNumber (ascending) and patientAssignments.dateConfirmed (descending).
         patients = [Patient(p) for p in self.pat_accessor.get_patients_by_treatment_arm_id(sum_rpt.treatmentId)]
-
-        # since a patient can be assigned a arm more than once (different versions), we want to clean up this
-        # list prior to moving on... NOTE: a patient can only go ON the arm once
-        pat_id = []
-        for pat in patients:
-            if pat.patientSequenceNumber in pat_id:
-                # we need to remove the old pat from the list
-                i = pat_id.index(pat.patientSequenceNumber)
-                pat_id.pop(i)
-                patients.pop(i)
-            # add to our list
-            pat_id.append(pat.patientSequenceNumber)
-
         self.logger.debug("{cnt} patients returned for '{trtmt_id}"
                           .format(cnt=len(patients), trtmt_id=sum_rpt.treatmentId))
 
         # Update the summary report object for any patients that meet the criteria.
+        pat_id = []
         for pat in patients:
-            Refresher._match(pat, sum_rpt)
+            # Only match the patient the first time he/she is encountered.  (A patient can be assigned to an arm more
+            # than once [different versions], but only the most recent occurrence should be counted.)
+            if pat.patientSequenceNumber not in pat_id:
+                Refresher._match(pat, sum_rpt)
+                pat_id.append(pat.patientSequenceNumber)
 
         # Update the summary report in the treatmentArms collection on the database
         return self.ta_accessor.update_summary_report(sum_rpt._id, sum_rpt.get_json())
