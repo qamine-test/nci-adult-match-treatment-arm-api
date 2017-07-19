@@ -43,7 +43,7 @@ API.add_resource(Version, '/api/v1/treatment_arms/version', endpoint='get_versio
 #
 
 if __name__ == '__main__':
-    LOGGER.debug("connecting to '%s' on '%s'" % (Configuration.DB_NAME, Configuration.MONGODB_URI))
+    # LOGGER.debug("connecting to '%s' on '%s'" % (Configuration.DB_NAME, Configuration.MONGODB_URI))
     LOGGER.debug("server starting on port :" + str(APP.config["PORT"]))
     HTTP_SERVER = HTTPServer(WSGIContainer(APP))
     HTTP_SERVER.listen(port=APP.config["PORT"])
