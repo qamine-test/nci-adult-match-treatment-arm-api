@@ -24,7 +24,7 @@ class HealthCheck(Resource):
 
             return_info = dict()
             return_info['Total Arm Count'] = accessor.count({})
-            return_info['Active Arm Count'] = accessor.count({'dateArchived': None})
+            # return_info['Active Arm Count'] = accessor.count({'dateArchived': None})
             for status in accessor.aggregate(self.status_pipeline):
                 return_info['Active Arms in %s Status' % status["_id"]] = status["count"]
 
