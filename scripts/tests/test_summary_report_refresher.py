@@ -90,25 +90,6 @@ class RefresherTest(unittest.TestCase):
             Refresher._create_assignment_record = orig_create_assignment_record
             Refresher._determine_patient_classification_by_dates = orig_determine_patient_classification_by_dates
 
-    # # Test the Refresher._match method.
-    # @data(
-    #     ('UNKNOWN_STATUS', DEFAULT_TA, [0, 0, 0, 0, 0]),
-    #     ('ON_TREATMENT_ARM', DEFAULT_TA, [1, 0, 0, 0, 1]),
-    #     ('PENDING_APPROVAL', DEFAULT_TA, [0, 1, 0, 0, 1]),
-    # )
-    # @unpack
-    # def test_match(self, patient_status, sum_rpt_data, exp_results):
-    #     sr = SummaryReport(sum_rpt_data)
-    #     patient = Patient(pd.create_patient(current_patient_status=patient_status))
-    #     Refresher._match(patient, sr)
-    #
-    #     self.maxDiff = None
-    #     self.assertEqual(len(sr.assignmentRecords), exp_results[AREC_IDX])
-    #     self.assertEqual(sr.numNotEnrolledPatient, exp_results[NOEN_IDX])
-    #     self.assertEqual(sr.numPendingArmApproval, exp_results[PEND_IDX])
-    #     self.assertEqual(sr.numFormerPatients, exp_results[FORM_IDX])
-    #     self.assertEqual(sr.numCurrentPatientsOnArm, exp_results[CURR_IDX])
-    #
     # Test the Refresher._update_summary_report method.
     @data(
         # 1. no patients associated with treatmentArm
@@ -200,6 +181,7 @@ class RefresherTest(unittest.TestCase):
         (None, None, None, None, None),
         (pd.ASSIGNMENT_DATE, None, None, None, SummaryReport.NOT_ENROLLED),
         (pd.ASSIGNMENT_DATE, None, None, 'PENDING_APPROVAL', SummaryReport.PENDING),
+        (pd.ASSIGNMENT_DATE, None, None, 'PENDING_CONFIRMATION', SummaryReport.PENDING),
         (pd.ASSIGNMENT_DATE, pd.ON_ARM_DATE, None, 'ON_TREATMENT_ARM', SummaryReport.CURRENT),
         (pd.ASSIGNMENT_DATE, pd.ON_ARM_DATE, pd.OFF_ARM_DATE, 'OFF_TRIAL', SummaryReport.FORMER),
     )
@@ -216,32 +198,6 @@ class RefresherTest(unittest.TestCase):
         patient_type = Refresher._determine_patient_classification_by_dates(mock_ar_inst)
         self.assertEqual(patient_type, expected_patient_type)
 
-    # # Test the Refresher._determine_patient_classification method.
-    # @data(
-    #     ('REGISTRATION', None, None),
-    #     ('OFF_TRIAL_REGISTRATION_ERROR', None, None),
-    #     ('PENDING_CONFIRMATION', None, None),
-    #     ('PENDING_OFF_STUDY', None, None),
-    #     ('RB_ORDER_REQUESTED', None, None),
-    #     ('RB_RESULT_RECEIVED', None, None),
-    #     ('ON_TREATMENT_ARM', None, SummaryReport.CURRENT),
-    #     ('PENDING_APPROVAL', None, SummaryReport.PENDING),
-    #     ('OFF_TRIAL', None, SummaryReport.FORMER),
-    #     ('REJOIN_REQUESTED', None, SummaryReport.FORMER),
-    #     ('OFF_TRIAL_DECEASED', None, SummaryReport.FORMER),
-    #     ('REJOIN_REQUESTED', TRIGGERS_FOR_NOT_ENROLLED, SummaryReport.NOT_ENROLLED),
-    #     ('OFF_TRIAL_DECEASED', TRIGGERS_FOR_NOT_ENROLLED, SummaryReport.NOT_ENROLLED),
-    #     ('OFF_TRIAL_DECEASED', TRIGGERS_FOR_NOT_ENROLLED, SummaryReport.NOT_ENROLLED),
-    # )
-    # @unpack
-    # def test_determine_patient_classification(self, patient_status, trigger_types, expected_patient_type):
-    #     if trigger_types is not None:
-    #         patient = pd.create_patient(current_patient_status=patient_status, triggers=trigger_types)
-    #     else:
-    #         patient = pd.create_patient(current_patient_status=patient_status)
-    #     patient_type = Refresher._determine_patient_classification(Patient(patient))
-    #     self.assertEqual(patient_type, expected_patient_type)
-    #
     @data(
         (pd.PENDING_PATIENT, pd.MATCHING_LOGIC['treatmentArmId'],
          [pd.PENDING_PATIENT['patientSequenceNumber'], pd.MATCHING_LOGIC['treatmentArmVersion'],
