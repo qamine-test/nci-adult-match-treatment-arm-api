@@ -20,6 +20,7 @@ class HealthCheck(Resource):
         self.logger.debug('Retrieving TreatmentArms Healthcheck')
         try:
             accessor = TreatmentArmsAccessor()
+            self.logger.debug('connection established.')
 
             return_info = dict()
             return_info['Total Arm Count'] = accessor.count({})
@@ -27,6 +28,7 @@ class HealthCheck(Resource):
             for status in accessor.aggregate(self.status_pipeline):
                 return_info['Active Arms in %s Status' % status["_id"]] = status["count"]
 
+            self.logger.debug('Healthcheck returning info: {}'.format(str(return_info)))
             return return_info
 
         except Exception as ex:
