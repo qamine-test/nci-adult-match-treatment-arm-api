@@ -28,10 +28,9 @@ class MyTestCase(unittest.TestCase):
         app = flask.Flask(__name__)
         with app.test_request_context(''):
             result = healthcheck.HealthCheck().get()
-            self.assertEqual(len(result), 3)
-            # self.assertEqual(len(result), 5)
-            # self.assertEqual(result["Total Arm Count"], total_cnt)
-            # self.assertEqual(result["Active Arm Count"], active_cnt)
+            self.assertEqual(len(result), 5)
+            self.assertEqual(result["Total Arm Count"], total_cnt)
+            self.assertEqual(result["Active Arm Count"], active_cnt)
             self.assertEqual(result["Active Arms in CLOSED Status"], active_closed_cnt)
             self.assertEqual(result["Active Arms in OPEN Status"], active_open_cnt)
             self.assertEqual(result["Active Arms in SUSPENDED Status"], active_suspended_cnt)

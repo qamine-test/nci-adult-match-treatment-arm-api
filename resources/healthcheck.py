@@ -20,11 +20,11 @@ class HealthCheck(Resource):
         self.logger.debug('Retrieving TreatmentArms Healthcheck')
         try:
             accessor = TreatmentArmsAccessor()
-            self.logger.debug('connection established.')
+            self.logger.debug('Connection established.')
 
             return_info = dict()
-            # return_info['Total Arm Count'] = accessor.count({})
-            # return_info['Active Arm Count'] = accessor.count({'dateArchived': None})
+            return_info['Total Arm Count'] = accessor.count({})
+            return_info['Active Arm Count'] = accessor.count({'dateArchived': None})
             for status in accessor.aggregate(self.status_pipeline):
                 return_info['Active Arms in %s Status' % status["_id"]] = status["count"]
 
