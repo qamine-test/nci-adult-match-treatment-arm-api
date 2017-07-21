@@ -95,6 +95,9 @@ Example with connecting to `nciadultmatchui_adult-match-net` Docker network. Rep
 docker run --name ncimatch-adult-treatment-arm-api -it --network nciadultmatchui_adult-match-net -e ENVIRONMENT=test -e MONGODB_URI=mongodb://mongo:27017/Match -p 5010:5010 fnlcr/nci-adult-match-treatment-arm-api:latest
 ```
 
+## Configuration
+Various configuration settings can be customized in the `config/environment.yml` file.
+
 ## Misc
 
 To find a service listening on a specific port
@@ -128,16 +131,16 @@ coverage run -m unittest discover tests; coverage report -m
 ```
 
 ## Scripts
-To run the scripts from their source directory, make sure that the path to the TreatmentArmAPI root directory is included in the PYTHONPATH
-environment variable.  Otherwise, they can be run from the root directory as shown below.
+To run the scripts from their source directory, make sure that the path to the TreatmentArmAPI root directory is 
+included in the PYTHONPATH environment variable.  Otherwise, they can be run from the root directory as shown below.
 
 The scripts require the following:
 
 * python 3
 * pymongo 3.4 python module
 
-Defaults to connect to the MongoDB at ```mongodb://localhost:27017/Match```; can be overwritten by setting the MONGODB_URI 
-environment variable to the desired URI.
+Defaults to connect to the MongoDB at ```mongodb://localhost:27017/Match```; can be overwritten by setting the 
+MONGODB_URI environment variable to the desired URI.
 
 #### consolidate_treatment_arms
 Merge the treatmentArm and treatmentArm collections in MongoDB Match database into single treatmentArms collection.
@@ -163,3 +166,9 @@ python3 scripts/ta_message_manager/ta_message_manager.py
 Currently only responds to two messages:
 * "RefreshSummaryReport":  runs the summary report refresh process.
 * "STOP":  shuts down the ta_message_manager.
+
+To easily send either of these messages to the message manager from the command line:
+```bash
+python3 -c "import scripts.ta_message_manager.ta_message_manager as tmm; tmm.send_message_to_ta_queue(tmm.REFRESH_MSG)"
+python3 -c "import scripts.ta_message_manager.ta_message_manager as tmm; tmm.send_message_to_ta_queue(tmm.STOP_MSG)"
+```
