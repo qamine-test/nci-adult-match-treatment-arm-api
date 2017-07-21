@@ -13,8 +13,9 @@ from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from tornado.wsgi import WSGIContainer
 
-from config.flask_config import Configuration
+# from config.flask_config import Configuration
 from config import log  # pylint: disable=unused-import
+from helpers.environment import Environment
 from resources.amois import AmoisResource
 from resources.healthcheck import HealthCheck
 from resources.treatment_arm import TreatmentArms
@@ -26,7 +27,7 @@ from resources.version import Version
 LOGGER = logging.getLogger(__name__)
 
 APP = Flask(__name__)
-APP.config.from_object(Configuration)
+# APP.config.from_object(Configuration)
 
 API = Api(APP)
 CORS = CORS(APP, resources={r"/api/*": {"origins": "*"}})
@@ -43,8 +44,8 @@ API.add_resource(Version, '/api/v1/treatment_arms/version', endpoint='get_versio
 #
 
 if __name__ == '__main__':
-    # LOGGER.debug("connecting to '%s' on '%s'" % (Configuration.DB_NAME, Configuration.MONGODB_URI))
-    LOGGER.debug("server starting on port :" + str(APP.config["PORT"]))
+    port = Environment().port
+    LOGGER.debug("server starting on port :" + str(port))
     HTTP_SERVER = HTTPServer(WSGIContainer(APP))
-    HTTP_SERVER.listen(port=APP.config["PORT"])
+    HTTP_SERVER.listen(port=port)
     IOLoop.instance().start()
