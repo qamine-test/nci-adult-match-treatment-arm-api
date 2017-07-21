@@ -3,20 +3,21 @@
 import logging
 import time
 
-from flask import Flask
+# from flask import Flask
 
 from accessors.sqs_accessor import SqsAccessor
-from config import log  # pylint: disable=unused-import
-from config.flask_config import Configuration
+from config import log
+# from config.flask_config import Configuration
 from scripts.summary_report_refresher.refresher import Refresher
 
-APP = Flask(__name__)
-APP.config.from_object(Configuration)
+# APP = Flask(__name__)
+# APP.config.from_object(Configuration)
+log.log_config()
 
 TA_QUEUE_NAME = "TreatmentArmQueue"
 DEFAULT_SLEEP_TIME = 10  # Time to sleep between checking for messages; in seconds.
 
-# Recoginized messages:
+# Recognized messages:
 REFRESH_MSG = "RefreshSummaryReport"
 STOP_MSG = "STOP"
 
@@ -84,8 +85,7 @@ class TreatmentArmMessageManager(object):
 
         return_code = 0
         try:
-            with APP.app_context():
-                Refresher().run()
+            Refresher().run()
         except Exception as e:
             self.logger.exception(str(e))
             return_code = 1
