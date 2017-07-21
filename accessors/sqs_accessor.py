@@ -6,11 +6,11 @@ import boto3
 
 from helpers.environment import Environment
 
-REGION = Environment().region
+# REGION = Environment().region
 
 class SqsAccessor(object):
     def __init__(self, queue_name):
-        self.sqs_client = boto3.client('sqs', region_name=REGION)
+        self.sqs_client = boto3.client('sqs', region_name=Environment().region)
         self.queue_name = queue_name
         response = self.sqs_client.create_queue(QueueName=queue_name)
         self.queue_url = response['QueueUrl']
