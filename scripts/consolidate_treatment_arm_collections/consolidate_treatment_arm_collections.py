@@ -35,13 +35,12 @@ import os
 import sys
 import uuid
 
-from config import log  # pylint: disable=unused-import
+from config import log
 from scripts.consolidate_treatment_arm_collections.consolidate_ta_mongo_db_accessor import MongoDbAccessor
 
 # Logging functionality
+log.log_config()
 LOGGER = logging.getLogger(__name__)
-# LOGGER.setLevel(logging.DEBUG)
-# LOGGER.addHandler(logging.StreamHandler())
 
 
 class ConverterBase(object):
