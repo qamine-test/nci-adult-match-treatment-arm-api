@@ -4,7 +4,9 @@ https://boto3.readthedocs.io/en/latest/reference/services/sqs.html
 """
 import boto3
 
-REGION = 'us-east-1'
+from helpers.environment import Environment
+
+REGION = Environment().region
 
 class SqsAccessor(object):
     def __init__(self, queue_name):
