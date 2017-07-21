@@ -4,10 +4,10 @@ Mongo DB connection helper
 import json
 import logging
 
-import flask
+# import flask
 from bson import json_util
 from pymongo import MongoClient
-# from helpers.environment import Environment
+from helpers.environment import Environment
 
 
 class MongoDbAccessor(object):
@@ -15,11 +15,11 @@ class MongoDbAccessor(object):
     Base class for MongoDB accessors
     """
     def __init__(self, collection_name, logger=logging.getLogger(__name__)):
-        # env = Environment()
-        # uri = env.mongodb_uri
-        # db_name = env.db_name
-        uri = flask.current_app.config["MONGODB_URI"]
-        db_name = flask.current_app.config["DB_NAME"]
+        env = Environment()
+        uri = env.mongodb_uri
+        db_name = env.db_name
+        # uri = flask.current_app.config["MONGODB_URI"]
+        # db_name = flask.current_app.config["DB_NAME"]
 
         self.mongo_client = MongoClient(uri)
         self.database = self.mongo_client[db_name]
