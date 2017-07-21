@@ -1,5 +1,5 @@
 development:
-  port: 5000
+  port: 5010
   visibility_timeout: '36000'
   region: "us-east-1"
   bucket: "adultmatch-dev"
@@ -11,7 +11,7 @@ development:
   aws_upload_time_limit: 3600
 
 test:
-  port: 5000
+  port: 5010
   visibility_timeout: '36000'
   region: "us-east-1"
   bucket: "adultmatch-int"
@@ -23,7 +23,7 @@ test:
   aws_upload_time_limit: 3600
 
 uat:
-  port: 5000
+  port: 5010
   visibility_timeout: '36000'
   region: "us-east-1"
   bucket: "adultmatch-dev"
@@ -35,7 +35,7 @@ uat:
   aws_upload_time_limit: 3600
 
 production:
-  port: 5000
+  port: 5010
   visibility_timeout: '36000'
   region: "us-east-1"
   bucket: "adultmatch-dev"
