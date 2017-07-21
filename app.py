@@ -8,13 +8,13 @@ import logging
 
 from flask import Flask
 from flask_cors import CORS
+from flask_env import MetaFlaskEnv
 from flask_restful import Api
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from tornado.wsgi import WSGIContainer
 
-# from config.flask_config import Configuration
-from config import log  # pylint: disable=unused-import
+from config import log
 from helpers.environment import Environment
 from resources.amois import AmoisResource
 from resources.healthcheck import HealthCheck
@@ -22,12 +22,16 @@ from resources.treatment_arm import TreatmentArms
 from resources.treatment_arm import TreatmentArmsById
 from resources.version import Version
 
-
 # Logging functionality
+log.log_config()  # set the global logging configuration
 LOGGER = logging.getLogger(__name__)
 
 APP = Flask(__name__)
-# APP.config.from_object(Configuration)
+
+class Configuration(metaclass=MetaFlaskEnv):
+    DEBUG = True  # for some reason, this causes JSON to be "pretty-printed"
+
+APP.config.from_object(Configuration)
 
 API = Api(APP)
 CORS = CORS(APP, resources={r"/api/*": {"origins": "*"}})
@@ -37,11 +41,6 @@ API.add_resource(HealthCheck, '/api/v1/treatment_arms/healthcheck', endpoint='ge
 API.add_resource(TreatmentArms, '/api/v1/treatment_arms', endpoint='get_all')
 API.add_resource(TreatmentArmsById, '/api/v1/treatment_arms/<string:arm_id>', endpoint='get_by_id')
 API.add_resource(Version, '/api/v1/treatment_arms/version', endpoint='get_version')
-
-# API.add_resource(TreatmentArm,
-#                  '/api/v1/treatment_arms/<string:name>/<string:version>',
-#                  endpoint='get_one')
-#
 
 if __name__ == '__main__':
     port = Environment().port
