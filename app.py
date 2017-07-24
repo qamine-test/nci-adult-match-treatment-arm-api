@@ -8,12 +8,12 @@ import logging
 
 from flask import Flask
 from flask_cors import CORS
-from flask_env import MetaFlaskEnv
 from flask_restful import Api
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from tornado.wsgi import WSGIContainer
 
+from config import flask_config
 from config import log
 from helpers.environment import Environment
 from resources.amois import AmoisResource
@@ -27,11 +27,7 @@ log.log_config()  # set the global logging configuration
 LOGGER = logging.getLogger(__name__)
 
 APP = Flask(__name__)
-
-class Configuration(metaclass=MetaFlaskEnv):
-    DEBUG = True  # for some reason, this causes JSON to be "pretty-printed"
-
-APP.config.from_object(Configuration)
+APP.config.from_object(flask_config.Configuration)
 
 API = Api(APP)
 CORS = CORS(APP, resources={r"/api/*": {"origins": "*"}})
