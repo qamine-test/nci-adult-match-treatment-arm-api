@@ -14,9 +14,6 @@ SCRIPT_PATH = 'scripts.consolidate_treatment_arm_collections.consolidate_treatme
 class TestConsolidateTreatmentArmCollections(unittest.TestCase):
 
     # Test the TAConverter().convert function that converts a treatmentArm document to a treatmentArms document.
-    EMPTY_SUMMARY_RPT = {'numCurrentPatientsOnArm': 0, 'numFormerPatients': 0, 'numPendingArmApproval': 0,
-                         'numNotEnrolledPatient': 0, 'assignmentRecords': []}
-
     @data(
         # successful conversion
         ({'_class': 'gov.match.model.TreatmentArm',
@@ -30,7 +27,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
           'dateCreated': datetime.datetime(2016, 6, 2, 14, 56, 52, 704000),
           'name': 'TDM1 in HER2 Amplification',
           'version': '2016-03-31',
-          'summaryReport': EMPTY_SUMMARY_RPT,
+          'summaryReport': ctac.TAConverter.EMPTY_SUMMARY_REPORT,
           'dateArchived': None}),
         # successful conversion when input record has incorrect _class
         ({'_class': 'gov.match.model.TreatmentArmor',
@@ -44,7 +41,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
           'dateCreated': datetime.datetime(2016, 6, 7, 14, 56, 52, 704000),
           'name': 'TDM1 in HER2 Amplification',
           'version': '2016-05-31',
-          'summaryReport': EMPTY_SUMMARY_RPT,
+          'summaryReport': ctac.TAConverter.EMPTY_SUMMARY_REPORT,
           'dateArchived': None}),
         # 1. exception for missing _id
         ({'_class': 'gov.match.model.TreatmentArm',
@@ -92,6 +89,46 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         'name': 'Trametinib in NF1 mutation',
         'treatmentArmDrugs': DEFAULT_TA_DRUGS,
         'version': '09-14-2015'}
+
+    TA_HISTORY_TA1 = {'_id': 'EAY131-S1',
+                      'dateCreated': datetime.datetime(2015, 1, 13, 21, 8, 22, 83000),
+                      'name': 'Trametinib in NF1 mutation',
+                      'treatmentArmDrugs': DEFAULT_TA_DRUGS,
+                      'version': '09-14-2015'}
+
+    TA_HISTORY_TA2 = {'_id': 'EAY131-S1',
+                      'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
+                      'name': 'Trametinib in NF1 mutation',
+                      'treatmentArmDrugs': DEFAULT_TA_DRUGS,
+                      'version': '09-14-2016'}
+
+    TA_HISTORY_DOC1 = {'_class': 'gov.match.model.TreatmentArmHistoryItem',
+                       '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
+                       'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
+                       'treatmentArm': TA_HISTORY_TA1}
+
+    TA_HISTORY_DOC2 = {'_class': 'gov.match.model.TreatmentArmHistoryItem',
+                       '_id': '4300d834-4234-44e3-acdf-65b4a3c444b1',
+                       'dateArchived': datetime.datetime(2016, 12, 5, 7, 36, 20, 602000),
+                       'treatmentArm': TA_HISTORY_TA2}
+
+    TA_DOC1 = {'_class': 'gov.match.model.TreatmentArm',
+               '_id': 'EAY131-Z1',
+               'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 707000),
+               'name': 'TDM1 in HER2 Amplification',
+               'version': '2016-07-30'}
+
+    TA_DOC2 = {'_class': 'gov.match.model.TreatmentArm',
+               '_id': 'EAY131-Q',
+               'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 708000),
+               'name': 'TDM2 in HER2 Amplification',
+               'version': '2016-05-30'}
+
+    TA_DOC3 = {'_class': 'gov.match.model.TreatmentArm',
+               '_id': 'EAY131-Z',
+               'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 709000),
+               'name': 'TDM3 in HER2 Amplification',
+               'version': '2016-12-30'}
 
     @data(
         # successful conversion
@@ -191,26 +228,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
     def test_TAHConverter_collection_name(self):
         self.assertEqual(ctac.TAHConverter().get_collection_name(), "treatmentArmHistory")
 
-    @data(
-        # treatmentArm data
-        ([{'_class': 'gov.match.model.TreatmentArm',
-           '_id': 'EAY131-Z',
-           'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
-           'name': 'TDM1 in HER1 Amplification',
-           'version': '2016-07-31'},
-          {'_class': 'gov.match.model.TreatmentArm',
-           '_id': 'EAY131-Q',
-           'dateCreated': datetime.datetime(2016, 6, 7, 14, 56, 52, 705000),
-           'name': 'TDM1 in HER2 Amplification',
-           'version': '2016-05-31'},
-          {'_class': 'gov.match.model.TreatmentArm',
-           '_id': 'EAY131-Z1',
-           'dateCreated': datetime.datetime(2016, 6, 8, 14, 56, 52, 706000),
-           'name': 'TDM1 in HER3 Amplification',
-           'version': '2016-12-31'}
-          ]
-         )
-    )
+    @data([TA_DOC1, TA_DOC2, TA_DOC3])
     @patch(SCRIPT_PATH + '.LOGGER')
     @patch(SCRIPT_PATH + '.MongoDbAccessor')
     def test_convert_to_treatment_arms(self, indata, mock_db_accessor, mock_logger):
@@ -240,125 +258,32 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
 
     @data(
         # 1. Expected normal execution: both tables contain data with no errors
-        ([  # treatmentArm data
-            {'_class': 'gov.match.model.TreatmentArm',
-             '_id': 'EAY131-Z1',
-             'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 707000),
-             'name': 'TDM1 in HER2 Amplification',
-             'version': '2016-07-30'},
-            {'_class': 'gov.match.model.TreatmentArm',
-             '_id': 'EAY131-Q',
-             'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 708000),
-             'name': 'TDM2 in HER2 Amplification',
-             'version': '2016-05-30'},
-            {'_class': 'gov.match.model.TreatmentArm',
-             '_id': 'EAY131-Z',
-             'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 709000),
-             'name': 'TDM3 in HER2 Amplification',
-             'version': '2016-12-30'}
-         ],
-         [  # treatmentArmHistory data
-            {'_class': 'gov.match.model.TreatmentArmHistoryItem',
-             '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
-             'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
-             'treatmentArm': {'_id': 'EAY131-S1',
-                              'dateCreated': datetime.datetime(2015, 1, 13, 21, 8, 22, 83000),
-                              'name': 'Trametinib in NF1 mutation',
-                              'treatmentArmDrugs': DEFAULT_TA_DRUGS,
-                              'version': '09-14-2015'}},
-            {'_class': 'gov.match.model.TreatmentArmHistoryItem',
-             '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
-             'dateArchived': datetime.datetime(2016, 12, 5, 7, 36, 20, 602000),
-             'treatmentArm': {'_id': 'EAY131-S1',
-                              'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
-                              'name': 'Trametinib in NF1 mutation',
-                              'treatmentArmDrugs': DEFAULT_TA_DRUGS,
-                              'version': '09-14-2016'}}
-         ],
+        ([TA_DOC1, TA_DOC2, TA_DOC3], # treatmentArm data
+         [TA_HISTORY_DOC1, TA_HISTORY_DOC2],  # treatmentArmHistory data
          0  # expected return value
         ),
         # 2. test when both source tables are empty
         ([], [], 0),
         # 3. test when treatmentArm contains data and treatmentArmHistory does not
-        ([  # treatmentArm data
-             {'_class': 'gov.match.model.TreatmentArm',
-              '_id': 'EAY131-Z',
-              'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 724000),
-              'name': 'TDM1 in HER2 Amplification',
-              'version': '2016-07-31'},
-             {'_class': 'gov.match.model.TreatmentArm',
-              '_id': 'EAY131-Q',
-              'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 714000),
-              'name': 'TDM1 in HER2 Amplification',
-              'version': '2016-05-31'},
-             {'_class': 'gov.match.model.TreatmentArm',
-              '_id': 'EAY131-Z1',
-              'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 724000),
-              'name': 'TDM1 in HER2 Amplification',
-              'version': '2016-12-31'}
-         ],
-         [  # treatmentArmHistory data is empty
-         ],
+        ([TA_DOC1, TA_DOC2, TA_DOC3], # treatmentArm data
+         [],  # treatmentArmHistory data is empty
          0  # expected return value
         ),
         # 4. test when treatmentArmHistory contains data and treatmentArm does not
-        ([  # treatmentArm data is empty
-         ],
-         [  # treatmentArmHistory data
-             {'_class': 'gov.match.model.TreatmentArmHistoryItem',
-              '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
-              'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 612000),
-              'treatmentArm': {'_id': 'EAY131-S1',
-                               'dateCreated': datetime.datetime(2015, 1, 13, 21, 8, 22, 83000),
-                               'name': 'Trametinib in NF1 mutation',
-                               'treatmentArmDrugs': DEFAULT_TA_DRUGS,
-                               'version': '09-14-2015'}},
-             {'_class': 'gov.match.model.TreatmentArmHistoryItem',
-              '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
-              'dateArchived': datetime.datetime(2016, 12, 5, 7, 36, 20, 612000),
-              'treatmentArm': {'_id': 'EAY131-S1',
-                               'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
-                               'name': 'Trametinib in NF1 mutation',
-                               'treatmentArmDrugs': DEFAULT_TA_DRUGS,
-                               'version': '09-14-2016'}}
-         ],
+        ([],  # treatmentArm data is empty
+         [TA_HISTORY_DOC1, TA_HISTORY_DOC2],  # treatmentArmHistory data
          0  # expected return value
         ),
         # 5. Test when an exception occurs
         ([  # treatmentArm data with missing _id in second record
-             {'_class': 'gov.match.model.TreatmentArm',
-              '_id': 'EAY131-Z',
-              'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
-              'name': 'TDM1 in HER2 Amplification',
-              'version': '2016-07-31'},
+             TA_DOC1,
              {'_class': 'gov.match.model.TreatmentArm',
               'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
               'name': 'TDM1 in HER2 Amplification',
               'version': '2016-05-31'},
-             {'_class': 'gov.match.model.TreatmentArm',
-              '_id': 'EAY131-Z1',
-              'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
-              'name': 'TDM1 in HER2 Amplification',
-              'version': '2016-12-31'}
+             TA_DOC3
          ],
-         [  # treatmentArmHistory data
-             {'_class': 'gov.match.model.TreatmentArmHistoryItem',
-              '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
-              'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
-              'treatmentArm': {'_id': 'EAY131-S1',
-                               'dateCreated': datetime.datetime(2015, 1, 13, 21, 8, 22, 83000),
-                               'name': 'Trametinib in NF1 mutation',
-                               'treatmentArmDrugs': DEFAULT_TA_DRUGS,
-                               'version': '09-14-2015'}},
-             {'_class': 'gov.match.model.TreatmentArmHistoryItem',
-              '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
-              'dateArchived': datetime.datetime(2016, 12, 5, 7, 36, 20, 602000),
-              'treatmentArm': {'_id': 'EAY131-S1',
-                               'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
-                               'name': 'Trametinib in NF1 mutation',
-                               'treatmentArmDrugs': DEFAULT_TA_DRUGS,
-                               'version': '09-14-2016'}}
-         ],
+         [TA_HISTORY_DOC1, TA_HISTORY_DOC2],  # treatmentArmHistory data
          -1  # expected return value for error
         )
     )
