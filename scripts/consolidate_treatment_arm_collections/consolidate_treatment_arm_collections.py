@@ -70,6 +70,12 @@ class TAConverter(ConverterBase):
     """Converts a document from the treatment collection to a document
        for the treatmentArms collection.
     """
+    EMPTY_SUMMARY_REPORT = {'numCurrentPatientsOnArm': 0,
+                            'numFormerPatients': 0,
+                            'numPendingArmApproval': 0,
+                            'numNotEnrolledPatient': 0,
+                            'assignmentRecords': []}
+
     def __init__(self):
         ConverterBase.__init__(self, 'treatmentArm')
 
@@ -85,13 +91,7 @@ class TAConverter(ConverterBase):
         ConverterBase._apply_common_changes(new_ta_doc)
         new_ta_doc['treatmentArmId'] = doc['_id']
         new_ta_doc['dateArchived'] = None
-        new_ta_doc['summaryReport'] = {
-            'numCurrentPatientsOnArm': 0,
-            'numFormerPatients': 0,
-            'numPendingArmApproval': 0,
-            'numNotEnrolledPatient': 0,
-            'assignmentRecords': []
-        }
+        new_ta_doc['summaryReport'] = TAConverter.EMPTY_SUMMARY_REPORT
         return new_ta_doc
 
 
