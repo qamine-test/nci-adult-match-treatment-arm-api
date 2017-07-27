@@ -14,6 +14,9 @@ SCRIPT_PATH = 'scripts.consolidate_treatment_arm_collections.consolidate_treatme
 class TestConsolidateTreatmentArmCollections(unittest.TestCase):
 
     # Test the TAConverter().convert function that converts a treatmentArm document to a treatmentArms document.
+    EMPTY_SUMMARY_RPT = {'numCurrentPatientsOnArm': 0, 'numFormerPatients': 0, 'numPendingArmApproval': 0,
+                         'numNotEnrolledPatient': 0, 'assignmentRecords': []}
+
     @data(
         # successful conversion
         ({'_class': 'gov.match.model.TreatmentArm',
@@ -21,53 +24,41 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
           'dateCreated': datetime.datetime(2016, 6, 2, 14, 56, 52, 704000),
           'exclusionCriterias': [],
           'name': 'TDM1 in HER2 Amplification',
-          'version': '2016-05-31'},
+          'version': '2016-03-31'},
          {'_class': 'gov.match.model.TreatmentArm',
-          'treatmentId': 'EAY131-Q',
+          'treatmentArmId': 'EAY131-Q',
           'dateCreated': datetime.datetime(2016, 6, 2, 14, 56, 52, 704000),
           'name': 'TDM1 in HER2 Amplification',
-          'version': '2016-05-31',
-          'summaryReport': {
-            'numCurrentPatientsOnArm': 0,
-            'numFormerPatients': 0,
-            'numPendingArmApproval': 0,
-            'numNotEnrolledPatient': 0,
-            'assignmentRecords': []
-          },
+          'version': '2016-03-31',
+          'summaryReport': EMPTY_SUMMARY_RPT,
           'dateArchived': None}),
         # successful conversion when input record has incorrect _class
         ({'_class': 'gov.match.model.TreatmentArmor',
-          '_id': 'EAY131-Q',
+          '_id': 'EAY131-U',
           'dateCreated': datetime.datetime(2016, 6, 7, 14, 56, 52, 704000),
           'exclusionCriterias': [],
           'name': 'TDM1 in HER2 Amplification',
           'version': '2016-05-31'},
          {'_class': 'gov.match.model.TreatmentArm',
-          'treatmentId': 'EAY131-Q',
+          'treatmentArmId': 'EAY131-U',
           'dateCreated': datetime.datetime(2016, 6, 7, 14, 56, 52, 704000),
           'name': 'TDM1 in HER2 Amplification',
           'version': '2016-05-31',
-          'summaryReport': {
-            'numCurrentPatientsOnArm': 0,
-            'numFormerPatients': 0,
-            'numPendingArmApproval': 0,
-            'numNotEnrolledPatient': 0,
-            'assignmentRecords': []
-          },
+          'summaryReport': EMPTY_SUMMARY_RPT,
           'dateArchived': None}),
         # 1. exception for missing _id
         ({'_class': 'gov.match.model.TreatmentArm',
           'dateCreated': datetime.datetime(2016, 6, 5, 14, 56, 52, 704000),
           'exclusionCriterias': [],
-          'name': 'TDM1 in HER2 Amplification',
-          'version': '2016-05-31'},
+          'name': 'TDM1 in HER1 Amplification',
+          'version': '2016-07-31'},
          'Invalid treatmentArm document'),
         # 2. exception for passing in already converted record
         ({'_class': 'gov.match.model.TreatmentArm',
-          'treatmentId': 'EAY131-Q',
+          'treatmentArmId': 'EAY131-V',
           'dateCreated': datetime.datetime(2016, 6, 8, 14, 56, 52, 704000),
           'exclusionCriterias': [],
-          'name': 'TDM1 in HER2 Amplification',
+          'name': 'TDM1 in HER3 Amplification',
           'version': '2016-05-31'},
          'Invalid treatmentArm document'),
         # 3. exception for input record's _id is None
@@ -76,7 +67,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
           'dateCreated': datetime.datetime(2016, 6, 9, 14, 56, 52, 704000),
           'exclusionCriterias': [],
           'name': 'TDM1 in HER2 Amplification',
-          'version': '2016-05-31'},
+          'version': '2016-03-31'},
          'Invalid treatmentArm document'),
         # 4. exception for ta_doc is None
         (None,
@@ -94,42 +85,34 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
             self.assertEqual(str(e), exp_result)
 
     # Test the TAHConverter().convert function that converts a treatmentArmHistory document to a treatmentArms document.
+    DEFAULT_TA_DRUGS = [{'drugId': '763093', 'name': 'Trametinib dimethyl sulfoxide (GSK1120212B)', 'pathway': 'NF1'}]
+    DEFAULT_TA_FROM_TA_HISTORY = {
+        '_id': 'EAY131-S1',
+        'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
+        'name': 'Trametinib in NF1 mutation',
+        'treatmentArmDrugs': DEFAULT_TA_DRUGS,
+        'version': '09-14-2015'}
+
     @data(
         # successful conversion
         ({'_class': 'gov.match.model.TreatmentArmHistoryItem',
           '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
           'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
           'exclusionCriterias': [],
-          'treatmentArm': {'_id': 'EAY131-S1',
-                           'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
-                           'name': 'Trametinib in NF1 mutation',
-                           'treatmentArmDrugs': [{'drugId': '763093',
-                                                  'name': 'Trametinib dimethyl '
-                                                          'sulfoxide (GSK1120212B)',
-                                                  'pathway': 'NF1'}],
-                           'version': '09-14-2015'}},
+          'treatmentArm': DEFAULT_TA_FROM_TA_HISTORY},
          {'_class': 'gov.match.model.TreatmentArm',
-          'treatmentId': 'EAY131-S1',
+          'treatmentArmId': 'EAY131-S1',
           'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
           'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
           'name': 'Trametinib in NF1 mutation',
-          'treatmentArmDrugs': [{'drugId': '763093',
-                                 'name': 'Trametinib dimethyl sulfoxide (GSK1120212B)',
-                                 'pathway': 'NF1'}],
+          'treatmentArmDrugs': DEFAULT_TA_DRUGS,
           'version': '09-14-2015'}
          ),
         # 1. exception for missing _id
         ({'_class': 'gov.match.model.TreatmentArmHistoryItem',
           'dateArchived': datetime.datetime(2016, 1, 16, 21, 36, 20, 602000),
           'exclusionCriterias': [],
-          'treatmentArm': {'_id': 'EAY131-S1',
-                           'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
-                           'name': 'Trametinib in NF1 mutation',
-                           'treatmentArmDrugs': [{'drugId': '763093',
-                                                  'name': 'Trametinib dimethyl '
-                                                          'sulfoxide (GSK1120212B)',
-                                                  'pathway': 'NF1'}],
-                           'version': '09-14-2015'}},
+          'treatmentArm': DEFAULT_TA_FROM_TA_HISTORY},
          'Invalid treatmentArmHistory document'
          ),
         # 2. exception for unpopulated _id
@@ -137,28 +120,14 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
           '_id': None,
           'dateArchived': datetime.datetime(2016, 1, 17, 21, 36, 20, 602000),
           'exclusionCriterias': [],
-          'treatmentArm': {'_id': 'EAY131-S1',
-                           'dateCreated': datetime.datetime(2016, 1, 14, 21, 8, 22, 83000),
-                           'name': 'Trametinib in NF1 mutation',
-                           'treatmentArmDrugs': [{'drugId': '763093',
-                                                  'name': 'Trametinib dimethyl '
-                                                          'sulfoxide (GSK1120212B)',
-                                                  'pathway': 'NF1'}],
-                           'version': '09-14-2015'}},
+          'treatmentArm': DEFAULT_TA_FROM_TA_HISTORY},
          'Invalid treatmentArmHistory document'
          ),
         # 3. exception for missing dateArchived
         ({'_class': 'gov.match.model.TreatmentArmHistoryItem',
           '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
           'exclusionCriterias': [],
-          'treatmentArm': {'_id': 'EAY131-S1',
-                           'dateCreated': datetime.datetime(2016, 1, 15, 21, 8, 22, 83000),
-                           'name': 'Trametinib in NF1 mutation',
-                           'treatmentArmDrugs': [{'drugId': '763091',
-                                                  'name': 'Trametinib dimethyl '
-                                                          'sulfoxide (GSK112021B)',
-                                                  'pathway': 'NF1'}],
-                           'version': '09-14-2015'}},
+          'treatmentArm': DEFAULT_TA_FROM_TA_HISTORY},
          'Invalid treatmentArmHistory document'
          ),
         # 4. exception for unpopulated dateArchived
@@ -166,14 +135,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
           '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
           'dateArchived': None,
           'exclusionCriterias': [],
-          'treatmentArm': {'_id': 'EAY131-S1',
-                           'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 84000),
-                           'name': 'Trametinib in NF1 mutation',
-                           'treatmentArmDrugs': [{'drugId': '763092',
-                                                  'name': 'Trametinib dimethyl '
-                                                          'sulfoxide (GSK112022B)',
-                                                  'pathway': 'NF1'}],
-                           'version': '09-14-2015'}},
+          'treatmentArm': DEFAULT_TA_FROM_TA_HISTORY},
          'Invalid treatmentArmHistory document'
          ),
         # 5. exception for missing treatmentArm
@@ -186,16 +148,13 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
          ),
         # 6. exception for unpopulated treatmentArm[_id]
         ({'_class': 'gov.match.model.TreatmentArmHistoryItem',
-          '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
+          '_id': '4300d834-4234-44e3-acdf-65b4a3c444b1',
           'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 604000),
           'exclusionCriterias': [],
           'treatmentArm': {'_id': None,
                            'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
                            'name': 'Trametinib in NF1 mutation',
-                           'treatmentArmDrugs': [{'drugId': '763094',
-                                                  'name': 'Trametinib dimethyl '
-                                                          'sulfoxide (GSK112012B)',
-                                                  'pathway': 'NF1'}],
+                           'treatmentArmDrugs': DEFAULT_TA_DRUGS,
                            'version': '09-14-2015'}},
          'Invalid treatmentArmHistory document'
          ),
@@ -204,12 +163,9 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
           '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
           'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 606000),
           'exclusionCriterias': [],
-          'treatmentArm': {'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 84000),
+          'treatmentArm': {'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
                            'name': 'Trametinib in NF1 mutation',
-                           'treatmentArmDrugs': [{'drugId': '763095',
-                                                  'name': 'Trametinib dimethyl '
-                                                          'sulfoxide (GSK120212B)',
-                                                  'pathway': 'NF1'}],
+                           'treatmentArmDrugs': DEFAULT_TA_DRUGS,
                            'version': '09-14-2015'}},
          'Invalid treatmentArmHistory document'
          ),
@@ -240,17 +196,17 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         ([{'_class': 'gov.match.model.TreatmentArm',
            '_id': 'EAY131-Z',
            'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 704000),
-           'name': 'TDM1 in HER2 Amplification',
+           'name': 'TDM1 in HER1 Amplification',
            'version': '2016-07-31'},
           {'_class': 'gov.match.model.TreatmentArm',
            '_id': 'EAY131-Q',
-           'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 705000),
+           'dateCreated': datetime.datetime(2016, 6, 7, 14, 56, 52, 705000),
            'name': 'TDM1 in HER2 Amplification',
            'version': '2016-05-31'},
           {'_class': 'gov.match.model.TreatmentArm',
            '_id': 'EAY131-Z1',
-           'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 706000),
-           'name': 'TDM1 in HER2 Amplification',
+           'dateCreated': datetime.datetime(2016, 6, 8, 14, 56, 52, 706000),
+           'name': 'TDM1 in HER3 Amplification',
            'version': '2016-12-31'}
           ]
          )
@@ -286,19 +242,19 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
         # 1. Expected normal execution: both tables contain data with no errors
         ([  # treatmentArm data
             {'_class': 'gov.match.model.TreatmentArm',
-             '_id': 'EAY131-Z',
+             '_id': 'EAY131-Z1',
              'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 707000),
              'name': 'TDM1 in HER2 Amplification',
              'version': '2016-07-30'},
             {'_class': 'gov.match.model.TreatmentArm',
              '_id': 'EAY131-Q',
              'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 708000),
-             'name': 'TDM1 in HER2 Amplification',
+             'name': 'TDM2 in HER2 Amplification',
              'version': '2016-05-30'},
             {'_class': 'gov.match.model.TreatmentArm',
-             '_id': 'EAY131-Z1',
+             '_id': 'EAY131-Z',
              'dateCreated': datetime.datetime(2016, 6, 6, 14, 56, 52, 709000),
-             'name': 'TDM1 in HER2 Amplification',
+             'name': 'TDM3 in HER2 Amplification',
              'version': '2016-12-30'}
          ],
          [  # treatmentArmHistory data
@@ -308,10 +264,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
              'treatmentArm': {'_id': 'EAY131-S1',
                               'dateCreated': datetime.datetime(2015, 1, 13, 21, 8, 22, 83000),
                               'name': 'Trametinib in NF1 mutation',
-                              'treatmentArmDrugs': [{'drugId': '763093',
-                                                     'name': 'Trametinib dimethyl '
-                                                             'sulfoxide (GSK1120212B)',
-                                                     'pathway': 'NF1'}],
+                              'treatmentArmDrugs': DEFAULT_TA_DRUGS,
                               'version': '09-14-2015'}},
             {'_class': 'gov.match.model.TreatmentArmHistoryItem',
              '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
@@ -319,10 +272,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
              'treatmentArm': {'_id': 'EAY131-S1',
                               'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
                               'name': 'Trametinib in NF1 mutation',
-                              'treatmentArmDrugs': [{'drugId': '763093',
-                                                     'name': 'Trametinib dimethyl '
-                                                             'sulfoxide (GSK1120212B)',
-                                                     'pathway': 'NF1'}],
+                              'treatmentArmDrugs': DEFAULT_TA_DRUGS,
                               'version': '09-14-2016'}}
          ],
          0  # expected return value
@@ -361,10 +311,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
               'treatmentArm': {'_id': 'EAY131-S1',
                                'dateCreated': datetime.datetime(2015, 1, 13, 21, 8, 22, 83000),
                                'name': 'Trametinib in NF1 mutation',
-                               'treatmentArmDrugs': [{'drugId': '764093',
-                                                      'name': 'Trametinib dimethyl '
-                                                              'sulfoxide (GSK1120212B)',
-                                                      'pathway': 'NF1'}],
+                               'treatmentArmDrugs': DEFAULT_TA_DRUGS,
                                'version': '09-14-2015'}},
              {'_class': 'gov.match.model.TreatmentArmHistoryItem',
               '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
@@ -372,10 +319,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
               'treatmentArm': {'_id': 'EAY131-S1',
                                'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
                                'name': 'Trametinib in NF1 mutation',
-                               'treatmentArmDrugs': [{'drugId': '764093',
-                                                      'name': 'Trametinib dimethyl '
-                                                              'sulfoxide (GSK1120212B)',
-                                                      'pathway': 'NF1'}],
+                               'treatmentArmDrugs': DEFAULT_TA_DRUGS,
                                'version': '09-14-2016'}}
          ],
          0  # expected return value
@@ -404,10 +348,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
               'treatmentArm': {'_id': 'EAY131-S1',
                                'dateCreated': datetime.datetime(2015, 1, 13, 21, 8, 22, 83000),
                                'name': 'Trametinib in NF1 mutation',
-                               'treatmentArmDrugs': [{'drugId': '763093',
-                                                      'name': 'Trametinib dimethyl '
-                                                              'sulfoxide (GSK1120212B)',
-                                                      'pathway': 'NF1'}],
+                               'treatmentArmDrugs': DEFAULT_TA_DRUGS,
                                'version': '09-14-2015'}},
              {'_class': 'gov.match.model.TreatmentArmHistoryItem',
               '_id': '4300d834-4234-44e3-acdf-65b4a3c444a0',
@@ -415,10 +356,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
               'treatmentArm': {'_id': 'EAY131-S1',
                                'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
                                'name': 'Trametinib in NF1 mutation',
-                               'treatmentArmDrugs': [{'drugId': '763093',
-                                                      'name': 'Trametinib dimethyl '
-                                                              'sulfoxide (GSK1120212B)',
-                                                      'pathway': 'NF1'}],
+                               'treatmentArmDrugs': DEFAULT_TA_DRUGS,
                                'version': '09-14-2016'}}
          ],
          -1  # expected return value for error
