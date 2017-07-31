@@ -5,7 +5,7 @@ services:
     command: python app.py
     image: "fnlcr/nci-adult-match-treatment-arm-api"
     ports:
-      - "5010:5010"
+      - "5011:5010"
     depends_on:
       - mongo
     environment:
