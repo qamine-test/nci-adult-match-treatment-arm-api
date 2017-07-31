@@ -30,7 +30,7 @@ class Refresher(object):
                 upd_cnt += 1
             else:
                 self.logger.error("Failed to update Summary Report for {trtmtId}:{version}"
-                                  .format(trtmtId=sr.treatmentId, version=sr.version))
+                                  .format(trtmtId=sr.treatmentArmId, version=sr.version))
 
         if upd_cnt != sum_rpt_cnt:
             self.logger.exception("Only {cnt}/{total} summary reports updated".format(cnt=upd_cnt, total=sum_rpt_cnt))
@@ -44,9 +44,9 @@ class Refresher(object):
         """
         # Get all patients associated with the Treatment Arm of the given Summary Report.
         # Patients are sorted by patientSequenceNumber (ascending) and patientAssignments.dateConfirmed (descending).
-        patients = [Patient(p) for p in self.pat_accessor.get_patients_by_treatment_arm_id(sum_rpt.treatmentId)]
+        patients = [Patient(p) for p in self.pat_accessor.get_patients_by_treatment_arm_id(sum_rpt.treatmentArmId)]
         self.logger.debug("{cnt} patients returned for '{trtmt_id}"
-                          .format(cnt=len(patients), trtmt_id=sum_rpt.treatmentId))
+                          .format(cnt=len(patients), trtmt_id=sum_rpt.treatmentArmId))
 
         # Update the summary report object for any patients that meet the criteria.
         pat_id = []
@@ -62,7 +62,7 @@ class Refresher(object):
 
     @staticmethod
     def _match(patient, sum_rpt):
-        assignment_rec = Refresher._create_assignment_record(patient, sum_rpt.treatmentId)
+        assignment_rec = Refresher._create_assignment_record(patient, sum_rpt.treatmentArmId)
         patient_type = Refresher._determine_patient_classification_by_dates(assignment_rec)
 
         if patient_type is not None:
