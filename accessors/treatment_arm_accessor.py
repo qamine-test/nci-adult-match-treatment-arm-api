@@ -18,7 +18,7 @@ class TreatmentArmsAccessor(MongoDbAccessor):
         return [ta_nhr for ta_nhr in self.aggregate([
             {"$match": {"variantReport.nonHotspotRules": {"$ne": []}}},
             {"$unwind": "$variantReport.nonHotspotRules"},
-            {"$project": {"treatmentId": 1,
+            {"$project": {"treatmentArmId": 1,
                           "version": 1,
                           "dateArchived": 1,
                           "treatmentArmStatus": 1,
@@ -40,7 +40,7 @@ class TreatmentArmsAccessor(MongoDbAccessor):
         return [ta_ir for ta_ir in self.aggregate([
             {"$match": {"variantReport."+variant_type: {"$ne": []}}},
             {"$unwind": "$variantReport."+variant_type},
-            {"$project": {"treatmentId": 1,
+            {"$project": {"treatmentArmId": 1,
                           "version": 1,
                           "dateArchived": 1,
                           "treatmentArmStatus": 1,
@@ -53,7 +53,7 @@ class TreatmentArmsAccessor(MongoDbAccessor):
     def get_arms_for_summary_report_refresh(self):
         self.logger.debug('Retrieving TreatmentArms from database for Summary Report Refresh')
         return [ta for ta in self.find({'dateArchived': None},
-                                       {'treatmentId': 1,
+                                       {'treatmentArmId': 1,
                                         'version': 1,
                                         'treatmentArmStatus': 1,
                                         'stateToken': 1})]
