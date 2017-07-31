@@ -29,13 +29,13 @@ def create_sr_json(**kwargs):
 
 # Default TreatmentArm
 DEFAULT_TA = {'_id': '2234567890',
-              'treatmentId': 'EAY131-A',
+              'treatmentArmId': 'EAY131-A',
               'version': '2016-08-15',
               'treatmentArmStatus': 'OPEN'}
 
 MATCHING_TA = {
     "_id": "2234567899",
-    'treatmentId': 'EAY131-B',
+    'treatmentArmId': 'EAY131-B',
     "version": "2015-08-06",
     "treatmentArmStatus": "OPEN",
 }
@@ -133,7 +133,7 @@ class RefresherTest(unittest.TestCase):
 
         ar_records = []
         for patient in expected_ar_patients:
-            assmt_rec = Refresher._create_assignment_record(Patient(patient), ta_data_for_sum_rpt['treatmentId'])
+            assmt_rec = Refresher._create_assignment_record(Patient(patient), ta_data_for_sum_rpt['treatmentArmId'])
             ar_records.append(assmt_rec.get_json())
         expected_sum_rpt_json['assignmentRecords'] = ar_records
 
