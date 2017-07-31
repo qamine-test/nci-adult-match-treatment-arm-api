@@ -77,3 +77,7 @@ class MongoDbAccessor(object):
         """
         self.logger.debug('Updating multiple {cn} documents in database'.format(cn=self.collection_name))
         return self.collection.update_many(query, update)
+
+    @staticmethod
+    def mongo_to_python(doc):
+        return json.loads(json_util.dumps(doc))
