@@ -9,7 +9,7 @@ class SummaryReport(object):
     ASSNMNT_RECS = 'assignmentRecords'
 
     _SR_COUNT_FIELDS = [NOT_ENROLLED, FORMER, CURRENT, PENDING]
-    _REQ_JSON_FIELDS = ['_id', 'treatmentId', 'version', 'treatmentArmStatus']
+    _REQ_JSON_FIELDS = ['_id', 'treatmentArmId', 'version', 'treatmentArmStatus']
     _REQ_SR_FIELDS = _SR_COUNT_FIELDS + ['assignmentRecords']
 
     @staticmethod

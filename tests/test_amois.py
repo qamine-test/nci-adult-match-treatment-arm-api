@@ -1,13 +1,15 @@
-import unittest
+#!/usr/bin/env python3
 import datetime
-import flask
 import json
+import unittest
+
+import flask
 from ddt import ddt, data, unpack
 from flask_env import MetaFlaskEnv
 from flask_restful import Api
 from mock import patch
-from resources import amois
 
+from resources import amois
 
 APP = None
 API = None
@@ -65,7 +67,7 @@ def variant(e, f, g, o, identifier='ABC', confirmed=True):
 
 def add_common_ta_fields(ta_rule, archived, incl, status, trtmt_id, ver, rule_type):
     # Add the fields to ta_rule that are common to both types of treatment arm rules (identifier and NonHotspot).
-    ta_rule['treatmentId'] = trtmt_id
+    ta_rule['treatmentArmId'] = trtmt_id
     ta_rule['version'] = ver
     ta_rule['inclusion'] = incl
     ta_rule['dateArchived'] = None if not archived else datetime.datetime(2016, 7, 7)
@@ -111,11 +113,11 @@ class TestAmoisAnnotator(unittest.TestCase):
 
     # Test the AmoisAnnotator._get_amoi_state function with exception.
     @data(
-        ({'treatmentArmStatus': 'PENDI', 'dateArchived': None, 'treatmentId': 'EAY-1', 'version': '2016-09-09'},
+        ({'treatmentArmStatus': 'PENDI', 'dateArchived': None, 'treatmentArmId': 'EAY-1', 'version': '2016-09-09'},
          "Unknown status 'PENDI' for TreatmentArm 'EAY-1', version 2016-09-09"),
-        ({'treatmentArmStatus': '', 'dateArchived': None, 'treatmentId': 'EAY-1', 'version': '2016-09-09'},
+        ({'treatmentArmStatus': '', 'dateArchived': None, 'treatmentArmId': 'EAY-1', 'version': '2016-09-09'},
          "Unknown status '' for TreatmentArm 'EAY-1', version 2016-09-09"),
-        ({'treatmentArmStatus': None, 'dateArchived': None, 'treatmentId': 'EAY-1', 'version': '2016-09-09'},
+        ({'treatmentArmStatus': None, 'dateArchived': None, 'treatmentArmId': 'EAY-1', 'version': '2016-09-09'},
          "Unknown status 'None' for TreatmentArm 'EAY-1', version 2016-09-09"),
     )
     @unpack
@@ -127,11 +129,11 @@ class TestAmoisAnnotator(unittest.TestCase):
     # Test the AmoisAnnotator._extract_annot_data function with normal execution.
     @data(
         (ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False),
-         {'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}),
+         {'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}),
         (ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', True),
-         {'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True, 'type': 'NonHotspot'}),
+         {'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True, 'type': 'NonHotspot'}),
         (ta_id_rule('ABCDE', 'EAY131-Q', '2016-11-11', True),
-         {'treatmentId': 'EAY131-Q', 'version': '2016-11-11', 'inclusion': True, 'type': 'Hotspot'}),
+         {'treatmentArmId': 'EAY131-Q', 'version': '2016-11-11', 'inclusion': True, 'type': 'Hotspot'}),
     )
     @unpack
     def test_extract_annot_data_with_exc(self, amois_dict, exp_annot):
@@ -141,9 +143,9 @@ class TestAmoisAnnotator(unittest.TestCase):
     # Test the AmoisAnnotator._extract_annot_data function with exception.
     @data(
         ({'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'},
-         "The following required fields were missing from the submitted aMOI: treatmentId"),
-        ({'treatmentId': None, 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'},
-         "The following required fields were empty in the submitted aMOI: treatmentId"),
+         "The following required fields were missing from the submitted aMOI: treatmentArmId"),
+        ({'treatmentArmId': None, 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'},
+         "The following required fields were empty in the submitted aMOI: treatmentArmId"),
     )
     @unpack
     def test_extract_annot_data(self, amois_dict, exp_exp_msg):
@@ -156,18 +158,18 @@ class TestAmoisAnnotator(unittest.TestCase):
     @data(
         ([], {}),
         ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN")],
-         {'CURRENT': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}]}),
+         {'CURRENT': [{'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}]}),
         ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', True, "OPEN"),
           ta_nh_rule("1", "1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
           ta_id_rule("EDBCA", 'EAY131-P', '2016-11-11', True)],
-         {'CURRENT': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True, 'type': 'Both'},
-                      {'treatmentId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False, 'type': 'NonHotspot'}]}),
+         {'CURRENT': [{'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True, 'type': 'Both'},
+                      {'treatmentArmId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False, 'type': 'NonHotspot'}]}),
         ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN", True),
           ta_nh_rule("1", "1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
           ta_id_rule('COSM6240', 'EAY131-R', '2016-12-12', False, "CLOSED")],
-         {'PREVIOUS': [{'treatmentId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}],
-          'CURRENT': [{'treatmentId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False, 'type': 'NonHotspot'}],
-          'PRIOR': [{'treatmentId': 'EAY131-R', 'version': '2016-12-12', 'inclusion': False, 'type': 'Hotspot'}]}),
+         {'PREVIOUS': [{'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}],
+          'CURRENT': [{'treatmentArmId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False, 'type': 'NonHotspot'}],
+          'PRIOR': [{'treatmentArmId': 'EAY131-R', 'version': '2016-12-12', 'inclusion': False, 'type': 'Hotspot'}]}),
     )
     @unpack
     def test_create_amois_annotation(self, amois_list, exp_annotation):
@@ -418,8 +420,8 @@ class TestAmoisResource(unittest.TestCase):
             "indels": [],
             "unifiedGeneFusions": [],
           },
-         {'PRIOR': [{'treatmentId': 'SNVARM-A', 'version': '2016-12-20', 'inclusion': True, 'type': 'Hotspot'}],
-          'CURRENT': [{'treatmentId': 'NONHOTSPOTARM-B', 'version': '2016-11-20',
+         {'PRIOR': [{'treatmentArmId': 'SNVARM-A', 'version': '2016-12-20', 'inclusion': True, 'type': 'Hotspot'}],
+          'CURRENT': [{'treatmentArmId': 'NONHOTSPOTARM-B', 'version': '2016-11-20',
                        'inclusion': True, 'type': 'NonHotspot'}],
           },
          [snv_rules[0], nh_rules[2]]),
