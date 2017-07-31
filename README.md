@@ -127,7 +127,7 @@ python3 -m unittest discover <test_directory>
 
 To run all tests with the coverage tool, execute the following from the TreatmentArmAPI root directory:
 ```
-coverage run -m unittest discover tests; coverage report -m
+coverage run -m unittest discover tests; coverage run -a -m unittest discover scripts/tests; coverage report -m
 ```
 
 ## Scripts
