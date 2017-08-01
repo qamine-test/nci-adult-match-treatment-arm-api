@@ -38,6 +38,9 @@ workon nci-adult-match-treatment-arm-api
 
 ```bash
 export MONGODB_URI=mongodb://localhost:27017/Match
+export ENVIRONMENT='development'
+export AWS_SECRET_ACCESS_KEY={your_aws_secret_access_key}
+export AWS_ACCESS_KEY_ID={your_aws_access_key_id}
 ```
 
 ### Set explicitly for a specific command execution
