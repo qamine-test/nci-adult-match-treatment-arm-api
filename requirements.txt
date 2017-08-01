@@ -20,6 +20,7 @@ pymongo
 pyparsing==2.2.0
 python-dateutil==2.6.0
 pytz==2017.2
+pyyaml
 requests
 six==1.10.0
 stevedore==1.21.0

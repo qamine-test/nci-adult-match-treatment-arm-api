@@ -8,19 +8,10 @@ from scripts.summary_report_refresher.summary_report import SummaryReport
 
 PATIENT_STATUS_FIELD = 'currentPatientStatus'
 ON_ARM_STATUS = 'ON_TREATMENT_ARM'
-PENDING_STATUS = 'PENDING_APPROVAL'
+PENDING_STATUSES = ['PENDING_APPROVAL', 'PENDING_CONFIRMATION']
 
 
 class Refresher(object):
-    # OTHER_STATUSES = [
-    #     'OFF_TRIAL_NO_TA_AVAILABLE',
-    #     'OFF_TRIAL_DECEASED',
-    #     'OFF_TRIAL',
-    #     'OFF_TRIAL_BIOPSY_EXPIRED',
-    #     'OFF_TRIAL_NOT_CONSENTED',
-    #     'REJOIN_REQUESTED',
-    #     'PROGRESSION_REBIOPSY',
-    # ]
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
@@ -39,7 +30,7 @@ class Refresher(object):
                 upd_cnt += 1
             else:
                 self.logger.error("Failed to update Summary Report for {trtmtId}:{version}"
-                                  .format(trtmtId=sr.treatmentId, version=sr.version))
+                                  .format(trtmtId=sr.treatmentArmId, version=sr.version))
 
         if upd_cnt != sum_rpt_cnt:
             self.logger.exception("Only {cnt}/{total} summary reports updated".format(cnt=upd_cnt, total=sum_rpt_cnt))
@@ -53,9 +44,9 @@ class Refresher(object):
         """
         # Get all patients associated with the Treatment Arm of the given Summary Report.
         # Patients are sorted by patientSequenceNumber (ascending) and patientAssignments.dateConfirmed (descending).
-        patients = [Patient(p) for p in self.pat_accessor.get_patients_by_treatment_arm_id(sum_rpt.treatmentId)]
+        patients = [Patient(p) for p in self.pat_accessor.get_patients_by_treatment_arm_id(sum_rpt.treatmentArmId)]
         self.logger.debug("{cnt} patients returned for '{trtmt_id}"
-                          .format(cnt=len(patients), trtmt_id=sum_rpt.treatmentId))
+                          .format(cnt=len(patients), trtmt_id=sum_rpt.treatmentArmId))
 
         # Update the summary report object for any patients that meet the criteria.
         pat_id = []
@@ -69,42 +60,9 @@ class Refresher(object):
         # Update the summary report in the treatmentArms collection on the database
         return self.ta_accessor.update_summary_report(sum_rpt._id, sum_rpt.get_json())
 
-    # @staticmethod
-    # def _matchOrig(patient, sum_rpt):
-    #     patient_type = Refresher._determine_patient_classification(patient)
-    #     # print("patient_type = {pt}".format(pt=str(patient_type)))
-    #
-    #     if patient_type is not None:
-    #         assignment_rec = Refresher._create_assignment_record(patient, sum_rpt.treatmentId)
-    #         sum_rpt.add_patient_by_type(patient_type, assignment_rec)
-    #
-    # @staticmethod
-    # def _determine_patient_classification(patient):
-    #     """
-    #     Determines if patient is a patient currently on the the Treatment Arm, pending for the Treatment Arm,
-    #     formerly on the Treatment Arm, or once considered but not enrolled on the Treatment Arm.
-    #     :param patient: a Patient
-    #     :return: SummaryReport.CURRENT, SummaryReport.PENDING, SummaryReport.FORMER,
-    #              SummaryReport.NOT_ENROLLED, or None
-    #     """
-    #     match_type = None
-    #
-    #     patient_status = patient.currentPatientStatus
-    #     if patient_status == ON_ARM_STATUS:
-    #         match_type = SummaryReport.CURRENT
-    #     elif patient_status == PENDING_STATUS:
-    #         match_type = SummaryReport.PENDING
-    #     elif patient_status in Refresher.OTHER_STATUSES:
-    #         if patient.find_trigger_by_status(ON_ARM_STATUS) is not None:
-    #             match_type = SummaryReport.FORMER
-    #         elif patient.find_trigger_by_status(PENDING_STATUS) is not None:
-    #             match_type = SummaryReport.NOT_ENROLLED
-    #
-    #     return match_type
-
     @staticmethod
     def _match(patient, sum_rpt):
-        assignment_rec = Refresher._create_assignment_record(patient, sum_rpt.treatmentId)
+        assignment_rec = Refresher._create_assignment_record(patient, sum_rpt.treatmentArmId)
         patient_type = Refresher._determine_patient_classification_by_dates(assignment_rec)
 
         if patient_type is not None:
@@ -126,7 +84,7 @@ class Refresher(object):
                     match_type = SummaryReport.FORMER
                 else:
                     match_type = SummaryReport.CURRENT
-            elif assignment_rec.assignment_status_outcome == PENDING_STATUS:
+            elif assignment_rec.assignment_status_outcome in PENDING_STATUSES:
                 match_type = SummaryReport.PENDING
             else:
                 match_type = SummaryReport.NOT_ENROLLED
@@ -142,7 +100,6 @@ class Refresher(object):
         :return: the created AssignmentRecord for patient and ta_id
         """
         ta_version = patient.treatment_arm_version()
-        # (date_on_arm, date_off_arm) = patient.get_dates_on_off_arm()
         (date_on_arm, date_off_arm, status) = patient.get_dates_status_from_arm ()
 
         return AssignmentRecord(patient.patientSequenceNumber,

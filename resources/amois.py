@@ -3,10 +3,10 @@ The AMOIS REST resource
 
 Gets the AMOIS data and annotates the given Variant Report with it in the following format:
 
-"amois": { STATE: [{treatmentId, version, inclusion, type}, ...], ... }
+"amois": { STATE: [{treatmentArmId, version, inclusion, type}, ...], ... }
 
     STATE:        will be one of the following:  PRIOR, CURRENT, PREVIOUS, FUTURE
-    treatmentId:  this is the Treatment Arm ID directly from the treatementArms collection
+    treatmentArmId:  this is the Treatment Arm ID directly from the treatementArms collection
     version:      this is the version of the Treatment Arm for which the aMOI was found
     inclusion:    boolean - if True, then it's an inclusion aMOI; if False, then it's an exclusion aMOI
     type:         the type of aMOI; will be one of the following:  Hotspot, NonHotspot, Both
@@ -160,7 +160,7 @@ class VariantRulesMgr:
 
 
 class AmoisAnnotator:
-    REQ_FIELDS = ['treatmentId', 'version', 'inclusion', 'type']
+    REQ_FIELDS = ['treatmentArmId', 'version', 'inclusion', 'type']
 
     def __init__(self):
         self._annotation = dict()
@@ -186,7 +186,7 @@ class AmoisAnnotator:
 
     @staticmethod
     def _equiv_annot(annot1, annot2):
-        EQUIV_FIELDS = ['treatmentId', 'version', 'inclusion']
+        EQUIV_FIELDS = ['treatmentArmId', 'version', 'inclusion']
         for fld_name in EQUIV_FIELDS:
             if annot1[fld_name] != annot2[fld_name]:
                 return False
@@ -230,7 +230,7 @@ class AmoisAnnotator:
                 state = "FUTURE"
             else:
                 msg_fmt = "Unknown status '%s' for TreatmentArm '%s', version %s"
-                raise Exception(msg_fmt % (ta_status, amoi['treatmentId'], amoi['version']))
+                raise Exception(msg_fmt % (ta_status, amoi['treatmentArmId'], amoi['version']))
 
         return state
 
@@ -255,7 +255,7 @@ def create_amois_annotation(amois_list):
     """
     Given all of the aMOIs in amois_list, assemble all of the required data into format required for annotation.
     :param amois_list:
-    :return: dict in the following format: { STATE: [{treatmentId, version, action}, ...], ... }
+    :return: dict in the following format: { STATE: [{treatmentArmId, version, action}, ...], ... }
     """
     annotator = AmoisAnnotator()
     for amoi in amois_list:
@@ -288,7 +288,7 @@ class AmoisResource(Resource):
         """
         Gets the AMOIS data and annotates the given Variant Report with it in the following format:
 
-        "amois": { STATE: [{treatmentId, version, inclusion(True|False), type(Hotspot|NonHotspot|Both)}, ...], ... }
+        "amois": { STATE: [{treatmentArmId, version, inclusion(True|False), type(Hotspot|NonHotspot|Both)}, ...], ... }
 
         """
         self.logger.debug("Getting annotated aMOI information for Patient Variant Report")

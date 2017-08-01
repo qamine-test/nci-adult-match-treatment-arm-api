@@ -1,7 +1,11 @@
+#!/usr/bin/env python3
+
 import unittest
+
 import flask
 from ddt import ddt, data, unpack
 from mock import patch
+
 from resources import healthcheck
 
 

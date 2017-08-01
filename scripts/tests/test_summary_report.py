@@ -12,7 +12,7 @@ DEFAULT_SR = {'assignmentRecords': []}
 for fld in SummaryReport._SR_COUNT_FIELDS:
     DEFAULT_SR[fld] = 0
 DEFAULT_TA = {'_id': '1234567890',
-              'treatmentId': 'EAY131-A',
+              'treatmentArmId': 'EAY131-A',
               'version': '2016-08-14',
               'treatmentArmStatus': 'OPEN'}
 ALL_FIELDS = SummaryReport._REQ_JSON_FIELDS
@@ -59,7 +59,7 @@ class TestSummaryReportConstruction(unittest.TestCase):
 
     @data(
         (['ALL']),
-        (['version', 'treatmentId']),
+        (['version', 'treatmentArmId']),
         (['version']),
     )
     def test_constructor_with_exc(self, missing_field_list):
@@ -80,7 +80,7 @@ class TestSummaryReportConstruction(unittest.TestCase):
     def test_get_after_normal_construction(self):
         sr = SummaryReport(create_ta_json())
         self.assertEqual(sr._id, DEFAULT_TA['_id'])
-        self.assertEqual(sr.treatmentId, DEFAULT_TA['treatmentId'])
+        self.assertEqual(sr.treatmentArmId, DEFAULT_TA['treatmentArmId'])
         self.assertEqual(sr.version, DEFAULT_TA['version'])
         self.assertEqual(sr.treatmentArmStatus, DEFAULT_TA['treatmentArmStatus'])
         self.assertEqual(sr.assignmentRecords, DEFAULT_SR['assignmentRecords'])

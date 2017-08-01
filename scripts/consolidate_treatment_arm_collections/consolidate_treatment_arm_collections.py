@@ -7,8 +7,8 @@ The new treatmentArms collection will look much like the old treatmentArm collec
 with the following changes/additions:
 *  treatmentArm._id currently contains the unique identifier for each
    treatment arm; because it functions as a primary key, it needs to be
-   renamed treatmentId.
-   - For documents from treatmentArmHistory, treatmentId will originate from _id of
+   renamed treatmentArmId.
+   - For documents from treatmentArmHistory, treatmentArmId will originate from _id of
      the treatmentArm subcollection.
 *  mongoDB will auto-generate a new unique _id
 *  add 'dateArchived' key; active arm will be identified by dateArchived IS NULL and archived
@@ -35,13 +35,12 @@ import os
 import sys
 import uuid
 
-from config import log  # pylint: disable=unused-import
+from config import log
 from scripts.consolidate_treatment_arm_collections.consolidate_ta_mongo_db_accessor import MongoDbAccessor
 
 # Logging functionality
+log.log_config()
 LOGGER = logging.getLogger(__name__)
-# LOGGER.setLevel(logging.DEBUG)
-# LOGGER.addHandler(logging.StreamHandler())
 
 
 class ConverterBase(object):
@@ -71,6 +70,12 @@ class TAConverter(ConverterBase):
     """Converts a document from the treatment collection to a document
        for the treatmentArms collection.
     """
+    EMPTY_SUMMARY_REPORT = {'numCurrentPatientsOnArm': 0,
+                            'numFormerPatients': 0,
+                            'numPendingArmApproval': 0,
+                            'numNotEnrolledPatient': 0,
+                            'assignmentRecords': []}
+
     def __init__(self):
         ConverterBase.__init__(self, 'treatmentArm')
 
@@ -78,21 +83,15 @@ class TAConverter(ConverterBase):
         if(doc is None
            or '_id' not in doc
            or doc['_id'] is None
-           or 'treatmentId' in doc
+           or 'treatmentArmId' in doc
            ):
             raise Exception('Invalid treatmentArm document')
 
         new_ta_doc = dict(doc)
         ConverterBase._apply_common_changes(new_ta_doc)
-        new_ta_doc['treatmentId'] = doc['_id']
+        new_ta_doc['treatmentArmId'] = doc['_id']
         new_ta_doc['dateArchived'] = None
-        new_ta_doc['summaryReport'] = {
-            'numCurrentPatientsOnArm': 0,
-            'numFormerPatients': 0,
-            'numPendingArmApproval': 0,
-            'numNotEnrolledPatient': 0,
-            'assignmentRecords': []
-        }
+        new_ta_doc['summaryReport'] = TAConverter.EMPTY_SUMMARY_REPORT
         return new_ta_doc
 
 
@@ -118,7 +117,7 @@ class TAHConverter(ConverterBase):
 
         new_ta_doc = dict(doc['treatmentArm'])
         ConverterBase._apply_common_changes(new_ta_doc)
-        new_ta_doc['treatmentId'] = doc['treatmentArm']['_id']
+        new_ta_doc['treatmentArmId'] = doc['treatmentArm']['_id']
         new_ta_doc['dateArchived'] = doc['dateArchived']
         return new_ta_doc
 

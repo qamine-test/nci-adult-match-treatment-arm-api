@@ -8,9 +8,10 @@ from mock import patch, MagicMock
 
 from scripts.ta_message_manager import ta_message_manager as mm
 
-logging.getLogger('botocore').propagate = False # Disable boto logging for unit tests.
+logging.getLogger('botocore').propagate = False  # Disable boto logging for unit tests.
 
 TEST_QUEUE_URL = 'https://queue.amazonaws.com/127516845550/TreatmentArmQueue'
+
 
 @ddt
 class TreatmentArmsMessageManagerTestCase(unittest.TestCase):
@@ -40,9 +41,9 @@ class TreatmentArmsMessageManagerTestCase(unittest.TestCase):
     # Test the TreatmentArmsMessageManager run method.
     def test_run(self):
         queue_instance = self.mock_queue.return_value
-        MESSAGE = {'Messages': ['1']}
-        NO_MESSAGE = {}
-        queue_instance.receive_message.side_effect = [NO_MESSAGE, MESSAGE, MESSAGE, NO_MESSAGE, MESSAGE]
+        message = {'Messages': ['1']}
+        no_message = {}
+        queue_instance.receive_message.side_effect = [no_message, message, message, no_message, message]
 
         mock_handle_message = MagicMock(side_effect=[False, False, True])
 
@@ -50,7 +51,7 @@ class TreatmentArmsMessageManagerTestCase(unittest.TestCase):
         tamm._handle_message = mock_handle_message
         tamm.run()
 
-        self.assertEqual(mock_handle_message.call_count, 3) # should only be called when there is a message
+        self.assertEqual(mock_handle_message.call_count, 3)  # should only be called when there is a message
 
     # Test the TreatmentArmsMessageManager _handle_message method.
     @data(

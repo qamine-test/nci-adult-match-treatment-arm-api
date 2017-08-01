@@ -4,9 +4,10 @@ Mongo DB connection helper
 import json
 import logging
 
-import flask
+# import flask
 from bson import json_util
 from pymongo import MongoClient
+from helpers.environment import Environment
 
 
 class MongoDbAccessor(object):
@@ -14,16 +15,18 @@ class MongoDbAccessor(object):
     Base class for MongoDB accessors
     """
     def __init__(self, collection_name, logger=logging.getLogger(__name__)):
-        uri = flask.current_app.config["MONGODB_URI"]
-        db = flask.current_app.config["DB_NAME"]
+        env = Environment()
+        uri = env.mongodb_uri
+        db_name = env.db_name
+        # uri = flask.current_app.config["MONGODB_URI"]
+        # db_name = flask.current_app.config["DB_NAME"]
 
-        # Commented out because pw is in URI in INT environment
-        # logger.debug("Connecting to database at {}".format(uri))
         self.mongo_client = MongoClient(uri)
-        self.database = self.mongo_client[db]
+        self.database = self.mongo_client[db_name]
         self.collection = self.database[collection_name]
-        self.logger = logger
         self.collection_name = collection_name
+        self.db_name = db_name
+        self.logger = logger
 
     def find(self, query, projection):
         """
@@ -43,14 +46,16 @@ class MongoDbAccessor(object):
         """
         Returns the number of items from the collection using a query.
         """
-        self.logger.debug('Counting {cn} documents in database'.format(cn=self.collection_name))
+        self.logger.debug('Counting {cn} documents in database with query {qry}'
+                          .format(cn=self.collection_name, qry=str(query)))
         return self.collection.count(query)
 
     def aggregate(self, pipeline):
         """
         Returns the aggregation defined by pipeline.
         """
-        self.logger.debug('Retrieving {cn} document aggregation from database'.format(cn=self.collection_name))
+        self.logger.debug('Retrieving {cn} document aggregation from database with pipeline {pl}'
+                          .format(cn=self.collection_name, pl=str(pipeline)))
         return self.collection.aggregate(pipeline)
 
     def update_one(self, query, update):
@@ -72,3 +77,7 @@ class MongoDbAccessor(object):
         """
         self.logger.debug('Updating multiple {cn} documents in database'.format(cn=self.collection_name))
         return self.collection.update_many(query, update)
+
+    @staticmethod
+    def mongo_to_python(doc):
+        return json.loads(json_util.dumps(doc))

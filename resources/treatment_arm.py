@@ -4,16 +4,10 @@ The Treatment Arm REST resource
 
 import logging
 
-from accessors.treatment_arm_accessor import TreatmentArmsAccessor
 from flask_restful import Resource
 from flask_restful import request
 
-# status codes
-# 200 - ok
-# 400 - bad request (malformed syntax)
-# 401 - unauthorized
-# 403 - forbidden
-# 500 - internal server error (i.e. db not available)
+from accessors.treatment_arm_accessor import TreatmentArmsAccessor
 
 
 def is_active_only(active_param):
@@ -79,25 +73,8 @@ class TreatmentArmsById(Resource):
         """
         self.logger.debug("Getting TreatmentArms by ID: {ARMID}".format(ARMID=arm_id))
         args = get_args()
-        query = {"treatmentId": arm_id}
+        query = {"treatmentArmId": arm_id}
         query.update(get_query(args))
         projection = get_projection(args)
 
         return TreatmentArmsAccessor().find(query, projection)
-
-
-# Commented out for now because not specified on API doc nor unit-tested.
-# class TreatmentArm(Resource):
-#     """
-#     Treatment Arm REST resource
-#     """
-#
-#     @staticmethod
-#     def get(name, version):
-#         """
-#         Gets the TreatmentArm resource
-#         """
-#
-#         return TreatmentArmsAccessor().find_one(
-#             {"name": name, "version": version}, None)
-#

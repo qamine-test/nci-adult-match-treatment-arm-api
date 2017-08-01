@@ -5,12 +5,24 @@ services:
     command: python app.py
     image: "fnlcr/nci-adult-match-treatment-arm-api"
     ports:
-      - "5010:5010"
+      - "5011:5010"
     depends_on:
       - mongo
     environment:
       - MONGODB_URI=mongodb://mongo:27017/Match
       - ENVIRONMENT=development
+  treatment-arm-message-manager:
+    image: "fnlcr/nci-adult-match-treatment-arm-api"
+    command: python scripts/ta_message_manager/ta_message_manager.py
+    depends_on:
+      - mongo
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/Match
+      - ENVIRONMENT=development
+      - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+      # this SHOULDN'T be necessary, but dockerized python can't find modules for script in a directory without it
+      - PYTHONPATH=.
   mongo:
     image: mongo:3.4.0
     volumes:

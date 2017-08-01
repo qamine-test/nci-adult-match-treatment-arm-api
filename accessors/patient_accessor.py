@@ -27,7 +27,7 @@ class PatientAccessor(MongoDbAccessor):
         return [pat for pat in
                 self.aggregate([{"$unwind": {"path": "$patientAssignments",
                                              "includeArrayIndex": "patientAssignmentIdx"}},
-                                {"$match": {"patientAssignments.treatmentArm._id": trtmt_id}},
+                                {"$match": {"patientAssignments.treatmentArm.treatmentArmId": trtmt_id}},
                                 {"$project": {"currentPatientStatus": 1,
                                               "patientAssignmentIdx": 1,
                                               "patientAssignments": 1,

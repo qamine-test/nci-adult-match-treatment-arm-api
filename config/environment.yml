@@ -1,0 +1,47 @@
+development:
+  port: 5010
+  visibility_timeout: '36000'
+  region: "us-east-1"
+  bucket: "adultmatch-dev"
+  tmp_file_dir: "/tmp"
+  polling_interval: 10
+  read_capacity: 5
+  write_capacity: 5
+  aws_download_time_limit: 600
+  aws_upload_time_limit: 3600
+
+test:
+  port: 5010
+  visibility_timeout: '36000'
+  region: "us-east-1"
+  bucket: "adultmatch-int"
+  tmp_file_dir: "/tmp"
+  polling_interval: 10
+  read_capacity: 5
+  write_capacity: 5
+  aws_download_time_limit: 600
+  aws_upload_time_limit: 3600
+
+uat:
+  port: 5010
+  visibility_timeout: '36000'
+  region: "us-east-1"
+  bucket: "adultmatch-dev"
+  tmp_file_dir: "/tmp"
+  polling_interval: 10
+  read_capacity: 5
+  write_capacity: 5
+  aws_download_time_limit: 600
+  aws_upload_time_limit: 3600
+
+production:
+  port: 5010
+  visibility_timeout: '36000'
+  region: "us-east-1"
+  bucket: "adultmatch-dev"
+  tmp_file_dir: "/tmp"
+  polling_interval: 10
+  read_capacity: 5
+  write_capacity: 5
+  aws_download_time_limit: 600
+  aws_upload_time_limit: 3600
