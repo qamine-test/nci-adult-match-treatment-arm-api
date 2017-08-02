@@ -8,7 +8,10 @@
 
 * [Install Python3.6.1](http://www.marinamele.com/2014/07/install-python3-on-mac-os-x-and-use-virtualenv-and-virtualenvwrapper.html)
 * [Setup Virtual Environments](https://realpython.com/blog/python/python-virtual-environments-a-primer/)
-* Required Python modules:  pymongo, flask, flask_env, flask_cors, flask_restful, boto3
+* Required Python modules should be installed with the following command:
+    ```bash
+    pip3 install -r requirements.txt
+    ```
 
 ## Development Setup
 
@@ -24,7 +27,7 @@ To switch to existing vevn:
 workon nci-adult-match-treatment-arm-api
 ```
 
-### If you use VS Code
+#### If you use VS Code
 
 * In your terminal, activating the `nci-adult-match-treatment-arm-api` venv
 * Install pylint by running pip install pylint by running `pip install pylint`
@@ -71,32 +74,43 @@ If you'd like to start only Monbgo DB to develop your service locally:
 docker-compose up mongo
 ```
 
-To restore MongoDB data for your local development:
-
-```bash
-docker exec -it nciadultmatchtreatmentarmapi_mongo_1 bash
-mongorestore --db Match ./backup
-```
-
-After you've restored the backup you may check the restored data (while still attached to the mongo container, as above):
-
-```bash
-mongo shell
-show dbs
-use Match
-show collections
-db.treatmentArms.count()
-```
-
-Exit from MongoDB shell by pressing `Ctrl+C`
-
-### To start the container stand-alone but attached to the Docker network
+#### To start the container stand-alone but attached to the Docker network
 
 Example with connecting to `nciadultmatchui_adult-match-net` Docker network. Replace with yours if needed.
 
 ```bash
 docker run --name ncimatch-adult-treatment-arm-api -it --network nciadultmatchui_adult-match-net -e ENVIRONMENT=test -e MONGODB_URI=mongodb://mongo:27017/Match -p 5010:5010 fnlcr/nci-adult-match-treatment-arm-api:latest
 ```
+
+## Restoring Data to Mongo DB for Local Development
+These instructions apply both to dockerized MongoDB (see above for how to access this) and to a local copy
+of MongoDB you may have installed.
+
+Recommended first step is to drop the existing **Match** database:
+```bash
+mongo shell
+show dbs
+use Match
+db.dropDatabase()
+```
+
+Do the restore from from the Linux shell:
+```bash
+mongorestore --db Match ./backup
+```
+
+After you've restored the backup you may check the restored data
+
+```bash
+mongo shell
+show dbs
+use Match
+show collections
+db.patient.count()
+```
+
+Exit from MongoDB shell by pressing `Ctrl+C` or typing `exit`.
+
 
 ## Configuration
 Various configuration settings can be customized in the `config/environment.yml` file.
