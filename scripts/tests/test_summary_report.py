@@ -2,6 +2,7 @@
 
 import unittest
 from datetime import datetime
+
 from ddt import ddt, data, unpack
 
 from scripts.summary_report_refresher.assignment_record import AssignmentRecord
