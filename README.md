@@ -18,7 +18,7 @@
 To create new venv:
 
 ```bash
-mkproject nci-adult-match-treatment-arm-api
+mkvirtualenv nci-adult-match-treatment-arm-api
 ```
 
 To switch to existing vevn:
@@ -44,6 +44,7 @@ export MONGODB_URI=mongodb://localhost:27017/Match
 export ENVIRONMENT='development'
 export AWS_SECRET_ACCESS_KEY={your_aws_secret_access_key}
 export AWS_ACCESS_KEY_ID={your_aws_access_key_id}
+export PYTHONPATH=.:{your path here}/nci-adult-match-treatment-arm-api
 ```
 
 ### Set explicitly for a specific command execution
@@ -149,7 +150,7 @@ coverage run -m unittest discover tests; coverage run -a -m unittest discover sc
 
 ## Scripts
 To run the scripts from their source directory, make sure that the path to the TreatmentArmAPI root directory is 
-included in the PYTHONPATH environment variable.  Otherwise, they can be run from the root directory as shown below.
+included in the PYTHONPATH environment variable (see section on environment variables above).
 
 The scripts require the following:
 
@@ -188,4 +189,16 @@ To easily send either of these messages to the message manager from the command 
 ```bash
 python3 -c "import scripts.ta_message_manager.ta_message_manager as tmm; tmm.send_message_to_ta_queue(tmm.REFRESH_MSG)"
 python3 -c "import scripts.ta_message_manager.ta_message_manager as tmm; tmm.send_message_to_ta_queue(tmm.STOP_MSG)"
+```
+
+## Helpful Aliases
+Add these to your .bashrc:
+
+For building docker image:
+```bash
+alias tabuild='docker build -t "fnlcr/nci-adult-match-treatment-arm-api:latest" .'
+```
+For running all tests with coverage:
+```bash
+alias tacov='cd {path to treatmentArmApi source}; coverage run -m unittest discover tests; coverage run -a -m unittest discover scripts/tests; coverage report -m; cd -'
 ```
