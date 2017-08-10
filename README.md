@@ -87,8 +87,9 @@ docker run --name ncimatch-adult-treatment-arm-api -it --network nciadultmatchui
 These instructions apply both to dockerized MongoDB (see above for how to access this) and to a local copy
 of MongoDB you may have installed.
 
-Do the restore from from the Linux shell to dockerized Mongo (see command for this above):
+Do the restore from from the Linux shell to dockerized Mongo:
 ```bash
+docker exec -it nciadultmatchtreatmentarmapi_mongo_1 bash
 mongo Match --eval "db.dropDatabase()"
 mongorestore --db Match ./backup
 ```
