@@ -87,17 +87,16 @@ docker run --name ncimatch-adult-treatment-arm-api -it --network nciadultmatchui
 These instructions apply both to dockerized MongoDB (see above for how to access this) and to a local copy
 of MongoDB you may have installed.
 
-Recommended first step is to drop the existing **Match** database:
+Do the restore from from the Linux shell to dockerized Mongo (see command for this above):
 ```bash
-mongo shell
-show dbs
-use Match
-db.dropDatabase()
+mongo Match --eval "db.dropDatabase()"
+mongorestore --db Match ./backup
 ```
 
-Do the restore from from the Linux shell:
+Do the restore from from the Linux shell to local Mongo:
 ```bash
-mongorestore --db Match ./backup
+mongo Match --eval "db.dropDatabase()"
+mongorestore --db Match ./data_setup/match
 ```
 
 After you've restored the backup you may check the restored data
@@ -107,7 +106,7 @@ mongo shell
 show dbs
 use Match
 show collections
-db.patient.count()
+db.treatmentArms.count()
 ```
 
 Exit from MongoDB shell by pressing `Ctrl+C` or typing `exit`.
