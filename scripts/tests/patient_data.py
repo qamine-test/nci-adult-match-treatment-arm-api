@@ -1,7 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
-
+from scripts.summary_report_refresher.patient import convert_date
 
 def create_patient_assignment_logic(trtmt_id, ver="2015-08-06", reason="The patient contains no matching variant.",
                                     category="NO_VARIANT_MATCH"):
@@ -13,6 +13,22 @@ def create_patient_assignment_logic(trtmt_id, ver="2015-08-06", reason="The pati
     }
 
 
+def datetime_to_timestamp(dt):
+    # Multiply by 1000 because MongoDB timestamps include milliseconds.
+    return {"$date": int(dt.replace(tzinfo=timezone.utc).timestamp()) * 1000}
+
+
+# def add_to_timestamp_dict(ts_dict, delta):
+#     if "$date" not in ts_dict:
+#         raise TypeError("Not dict with '$date' key")
+#     if type(delta) != timedelta:
+#         raise TypeError("Not timedelta")
+#
+#     dt = convert_date(ts_dict)
+#     new_dt = dt + delta
+#     return datetime_to_timestamp(new_dt)
+
+
 ASSIGNMENT_DATE = datetime(2015, 9, 29)
 PENDING_CONF_DATE = datetime(2015, 9, 29, 0, 0, 1)
 PENDING_OFF_STUDY_DATE = datetime(2015, 9, 12, 10, 10, 10)
@@ -20,6 +36,13 @@ PENDING_APPR_DATE = datetime(2015, 9, 30, 0, 1)
 PENDING_APPR_DATE2 = datetime(2015, 9, 30, 12, 1)
 ON_ARM_DATE = datetime(2015, 10, 1)
 OFF_ARM_DATE = datetime(2016, 3, 1)
+# ASSIGNMENT_DATE = datetime_to_timestamp(datetime(2015, 9, 29))
+# PENDING_CONF_DATE = datetime_to_timestamp(datetime(2015, 9, 29, 0, 0, 1))
+# PENDING_OFF_STUDY_DATE = datetime_to_timestamp(datetime(2015, 9, 12, 10, 10, 10))
+# PENDING_APPR_DATE = datetime_to_timestamp(datetime(2015, 9, 30, 0, 1))
+# PENDING_APPR_DATE2 = datetime_to_timestamp(datetime(2015, 9, 30, 12, 1))
+# ON_ARM_DATE = datetime_to_timestamp(datetime(2015, 10, 1))
+# OFF_ARM_DATE = datetime_to_timestamp(datetime(2016, 3, 1))
 
 
 def create_patient_trigger(patient_status, message=None, date_created=None, patient_seq_num="10065"):
@@ -28,14 +51,14 @@ def create_patient_trigger(patient_status, message=None, date_created=None, pati
         "patientSequenceNumber": patient_seq_num,
         "stepNumber": "0",
         "patientStatus": patient_status,
-        "dateCreated": datetime(2015, 9, 4, 18, 22, 0),
-        "auditDate": datetime(2015, 9, 4, 18, 30, 14)
+        "dateCreated": datetime_to_timestamp(datetime(2015, 9, 4, 18, 22, 0)),
+        "auditDate": datetime_to_timestamp(datetime(2015, 9, 4, 18, 30, 14))
     }
 
     if message is not None:
         trigger['message'] = message
     if date_created is not None:
-        trigger['dateCreated'] = date_created
+        trigger['dateCreated'] = datetime_to_timestamp(date_created)
 
     return trigger
 
@@ -179,7 +202,7 @@ def create_patient(triggers=None, assignment_logics=None,
     if len(assignment_logics):
         patient['patientAssignmentIdx'] = patient_assmnt_idx
         patient['patientAssignments'] = {
-            "dateAssigned": assignment_date,
+            "dateAssigned": datetime_to_timestamp(assignment_date),
             "biopsySequenceNumber": MATCHING_BIOPSY_SEQ_NUM,
             "patientAssignmentStatus": "AVAILABLE",
             "patientAssignmentLogic": assignment_logics,
@@ -195,7 +218,7 @@ def create_patient(triggers=None, assignment_logics=None,
                     "stepNumber": "1"
                 }
             ],
-            "dateConfirmed": datetime(2015, 9, 30, 12, 34, 55)
+            "dateConfirmed": datetime_to_timestamp(datetime(2015, 9, 30, 12, 34, 55))
         }
     if treatment_arm is not None:
         patient['treatmentArm'] = treatment_arm
@@ -273,6 +296,8 @@ REGISTERED_PATIENT = create_patient(
     None,
     patient_sequence_number = "14446"
 )
+# REJOIN_DATE = add_to_timestamp_dict(PENDING_OFF_STUDY_DATE, timedelta(days=2))
+# NEW_PENDING_CONF_DATE = add_to_timestamp_dict(PENDING_OFF_STUDY_DATE, timedelta(days=3))
 REJOIN_DATE = PENDING_OFF_STUDY_DATE + timedelta(days=2)
 NEW_PENDING_CONF_DATE = PENDING_OFF_STUDY_DATE + timedelta(days=3)
 NEW_PENDING_CONF_TRIGGER = create_patient_trigger('PENDING_CONFIRMATION', date_created=NEW_PENDING_CONF_DATE)
@@ -296,7 +321,9 @@ PENDING_CONF_APPR_CONF_PATIENT = create_patient(
     triggers=[REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER,
               # I don't think that in the real world a PENDING_CONFIRMATION trigger would follow a PENDING_APPROVAL
               # trigger, but it is a case that the code handles and therefore it must be tested.
-              create_patient_trigger('PENDING_CONFIRMATION', date_created=PENDING_APPR_DATE + timedelta(minutes=2)),
+              create_patient_trigger('PENDING_CONFIRMATION',
+                                     date_created=PENDING_APPR_DATE + timedelta(minutes=2)),
+                                     # date_created=add_to_timestamp_dict(PENDING_APPR_DATE, timedelta(minutes=2))),
               ],
     assignment_logics = [
         create_patient_assignment_logic("EAY131-C"),

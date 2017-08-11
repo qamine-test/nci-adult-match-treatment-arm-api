@@ -7,7 +7,7 @@ from ddt import ddt, data, unpack
 from mock import patch, MagicMock
 
 from scripts.summary_report_refresher.assignment_record import AssignmentRecord
-from scripts.summary_report_refresher.patient import Patient
+from scripts.summary_report_refresher.patient import Patient, convert_date
 from scripts.summary_report_refresher.refresher import Refresher
 from scripts.summary_report_refresher.summary_report import SummaryReport
 from scripts.tests import patient_data as pd
@@ -204,14 +204,15 @@ class RefresherTest(unittest.TestCase):
           pd.PENDING_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
           pd.PENDING_PATIENT['patientAssignments']['stepNumber'], pd.PENDING_PATIENT['diseases'],
           pd.MATCHING_ANALYSIS_ID, pd.PENDING_PATIENT['patientAssignmentIdx'],
-          pd.PENDING_PATIENT['patientAssignments']['dateAssigned'], None, None
+          convert_date(pd.PENDING_PATIENT['patientAssignments']['dateAssigned']),
+          None, None
           ]),
         (pd.CURRENT_PATIENT, pd.MATCHING_LOGIC['treatmentArmId'],
          [pd.CURRENT_PATIENT['patientSequenceNumber'], pd.MATCHING_LOGIC['treatmentArmVersion'],
           pd.CURRENT_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
           pd.CURRENT_PATIENT['patientAssignments']['stepNumber'], pd.CURRENT_PATIENT['diseases'],
           pd.MATCHING_ANALYSIS_ID, pd.CURRENT_PATIENT['patientAssignmentIdx'],
-          pd.CURRENT_PATIENT['patientAssignments']['dateAssigned'],
+          convert_date(pd.CURRENT_PATIENT['patientAssignments']['dateAssigned']),
           pd.ON_ARM_DATE, None
           ]),
         (pd.FORMER_PATIENT, pd.MATCHING_LOGIC['treatmentArmId'],
@@ -219,7 +220,7 @@ class RefresherTest(unittest.TestCase):
           pd.FORMER_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
           pd.FORMER_PATIENT['patientAssignments']['stepNumber'], pd.FORMER_PATIENT['diseases'],
           pd.MATCHING_ANALYSIS_ID, pd.FORMER_PATIENT['patientAssignmentIdx'],
-          pd.FORMER_PATIENT['patientAssignments']['dateAssigned'],
+          convert_date(pd.FORMER_PATIENT['patientAssignments']['dateAssigned']),
           pd.ON_ARM_DATE, pd.OFF_ARM_DATE
           ])
     )

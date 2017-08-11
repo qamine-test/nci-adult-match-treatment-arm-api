@@ -97,7 +97,8 @@ class TestPatient(unittest.TestCase):
     )
     @unpack
     def test_trigger_belongs_to_assignment(self, trigger, assignment_date, exp_result):
-        result = Patient._trigger_belongs_to_assignment(trigger, assignment_date)
+        assignment_date_ts = pd.datetime_to_timestamp(assignment_date)
+        result = Patient._trigger_belongs_to_assignment(trigger, assignment_date_ts)
         self.assertEqual(result, exp_result)
 
     # Test the Patient.get_date_assigned method.
