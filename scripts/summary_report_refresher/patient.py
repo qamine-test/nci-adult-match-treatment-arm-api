@@ -1,3 +1,11 @@
+from datetime import datetime
+
+def convert_date(json_date_dict):
+    if not '$date' in json_date_dict:
+        return Exception("this is not what I expected")
+    return datetime.utcfromtimestamp(int(json_date_dict['$date']/1000))
+
+
 class Patient(object):
     """
     An object to store all of the Patient data required for summaryReport refresh.
@@ -77,7 +85,8 @@ class Patient(object):
             if trigger['patientStatus'] == "PENDING_CONFIRMATION":
                 if assignment_flag:
                     if date_on_arm:
-                        date_off_arm = trigger['dateCreated']
+                        # date_off_arm = trigger['dateCreated']
+                        date_off_arm = convert_date(trigger['dateCreated'])
                     break
 
                 if self._trigger_belongs_to_assignment(trigger, self._pat['patientAssignments']['dateAssigned']):
@@ -87,10 +96,12 @@ class Patient(object):
             elif assignment_flag:
                 last_status = trigger['patientStatus']
                 if last_status == "ON_TREATMENT_ARM":
-                    date_on_arm = trigger['dateCreated']
+                    # date_on_arm = trigger['dateCreated']
+                    date_on_arm = convert_date(trigger['dateCreated'])
                 elif last_status != "PENDING_APPROVAL":
                     if date_on_arm:
-                        date_off_arm = trigger['dateCreated']
+                        # date_off_arm = trigger['dateCreated']
+                        date_off_arm = convert_date(trigger['dateCreated'])
                     break
 
         return date_on_arm, date_off_arm, last_status
@@ -104,7 +115,11 @@ class Patient(object):
         :return: True/False
         """
         belongs = False
-        delta = trigger['dateCreated'] - assignment_date
+        # print("assignment_date ({}), type = {}".format(assignment_date, type(assignment_date)))
+        # print("trigger['dateCreated'] ({}), type = {}".format(trigger['dateCreated'], type(trigger['dateCreated'])))
+
+        # delta = trigger['dateCreated'] - assignment_date
+        delta = convert_date(trigger['dateCreated']) - convert_date(assignment_date)
         # print('Trigger: (' + repr(trigger['dateCreated']) + ') vs (' +
         #       repr(self._pat['patientAssignments']['dateAssigned']) +') delta (' + repr(delta.total_seconds()) + ')')
 
@@ -125,9 +140,11 @@ class Patient(object):
         date_off_arm = None
         for i, trigger in reversed([(i, trigger) for i, trigger in enumerate(self._pat['patientTriggers'])]):
             if trigger['patientStatus'] == "ON_TREATMENT_ARM":
-                date_on_arm = trigger['dateCreated']
+                # date_on_arm = trigger['dateCreated']
+                date_on_arm = convert_date(trigger['dateCreated'])
                 if i + 1 < len(self._pat['patientTriggers']):
-                    date_off_arm = self._pat['patientTriggers'][i+1]['dateCreated']
+                    # date_off_arm = self._pat['patientTriggers'][i+1]['dateCreated']
+                    date_off_arm = convert_date(self._pat['patientTriggers'][i+1]['dateCreated'])
                 break
 
         return date_on_arm, date_off_arm
@@ -138,7 +155,8 @@ class Patient(object):
         :return: the date the patient was assigned to the arm; if never assigned to the arm, returns None.
         """
         if 'dateAssigned' in self._pat['patientAssignments']:
-            return self._pat['patientAssignments']['dateAssigned']
+            return convert_date(self._pat['patientAssignments']['dateAssigned'])
+            # return self._pat['patientAssignments']['dateAssigned']
         else:
             return None
 
