@@ -4,7 +4,7 @@ import unittest
 
 from ddt import ddt, data, unpack
 
-from scripts.summary_report_refresher.patient import Patient
+from scripts.summary_report_refresher.patient import Patient, convert_date
 from scripts.tests import patient_data as pd
 
 
@@ -107,7 +107,7 @@ class TestPatient(unittest.TestCase):
         (pd.CURRENT_PATIENT, pd.ASSIGNMENT_DATE)
     )
     @unpack
-    def test_(self, patient_data, exp_date):
+    def test_get_date_assigned(self, patient_data, exp_date):
         p = Patient(patient_data)
         assd_date = p.get_date_assigned()
         self.assertEqual(assd_date, exp_date)
@@ -130,6 +130,15 @@ class TestPatient(unittest.TestCase):
         analysis_id = p.get_analysis_id()
         self.assertEqual(analysis_id, exp_analysis_id)
 
+class TestConvertDate(unittest.TestCase):
+    def test(self):
+        dt = pd.PENDING_CONF_DATE
+        ts = pd.datetime_to_timestamp(dt)
+        self.assertEqual(convert_date(ts), dt)
+
+    def test_exc(self):
+        with self.assertRaises(TypeError):
+            convert_date(pd.PENDING_CONF_DATE)
 
 if __name__ == '__main__':
     unittest.main()
