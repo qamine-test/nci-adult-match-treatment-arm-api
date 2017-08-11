@@ -1,7 +1,7 @@
 from datetime import datetime
 
 def convert_date(json_date_dict):
-    if type(json_date_dict) is not dict or '$date' not in json_date_dict:
+    if not isinstance(json_date_dict, dict) or '$date' not in json_date_dict:
         raise TypeError("parameter must be a dict with a '$date' key")
     return datetime.utcfromtimestamp(int(json_date_dict['$date']/1000))
 
