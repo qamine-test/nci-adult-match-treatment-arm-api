@@ -9,6 +9,7 @@ development:
   write_capacity: 5
   aws_download_time_limit: 600
   aws_upload_time_limit: 3600
+  patient_api_url: "http://localhost:5000/api/v1/patients"
 
 test:
   port: 5010
@@ -21,6 +22,7 @@ test:
   write_capacity: 5
   aws_download_time_limit: 600
   aws_upload_time_limit: 3600
+  patient_api_url: "https://match-int.nci.nih.gov/api/v1/patients"
 
 uat:
   port: 5010
@@ -33,6 +35,7 @@ uat:
   write_capacity: 5
   aws_download_time_limit: 600
   aws_upload_time_limit: 3600
+  patient_api_url: "[TBD]"
 
 production:
   port: 5010
@@ -45,3 +48,4 @@ production:
   write_capacity: 5
   aws_download_time_limit: 600
   aws_upload_time_limit: 3600
+  patient_api_url: "[TBD]"
