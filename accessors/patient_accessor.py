@@ -3,13 +3,10 @@ Patient Accessor
 """
 
 import logging
-import json
+
 import requests
 
 from helpers.environment import Environment
-
-
-# from accessors.mongo_db_accessor import MongoDbAccessor
 
 
 class PatientAccessor(object):
@@ -31,14 +28,10 @@ class PatientAccessor(object):
         trtmt_id_url = "{}/{}".format(self.url, trtmt_id)
         self.logger.debug('Retrieving Patient from {}'.format(trtmt_id_url))
         response = requests.get(trtmt_id_url)
-        # result = json.loads(response.json().decode("utf-8"))
         result = response.json()
-
-        import pprint
-        # pprint.pprint(result, width=200)
-
-        # self.logger.debug("{} Patients returned for arm {}".format(len(result), trtmt_id))
         return result
+
+
     # class PatientAccessor(MongoDbAccessor):
     #     """
     #     The Patient data accessor
