@@ -10,6 +10,8 @@ Gets the AMOIS data and annotates the given Variant Report with it in the follow
     version:      this is the version of the Treatment Arm for which the aMOI was found
     inclusion:    boolean - if True, then it's an inclusion aMOI; if False, then it's an exclusion aMOI
     type:         the type of aMOI; will be one of the following:  Hotspot, NonHotspot, Both
+
+An example of how to call this service can be found in scripts/examples/call_amois_svc.py.
 """
 
 import logging
@@ -283,7 +285,6 @@ class AmoisResource(Resource):
             raise Exception(err_msg)
         return args
 
-    # @staticmethod
     def patch(self):
         """
         Gets the AMOIS data and annotates the given Variant Report with it in the following format:
@@ -323,26 +324,3 @@ class AmoisResource(Resource):
             self.logger.error(ret_val)
             status_code = 404
         return ret_val, status_code
-
-
-# if __name__ == '__main__':
-#     import flask
-#     import os
-#     from flask_env import MetaFlaskEnv
-#
-#
-#     class Configuration(metaclass=MetaFlaskEnv):
-#         """
-#         Service configuration
-#         """
-#         DEBUG = True
-#         PORT = 5010
-#         MONGODB_URI = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/match')
-#         # Some instances of the DB are named 'Match' and others 'match'.
-#         DB_NAME = 'match' if '/match' in MONGODB_URI else 'Match'
-#
-#     app = flask.Flask(__name__)
-#     app.config.from_object(Configuration)
-#     with app.test_request_context(''):
-#         import pprint
-#         pprint.pprint(get_ta_non_hotspot_rules())
