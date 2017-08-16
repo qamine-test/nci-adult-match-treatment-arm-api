@@ -235,7 +235,7 @@ class TestTreatmentArmsById(unittest.TestCase):
 @ddt
 class TreatmentArmsOveriewTests(unittest.TestCase):
     @data(
-        ([], {}),
+        ([], 0, {'TOTAL': 0}),
         ([
             {"_id" : "READY", "count" : 7.0},
             {"_id" : "PENDING", "count" : 2.0},
@@ -243,20 +243,23 @@ class TreatmentArmsOveriewTests(unittest.TestCase):
             {"_id" : "OPEN", "count" : 63.0},
             {"_id" : "CLOSED", "count" : 7.0}
          ],
+         82,
          {
              "CLOSED": 7,
              "OPEN": 63,
              "PENDING": 2,
              "READY": 7,
-             "SUSPENDED": 3
+             "SUSPENDED": 3,
+             "TOTAL": 82
          }
         )
     )
     @unpack
     @patch('resources.treatment_arm.TreatmentArmsAccessor')
-    def test_get(self, db_return, exp_result, mock_ta_accessor):
+    def test_get(self, db_aggr_return, db_count_return, exp_result, mock_ta_accessor):
         instance = mock_ta_accessor.return_value
-        instance.aggregate.return_value = db_return
+        instance.aggregate.return_value = db_aggr_return
+        instance.count.return_value = db_count_return
 
         result = treatment_arm.TreatmentArmsOverview().get()
         self.assertEqual(result, exp_result)

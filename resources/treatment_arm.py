@@ -97,6 +97,9 @@ class TreatmentArmsOverview(Resource):
         Gets the TreatmentArms overview data.
         """
         self.logger.debug("Getting TreatmentArms Overview Data")
-        count_data = TreatmentArmsAccessor().aggregate(self.STEPS)
+        treatment_arms_accessor = TreatmentArmsAccessor()
+        counts_by_status = treatment_arms_accessor.aggregate(self.STEPS)
 
-        return dict([(cd['_id'], cd['count']) for cd in count_data])
+        counts = dict([(cd['_id'], cd['count']) for cd in counts_by_status])
+        counts['TOTAL'] = treatment_arms_accessor.count({})
+        return counts
