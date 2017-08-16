@@ -4,7 +4,6 @@ Mongo DB connection helper
 import json
 import logging
 
-# import flask
 from bson import json_util
 from pymongo import MongoClient
 from helpers.environment import Environment
@@ -18,8 +17,6 @@ class MongoDbAccessor(object):
         env = Environment()
         uri = env.mongodb_uri
         db_name = env.db_name
-        # uri = flask.current_app.config["MONGODB_URI"]
-        # db_name = flask.current_app.config["DB_NAME"]
 
         self.mongo_client = MongoClient(uri)
         self.database = self.mongo_client[db_name]
@@ -33,14 +30,16 @@ class MongoDbAccessor(object):
         Returns items from the collection using a query and a projection.
         """
         self.logger.debug('Retrieving {cn} documents from database'.format(cn=self.collection_name))
-        return [json.loads(json_util.dumps(doc)) for doc in self.collection.find(query, projection)]
+        return [self.mongo_to_python(doc) for doc in self.collection.find(query, projection)]
+        # return [json.loads(json_util.dumps(doc)) for doc in self.collection.find(query, projection)]
 
     def find_one(self, query, projection):
         """
         Returns one element found by filter
         """
         self.logger.debug('Retrieving one {cn} document from database'.format(cn=self.collection_name))
-        return json.loads(json_util.dumps(self.collection.find_one(query, projection)))
+        return self.mongo_to_python(self.collection.find_one(query, projection))
+        # return json.loads(json_util.dumps(self.collection.find_one(query, projection)))
 
     def count(self, query):
         """
@@ -56,7 +55,9 @@ class MongoDbAccessor(object):
         """
         self.logger.debug('Retrieving {cn} document aggregation from database with pipeline {pl}'
                           .format(cn=self.collection_name, pl=str(pipeline)))
-        return self.collection.aggregate(pipeline)
+        cursor = self.collection.aggregate(pipeline)
+        return [self.mongo_to_python(doc) for doc in cursor]
+        # return self.collection.aggregate(pipeline)
 
     def update_one(self, query, update):
         """
