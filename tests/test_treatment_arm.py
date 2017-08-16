@@ -231,5 +231,36 @@ class TestTreatmentArmsById(unittest.TestCase):
             requested_arms = filter_out_inactives(requested_arms)
         return requested_arms
 
+
+@ddt
+class TreatmentArmsOveriewTests(unittest.TestCase):
+    @data(
+        ([], {}),
+        ([
+            {"_id" : "READY", "count" : 7.0},
+            {"_id" : "PENDING", "count" : 2.0},
+            {"_id" : "SUSPENDED", "count" : 3.0},
+            {"_id" : "OPEN", "count" : 63.0},
+            {"_id" : "CLOSED", "count" : 7.0}
+         ],
+         {
+             "CLOSED": 7,
+             "OPEN": 63,
+             "PENDING": 2,
+             "READY": 7,
+             "SUSPENDED": 3
+         }
+        )
+    )
+    @unpack
+    @patch('resources.treatment_arm.TreatmentArmsAccessor')
+    def test_get(self, db_return, exp_result, mock_ta_accessor):
+        instance = mock_ta_accessor.return_value
+        instance.aggregate.return_value = db_return
+
+        result = treatment_arm.TreatmentArmsOverview().get()
+        self.assertEqual(result, exp_result)
+
+
 if __name__ == '__main__':
     unittest.main()

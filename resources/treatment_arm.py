@@ -78,3 +78,25 @@ class TreatmentArmsById(Resource):
         projection = get_projection(args)
 
         return TreatmentArmsAccessor().find(query, projection)
+
+
+class TreatmentArmsOverview(Resource):
+    """
+    Treatment Arms REST resource to get overview statistics (counts of arms by status).
+    """
+    STEPS = [
+        {"$unwind": "$treatmentArmStatus"},
+        {"$group": {"_id": "$treatmentArmStatus", "count": {"$sum": 1}}},
+    ]
+
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+
+    def get(self):
+        """
+        Gets the TreatmentArms overview data.
+        """
+        self.logger.debug("Getting TreatmentArms Overview Data")
+        count_data = TreatmentArmsAccessor().aggregate(self.STEPS)
+
+        return dict([(cd['_id'], cd['count']) for cd in count_data])

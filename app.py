@@ -20,6 +20,7 @@ from resources.amois import AmoisResource
 from resources.healthcheck import HealthCheck
 from resources.treatment_arm import TreatmentArms
 from resources.treatment_arm import TreatmentArmsById
+from resources.treatment_arm import TreatmentArmsOverview
 from resources.version import Version
 
 # Logging functionality
@@ -36,6 +37,7 @@ API.add_resource(AmoisResource, '/api/v1/treatment_arms/amois')
 API.add_resource(HealthCheck, '/api/v1/treatment_arms/healthcheck', endpoint='get_healthcheck')
 API.add_resource(TreatmentArms, '/api/v1/treatment_arms', endpoint='get_all')
 API.add_resource(TreatmentArmsById, '/api/v1/treatment_arms/<string:arm_id>', endpoint='get_by_id')
+API.add_resource(TreatmentArmsOverview, '/api/v1/treatment_arms/dashboard/overview')
 API.add_resource(Version, '/api/v1/treatment_arms/version', endpoint='get_version')
 
 if __name__ == '__main__':
