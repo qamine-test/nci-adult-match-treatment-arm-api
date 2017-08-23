@@ -167,7 +167,7 @@ Merge the treatmentArm and treatmentArm collections in MongoDB Match database in
 python3 scripts/consolidate_treatment_arm_collections/consolidate_treatment_arm_collections.py
 ```
 
-#### refresh_summary_report.py
+#### refresh_summary_report
 Refreshes the summaryReport field of the active arms in the treatmentArms collection.  Ordinarily this process will be 
 started via message to the TreatmentArmQueue in SQS.  Running the script manually as shown below is provided primarily 
 to make development and testing easier.
@@ -176,7 +176,7 @@ to make development and testing easier.
 python3 scripts/summary_report_refresher/refresh_summary_report.py
 ```
 
-#### ta_message_manager.py
+#### ta_message_manager
 Creates and monitors the TreatmentArmQueue in SQS.
 ```bash
 python3 scripts/ta_message_manager/ta_message_manager.py
@@ -190,6 +190,16 @@ To easily send either of these messages to the message manager from the command 
 python3 -c "import scripts.ta_message_manager.ta_message_manager as tmm; tmm.send_message_to_ta_queue(tmm.REFRESH_MSG)"
 python3 -c "import scripts.ta_message_manager.ta_message_manager as tmm; tmm.send_message_to_ta_queue(tmm.STOP_MSG)"
 ```
+
+## Database Conversion
+There are a handful of changes to the Adult Match production database that are required:
+
+1.  Run the **consolidate_treatment_arms** script.  (See instructions above.)
+2.  Run the **refresh_summary_report** script.  (See instructions above.)
+3.  In the **PatientAPI** project, create indexes on the **Patient** collection.  
+4.  In the **PatientAPI** project, create the Patient UI Views on the **Patient** collection. 
+5.  In the **PatientAPI** project, run the script to update the field name for the Treatment Arm ID.
+
 
 ## Helpful Aliases
 Add these to your .bashrc:
