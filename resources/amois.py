@@ -123,7 +123,7 @@ class VariantRulesMgr:
         :param patient_variants: list of variants with an identifier field
         :return: an array containing the rules that matched.
         """
-        def _matches(pv, r):
+        def _matches(pv, r):  # pv=patient variant; r=rule
             return pv['confirmed'] and r['identifier'] == pv['identifier']
 
         return [r for r in rule_list for pv in patient_variants if _matches(pv, r)]
