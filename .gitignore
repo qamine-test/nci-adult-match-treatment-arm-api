@@ -98,3 +98,7 @@ bin/
 # scratch files
 scratch
 scratch*.py
+
+# OS X trash files
+ .DS_Store
+ 
