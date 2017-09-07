@@ -7,25 +7,60 @@
 ## Prerequisites
 
 * [Install Python3.6.1](http://www.marinamele.com/2014/07/install-python3-on-mac-os-x-and-use-virtualenv-and-virtualenvwrapper.html)
-* [Setup Virtual Environments](https://realpython.com/blog/python/python-virtual-environments-a-primer/)
-* Required Python modules should be installed with the following command:
+* [Setup Virtual Environments](https://realpython.com/blog/python/python-virtual-environments-a-primer/) 
+(Explanation about virtual environments.)
+    
+    Install **virtualenvwrapper**:
     ```bash
-    pip3 install -r requirements.txt
+    pip3 install virtualenv
+    pip3 install virtualenvwrapper
+    ```
+    
+    If you run into an error related to the package six (dependency) use:
+    ```bash
+    pip3 install virtualenvwrapper --ignore-installed six
+    ```
+    
+    In your home directory, create a folder to contain your virtual environments:
+    ```bash
+    mkdir ~/.virtualenvs
+    ```
+    
+    Open your **.bashrc** and add the following:
+    ```bash
+    export VIRTUALENVWRAPPER_PYTHON=[path to python3]
+    export WORKON_HOME=~/.virtualenvs
+    source /usr/local/bin/virtualenvwrapper.sh
+    ```
+    
+    Activate those changes with the following command:
+    ```bash
+    . .bashrc
     ```
 
 ## Development Setup
 
-To create new venv:
-
+To create a new virtual environment named "nci-adult-match-treatment-arm-api":
 ```bash
-mkvirtualenv nci-adult-match-treatment-arm-api
+mkvirtualenv --python=[python3.6_path] nci-adult-match-treatment-arm-api
 ```
 
-To switch to existing vevn:
-
+To switch to existing existing virtual environment:
 ```bash
 workon nci-adult-match-treatment-arm-api
 ```
+
+Required Python modules should be installed in the virtual environment with the following command:
+```bash
+pip3 install -r requirements.txt
+```
+
+To exit the virtual environment:
+```bash
+deactivate 
+```
+
+Also, see section below on customizing the TreatmentArm API virtual environment.
 
 #### If you use VS Code
 
@@ -38,7 +73,6 @@ workon nci-adult-match-treatment-arm-api
 ## To run locally
 
 ### Export environment variable for shell session
-
 ```bash
 export MONGODB_URI=mongodb://localhost:27017/Match
 export ENVIRONMENT='development'
@@ -48,7 +82,6 @@ export PYTHONPATH=.:{your path here}/nci-adult-match-treatment-arm-api
 ```
 
 ### Set explicitly for a specific command execution
-
 ```bash
 MONGODB_URI=mongodb://localhost:27017/Match python app.py
 ```
@@ -58,19 +91,16 @@ MONGODB_URI=mongodb://localhost:27017/Match python app.py
 *Note: you need to have access to FNLCR private docker repository. Please contact systems team if you need the access.*
 
 To build the production image based on Apache run the following:
-
 ```bash
 docker build -t "fnlcr/nci-adult-match-treatment-arm-api:latest" .
 ```
 
 Starts Treatment Arm API and MongoDB:
-
 ```bash
 docker-compose up
 ```
 
 If you'd like to start only Monbgo DB to develop your service locally:
-
 ```bash
 docker-compose up mongo
 ```
@@ -78,7 +108,6 @@ docker-compose up mongo
 #### To start the container stand-alone but attached to the Docker network
 
 Example with connecting to `nciadultmatchui_adult-match-net` Docker network. Replace with yours if needed.
-
 ```bash
 docker run --name ncimatch-adult-treatment-arm-api -it --network nciadultmatchui_adult-match-net -e ENVIRONMENT=test -e MONGODB_URI=mongodb://mongo:27017/Match -p 5010:5010 fnlcr/nci-adult-match-treatment-arm-api:latest
 ```
@@ -100,8 +129,7 @@ mongo Match --eval "db.dropDatabase()"
 mongorestore --db Match ./data_setup/match
 ```
 
-After you've restored the backup you may check the restored data
-
+After you've restored the backup you may check the restored data:
 ```bash
 mongo shell
 show dbs
@@ -119,13 +147,11 @@ Various configuration settings can be customized in the `config/environment.yml`
 ## Misc
 
 To find a service listening on a specific port
-
 ```bash
 lsof -n -i4TCP:5010 | grep LISTEN
 ```
 
 To kill a service on a specific port
-
 ```bash
 kill -9 $(lsof -n -i4TCP:5010)
 ```
@@ -150,12 +176,8 @@ coverage run -m unittest discover tests; coverage run -a -m unittest discover sc
 
 ## Scripts
 To run the scripts from their source directory, make sure that the path to the TreatmentArmAPI root directory is 
-included in the PYTHONPATH environment variable (see section on environment variables above).
-
-The scripts require the following:
-
-* python 3
-* pymongo 3.4 python module
+included in the PYTHONPATH environment variable (see section on environment variables above OR section on 
+Customizing the TreatmentArm API Virtual Environment below).
 
 Defaults to connect to the MongoDB at ```mongodb://localhost:27017/Match```; can be overwritten by setting the 
 MONGODB_URI environment variable to the desired URI.
@@ -201,14 +223,32 @@ There are a handful of changes to the Adult Match production database that are r
 5.  In the **PatientAPI** project, run the script to update the field name for the Treatment Arm ID.
 
 
-## Helpful Aliases
-Add these to your .bashrc:
+## Customizing the TreatmentArm API Virtual Environment
+Create custom environment variables and aliases to simplify development within the virtual environment.
 
-For building docker image:
+Recommended additions to the **postactivate** file:
 ```bash
-alias tabuild='docker build -t "fnlcr/nci-adult-match-treatment-arm-api:latest" .'
+export PROJECT_PATH=[path to nci-adult-match-treatment-arm-api]
+export OLD_PYTHONPATH="$PYTHONPATH"
+export PYTHONPATH=.:$PROJECT_PATH
+VIRTUAL_ENV_NAME=`basename $VIRTUAL_ENV`
+export PROMPT_COMMAND='echo -ne "\033]0;${PWD/#$PROJECT_PATH/$VIRTUAL_ENV_NAME:}\007"'
+alias home='cd $PROJECT_PATH'
+home
+
+alias dbm='docker exec -it nciadultmatchtreatmentarmapi_mongo_1 bash'   # create a bash shell for accessing the dockerized MongoDB; dbm=DockerMongoBash
+alias build='cd $PROJECT_PATH; docker build -t "fnlcr/nci-adult-match-treatment-arm-api:latest" .'  # builds the docker image
+alias up='docker-compose up' # starts the service in docker
+# For running all tests with coverage:
+alias cov='cd $PROJECT_PATH; coverage run -m unittest discover tests; coverage run -a -m unittest discover scripts/tests; coverage report -m; cd -'
 ```
-For running all tests with coverage:
+Recommended additions to the **postdeactivate** file:
 ```bash
-alias tacov='cd {path to treatmentArmApi source}; coverage run -m unittest discover tests; coverage run -a -m unittest discover scripts/tests; coverage report -m; cd -'
+export PYTHONPATH="$OLD_PYTHONPATH"
+export PROMPT_COMMAND='echo -ne "\033]0;${PWD/#$HOME/~}\007"'
+```
+
+To find those files, use the following command while within the virtual environment:
+```bash
+cdvirtualenv bin
 ```
