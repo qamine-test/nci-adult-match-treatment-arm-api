@@ -26,7 +26,7 @@ class PatientAccessor(object):
         :return: array of JSON documents containing required fields for Summary Report Refresh analysis
         """
         trtmt_id_url = "{}/{}".format(self.url, trtmt_id)
-        self.logger.debug('Retrieving Patient from {}'.format(trtmt_id_url))
+        self.logger.debug('Retrieving Patients from {}'.format(trtmt_id_url))
         response = requests.get(trtmt_id_url)
         result = response.json()
         return result
