@@ -8,6 +8,7 @@ from flask_restful import Resource
 from flask_restful import request
 
 from accessors.treatment_arm_accessor import TreatmentArmsAccessor
+from resources.auth0_resource import requires_auth
 
 
 def is_active_only(active_param):
@@ -48,6 +49,7 @@ class TreatmentArms(Resource):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
+    @requires_auth
     def get(self):
         """
         Gets the TreatmentArms data.
@@ -67,6 +69,7 @@ class TreatmentArmsById(Resource):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
+    @requires_auth
     def get(self, arm_id):
         """
         Gets the TreatmentArms data for the arm_id specified.
@@ -92,6 +95,7 @@ class TreatmentArmsOverview(Resource):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
+    @requires_auth
     def get(self):
         """
         Gets the TreatmentArms overview data.

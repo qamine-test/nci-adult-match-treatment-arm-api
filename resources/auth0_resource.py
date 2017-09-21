@@ -57,7 +57,7 @@ def requires_auth(function):  # pragma: no cover
                 auth0_client_secret = os.environ['AUTH0_CLIENT_SECRET']
             except KeyError:
                 return authenticate({'code': 'missing secret',
-                                     'description': 'Environment variable AUTH0_CLIENT_SECRET is mising'})
+                                     'description': 'Environment variable AUTH0_CLIENT_SECRET is missing'})
 
             # print("token='{}'".format(token))
             # print("auth0_client_secret='{}'".format(auth0_client_secret))
@@ -69,7 +69,7 @@ def requires_auth(function):  # pragma: no cover
                 auth0_client_id = os.environ['AUTH0_CLIENT_ID']
             except KeyError:
                 return authenticate({'code': 'missing client ID',
-                                     'description': 'Environment variable AUTH0_CLIENT_ID is mising'})
+                                     'description': 'Environment variable AUTH0_CLIENT_ID is missing'})
             # print("auth0_client_id='{}'".format(auth0_client_id))
             try:
                 payload = jwt.decode(token, auth0_client_secret, audience=auth0_client_id)
