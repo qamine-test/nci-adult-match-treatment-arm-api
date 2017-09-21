@@ -41,10 +41,10 @@ after_success:
     --cluster AdultMatch-IntTest-Backend  --service-name AdultMATCH-treatment-arm-api-INTTEST
     -i $DOCKER_IMAGE:$DATE
   #Trigger Travis bdd tests
-   - curl -s -X POST -H "Content-Type:application/json" -H "Accept:application/json"
-     -H "Travis-API-Version:3" -H "Authorization:token $TRAVIS_TOKEN"
-     -d "{\"request\":{\"message\":\"Triggered by nci-adult-match-treatment-arm-api $TRAVIS_COMMIT\", \"branch\":\"master\", \"config\":{\"env\":{\"matrix\":[\"TRIGGER_REPO=nci-adult-match-treatment-arm-api;TRIGGER_VER=$DATE;CUC_TAG=@treatment_arm_api;AUTHOR=$AUTHOR\"]}}}}"
-     https://api.travis-ci.org/repo/CBIIT%2Fnci-informatics-bddtests/requests
+  - curl -s -X POST -H "Content-Type:application/json" -H "Accept:application/json"
+    -H "Travis-API-Version:3" -H "Authorization:token $TRAVIS_TOKEN"
+    -d "{\"request\":{\"message\":\"Triggered by nci-adult-match-treatment-arm-api $TRAVIS_COMMIT\", \"branch\":\"master\", \"config\":{\"env\":{\"matrix\":[\"TRIGGER_REPO=nci-adult-match-treatment-arm-api;TRIGGER_VER=$DATE;CUC_TAG=@treatment_arm_api;AUTHOR=$AUTHOR\"]}}}}"
+    https://api.travis-ci.org/repo/CBIIT%2Fnci-informatics-bddtests/requests
 
 notifications:
   slack: clinicalbiomed:k1HFjdqTwI4yvSyQWPulUEK4
