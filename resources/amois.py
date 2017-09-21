@@ -15,10 +15,13 @@ An example of how to call this service can be found in scripts/examples/call_amo
 """
 
 import logging
+from pprint import pformat
+
+from flask_restful import Resource, request
 
 from accessors.treatment_arm_accessor import TreatmentArmsAccessor
-from flask_restful import Resource, request
-from pprint import pformat
+from resources.auth0_resource import requires_auth
+
 
 # NonHotspot Matching rules for 'exon', 'function', 'oncominevariantclass', 'gene':
 #    Observations:
@@ -39,7 +42,6 @@ from pprint import pformat
 #
 #    Follow the same logic for all four ('exon', 'function', 'oncominevariantclass', 'gene');
 #    if all four match, it's an aMOI.
-
 
 
 class VariantRulesMgr:
@@ -162,6 +164,7 @@ class VariantRulesMgr:
 
 
 class AmoisAnnotator:
+    EQUIV_FIELDS = ['treatmentArmId', 'version', 'inclusion']
     REQ_FIELDS = ['treatmentArmId', 'version', 'inclusion', 'type']
 
     def __init__(self):
@@ -179,7 +182,7 @@ class AmoisAnnotator:
             if not equiv_annot:
                 state_annots.append(annot_data)
             elif equiv_annot['type'] != annot_data['type']:
-                 equiv_annot['type'] = 'Both'
+                equiv_annot['type'] = 'Both'
         else:
             self._annotation[state] = [annot_data]
 
@@ -188,8 +191,7 @@ class AmoisAnnotator:
 
     @staticmethod
     def _equiv_annot(annot1, annot2):
-        EQUIV_FIELDS = ['treatmentArmId', 'version', 'inclusion']
-        for fld_name in EQUIV_FIELDS:
+        for fld_name in AmoisAnnotator.EQUIV_FIELDS:
             if annot1[fld_name] != annot2[fld_name]:
                 return False
         return True
@@ -285,6 +287,7 @@ class AmoisResource(Resource):
             raise Exception(err_msg)
         return args
 
+    @requires_auth
     def patch(self):
         """
         Gets the AMOIS data and annotates the given Variant Report with it in the following format:
