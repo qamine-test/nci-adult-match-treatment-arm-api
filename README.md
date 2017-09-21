@@ -166,17 +166,17 @@ environment variable.
 
 To run a single unit test:
 ```
-python3 <testfile>.py
+UNITTEST=1 python3 <testfile>.py
 ```
 
 To run all unit tests:
 ```
-python3 -m unittest discover <test_directory>
+UNITTEST=1 python3 -m unittest discover <test_directory>
 ```
 
 To run all tests with the coverage tool, execute the following from the TreatmentArmAPI root directory:
 ```
-coverage run -m unittest discover tests; coverage run -a -m unittest discover scripts/tests; coverage report -m
+UNITTEST=1 coverage run -m unittest discover tests; UNITTEST=1 coverage run -a -m unittest discover scripts/tests; coverage report -m
 ```
 
 ## Scripts
@@ -245,7 +245,7 @@ alias dbm='docker exec -it nciadultmatchtreatmentarmapi_mongo_1 bash'   # create
 alias build='cd $PROJECT_PATH; docker build -t "fnlcr/nci-adult-match-treatment-arm-api:latest" .'  # builds the docker image
 alias up='docker-compose up' # starts the service in docker
 # For running all tests with coverage:
-alias cov='cd $PROJECT_PATH; coverage run -m unittest discover tests; coverage run -a -m unittest discover scripts/tests; coverage report -m; cd -'
+alias cov='cd $PROJECT_PATH; UNITTEST=1 coverage run -m unittest discover tests; UNITTEST=1 coverage run -a -m unittest discover scripts/tests; coverage report -m; cd -'
 ```
 Recommended additions to the **postdeactivate** file:
 ```bash
