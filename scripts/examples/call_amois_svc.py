@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+import os
 import pprint
+
 import requests
 
 vr = {
@@ -84,5 +86,9 @@ vr = {
     "nonHotspotRules": [],
 }
 
-resp = requests.patch('http://localhost:5010/api/v1/treatment_arms/amois', json=vr)
-pprint.pprint(resp.json())
+if 'TOKEN_ID' in os.environ:
+    headers = {"authorization": "Bearer {}".format(os.environ['TOKEN_ID'])}
+    resp = requests.patch('http://localhost:5010/api/v1/treatment_arms/amois', json=vr, headers=headers)
+    pprint.pprint(resp.json())
+else:
+    print("TOKEN_ID environment variable not found.")
