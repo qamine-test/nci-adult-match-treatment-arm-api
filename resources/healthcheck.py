@@ -1,10 +1,9 @@
 import logging
 
-from flask_restful import Resource
 from bson.son import SON
-from accessors.treatment_arm_accessor import TreatmentArmsAccessor
+from flask_restful import Resource
 
-# from flask_cors import cross_origin
+from accessors.treatment_arm_accessor import TreatmentArmsAccessor
 from resources.auth0_resource import requires_auth
 
 
@@ -19,8 +18,6 @@ class HealthCheck(Resource):
             {"$sort": SON([("count", -1), ("_id", -1)])}
         ]
 
-    # @cross_origin(headers=['Content-Type', 'Authorization'])
-    # @cross_origin(headers=['Content-Type'])
     @requires_auth
     def get(self):
         self.logger.debug('Retrieving TreatmentArms Healthcheck')
