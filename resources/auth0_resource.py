@@ -49,8 +49,8 @@ def requires_auth(function):  # pragma: no cover
             except KeyError:
                 return error_response('missing secret', 'Environment variable AUTH0_CLIENT_SECRET is missing')
 
-            # auth0_client_secret = auth0_client_secret if len(auth0_client_secret) == 64 else  base64.b64decode(
-            #     auth0_client_secret)
+            auth0_client_secret = auth0_client_secret if len(auth0_client_secret) == 64 else  base64.b64decode(
+                auth0_client_secret)
 
             try:
                 auth0_client_id = os.environ['AUTH0_CLIENT_ID']
