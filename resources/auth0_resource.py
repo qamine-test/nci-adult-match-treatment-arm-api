@@ -7,7 +7,6 @@ from flask import request, jsonify, _request_ctx_stack
 from flask_restful import Resource
 from werkzeug.local import LocalProxy
 
-# from helpers.environment import Environment
 
 # Authentication annotation
 current_user = LocalProxy(lambda: _request_ctx_stack.top.current_user)
@@ -20,8 +19,6 @@ def error_response(code, description):  # pragma: no cover
 
 
 def requires_auth(function):  # pragma: no cover
-    # if Environment().environment == 'development':
-        # print("************ returning function without authorization ************")
     if 'UNITTEST' in os.environ:
         # print("************ returning function without authorization ************")
         return function
@@ -37,11 +34,11 @@ def requires_auth(function):  # pragma: no cover
             parts = auth.split()
 
             if parts[0].lower() != 'bearer':
-                return {'code': 'invalid_header', 'description': 'Authorization header must start with Bearer'}
+                return error_response('invalid_header', 'Authorization header must start with Bearer')
             elif len(parts) == 1:
-                return {'code': 'invalid_header', 'description': 'Token not found'}
+                return error_response('invalid_header', 'Token not found')
             elif len(parts) > 2:
-                return {'code': 'invalid_header', 'description': 'Authorization header must be Bearer + \s + token'}
+                return error_response('invalid_header', 'Authorization header must be Bearer + \s + token')
             token = parts[1]
 
             try:
