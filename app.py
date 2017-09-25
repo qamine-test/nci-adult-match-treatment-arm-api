@@ -7,7 +7,7 @@ Main application module
 import logging
 
 from flask import Flask
-# from flask_cors import CORS
+from flask_cors import CORS
 from flask_restful import Api
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
@@ -31,7 +31,7 @@ APP = Flask(__name__)
 APP.config.from_object(flask_config.Configuration)
 
 API = Api(APP)
-# cors = CORS(APP, resources={r"/api/*": {"origins": "*"}})
+cors = CORS(APP, resources={r"/api/*": {"origins": "*"}})
 
 API.add_resource(AmoisResource, '/api/v1/treatment_arms/amois')
 API.add_resource(HealthCheck, '/api/v1/treatment_arms/healthcheck', endpoint='get_healthcheck')
