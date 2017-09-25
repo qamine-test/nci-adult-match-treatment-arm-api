@@ -17,7 +17,7 @@ class PatientAccessor(object):
         self.logger = logging.getLogger(__name__)
         self.url = "{}/{}".format(Environment().patient_api_url, 'by_treatment_arm')
 
-    def get_patients_by_treatment_arm_id(self, trtmt_id):
+    def get_patients_by_treatment_arm_id(self, trtmt_id, authorization_token=None):
         """
         Gets patient data for patients associated (currently or formerly) with the given TreatmentId.
         The patients will be sorted by patientSequenceNumber (ascending) and patientAssignments.dateConfirmed
@@ -26,8 +26,10 @@ class PatientAccessor(object):
         :return: array of JSON documents containing required fields for Summary Report Refresh analysis
         """
         trtmt_id_url = "{}/{}".format(self.url, trtmt_id)
+        headers = {"authorization": authorization_token} if authorization_token else {}
+
         self.logger.debug('Retrieving Patients from {}'.format(trtmt_id_url))
-        response = requests.get(trtmt_id_url)
+        response = requests.get(trtmt_id_url, headers=headers)
         result = response.json()
         return result
 
