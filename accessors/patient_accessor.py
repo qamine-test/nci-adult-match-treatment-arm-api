@@ -31,6 +31,13 @@ class PatientAccessor(object):
         self.logger.debug('Retrieving Patients from {}'.format(trtmt_id_url))
         response = requests.get(trtmt_id_url, headers=headers)
         result = response.json()
+
+        if response.status_code != 200:
+            desc = result['description'] if 'description' in result else str(result)
+            err_msg = "{url} returned {code}: {description}".format(url=self.url, code=response.status_code,
+                                                                    description=desc)
+            raise Exception(err_msg)
+
         return result
 
 
