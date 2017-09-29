@@ -133,10 +133,12 @@ class Auth0ResourceTests(unittest.TestCase):
          'MyTestToken', None),
         # 2.  Environment is missing AUTH0_CLIENT_ID env var
         ({'AUTH0_CLIENT_SECRET': 'MyClientSecret'}, 'MyTestToken',
-         auth0_resource.AuthenticationError('missing_client_ID', 'Environment variable AUTH0_CLIENT_ID is missing')),
+         auth0_resource.AuthenticationError('missing_env_var',
+                                            'Required environment variable AUTH0_CLIENT_ID is missing')),
         # 3.  Environment is missing AUTH0_CLIENT_SECRET env var
         ({'AUTH0_CLIENT_ID': 'MyClientId'}, 'MyTestToken',
-         auth0_resource.AuthenticationError('missing_secret', 'Environment variable AUTH0_CLIENT_SECRET is missing')),
+         auth0_resource.AuthenticationError('missing_env_var',
+                                            'Required environment variable AUTH0_CLIENT_SECRET is missing')),
         # 4.  get_authentication_token throws an exception
         ({'AUTH0_CLIENT_ID': 'MyClientId'},
          auth0_resource.AuthenticationError('invalid_header', 'Token not found'),
