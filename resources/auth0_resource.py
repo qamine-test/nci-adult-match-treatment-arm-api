@@ -55,20 +55,21 @@ def authenticated_function(function):
 def authenticate():
     token = get_authentication_token()
 
-    try:
-        auth0_client_id = os.environ['AUTH0_CLIENT_ID']
-    except KeyError:
-        raise AuthenticationError('missing_client_ID', 'Environment variable AUTH0_CLIENT_ID is missing')
-
-    try:
-        auth0_client_secret = os.environ['AUTH0_CLIENT_SECRET']
-    except KeyError:
-        raise AuthenticationError('missing_secret', 'Environment variable AUTH0_CLIENT_SECRET is missing')
+    auth0_client_id = read_environment_variable('AUTH0_CLIENT_ID')
+    auth0_client_secret = read_environment_variable('AUTH0_CLIENT_SECRET')
 
     # auth0_client_secret = auth0_client_secret if len(auth0_client_secret) == 64 else  base64.b64decode(
     # auth0_client_secret)
 
     validate_token(token, auth0_client_id, auth0_client_secret)
+
+
+def read_environment_variable(env_var):
+    try:
+        auth0_client_id = os.environ[env_var]
+    except KeyError:
+        raise AuthenticationError('missing_env_var', 'Required environment variable {} is missing'.format(env_var))
+    return auth0_client_id
 
 
 def get_authentication_token():
