@@ -39,6 +39,7 @@ class PatientAccessorTests(unittest.TestCase):
 
         mock_response = Mock()
         mock_response.json.return_value = patients
+        mock_response.status_code = 200
         mock_requests.get.return_value = mock_response
 
         patient_accessor = PatientAccessor()
@@ -48,6 +49,35 @@ class PatientAccessorTests(unittest.TestCase):
         mock_requests.get.assert_called_once_with(exp_url, headers=exp_headers)
         mock_response.json.assert_called_once_with()
         self.assertEqual(result, patients)
+
+    @data(
+        (401, {'code': 'invalid_token', 'description': 'token is invalid'},
+         TEST_PATIENT_API_URL + "/by_treatment_arm returned 401: token is invalid"),
+        (500, {'error_msg_in_other_format': 'description of the error'},
+         TEST_PATIENT_API_URL + "/by_treatment_arm returned 500: " +
+         str({'error_msg_in_other_format': 'description of the error'})),
+    )
+    @unpack
+    @patch('accessors.patient_accessor.requests')
+    def test_get_patients_by_treatment_arm_id_with_exc(self, status_code, response_data, exp_exc_msg, mock_requests):
+        # Doesn't really matter what the treatment arm ID is; just verifying here that the service
+        # is called correctly and the returned data is formatted correctly in an exception.
+        treatment_id = "TA_ID_5"
+
+        mock_response = Mock()
+        mock_response.json.return_value = response_data
+        mock_response.status_code = status_code
+        mock_requests.get.return_value = mock_response
+
+        patient_accessor = PatientAccessor()
+        with self.assertRaises(Exception) as cm:
+            patient_accessor.get_patients_by_treatment_arm_id(treatment_id, {})
+
+        exp_url = TEST_PATIENT_API_URL + '/by_treatment_arm/' + treatment_id
+        mock_requests.get.assert_called_once_with(exp_url, headers={})
+        mock_response.json.assert_called_once_with()
+        self.assertEqual(str(cm.exception), exp_exc_msg)
+
 
 if __name__ == '__main__':
     unittest.main()
