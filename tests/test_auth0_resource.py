@@ -190,5 +190,52 @@ class Auth0ResourceTests(unittest.TestCase):
             self.assertEqual(flask.json.loads(response.data.decode("utf-8")), exp_data)
         mock_authenticate.assert_called_once_with()
 
+    # Test the auth0_resource.create_authentication_token function
+    @data(
+        # 1.  Everything is correct.
+        ({'AUTH0_CLIENT_ID': 'id', 'AUTH0_DATABASE': 'db', 'AUTH0_USERNAME': 'un', 'AUTH0_PASSWORD': 'pw'},
+         {'id_token': 'my_made_up_id_token'},
+         "bearer my_made_up_id_token"),
+        # 2.  Completely unexpected response
+        ({'AUTH0_CLIENT_ID': 'id', 'AUTH0_DATABASE': 'db', 'AUTH0_USERNAME': 'un', 'AUTH0_PASSWORD': 'pw'},
+         {'unexpected': 'response'},
+         auth0_resource.AuthenticationError("unexpected_response", "'id_token' not found in response")),
+        # 3.  Error response indicates what went wrong
+        ({'AUTH0_CLIENT_ID': 'id', 'AUTH0_DATABASE': 'db', 'AUTH0_USERNAME': 'un', 'AUTH0_PASSWORD': 'pw'},
+         {'error': 'invalid_token', 'error_description': 'The token is not valid'},
+         auth0_resource.AuthenticationError("invalid_token", "The token is not valid")),
+        # 4.  Environment is missing AUTH0_CLIENT_ID env var
+        ({'AUTH0_DATABASE': 'db', 'AUTH0_USERNAME': 'un', 'AUTH0_PASSWORD': 'pw'},
+         {'error': 'invalid_token', 'error_description': 'The token is not valid'},
+         auth0_resource.AuthenticationError('missing_env_var',
+                                            'Required environment variable AUTH0_CLIENT_ID is missing')),
+    )
+    @unpack
+    @patch('resources.auth0_resource.os')
+    @patch('resources.auth0_resource.requests')
+    def test_create_authentication_token(self, mock_env_vars, response_data, exp_result, mock_requests, mock_os):
+        mock_response = Mock()
+        mock_response.json.return_value = response_data
+        mock_requests.post.return_value = mock_response
+        mock_os.environ = mock_env_vars
+
+        if isinstance(exp_result, Exception):
+            with self.assertRaises(auth0_resource.AuthenticationError) as cm:
+                auth0_resource.create_authentication_token()
+            self.assertEqual(str(cm.exception), str(exp_result))
+        else:
+            result = auth0_resource.create_authentication_token()
+            self.assertEqual(result, exp_result)
+            mock_requests.post.assert_called_once_with(auth0_resource.AUTH_URI,
+                                                       headers={"Content-Type": "application/json"},
+                                                       json={
+                                                           "client_id": mock_env_vars['AUTH0_CLIENT_ID'],
+                                                           "connection": mock_env_vars['AUTH0_DATABASE'],
+                                                           "username": mock_env_vars['AUTH0_USERNAME'],
+                                                           "password": mock_env_vars['AUTH0_PASSWORD'],
+                                                           "grant_type": "password",
+                                                           "scope": "openid roles email",
+                                                       })
+
 if __name__ == '__main__':
     unittest.main()
