@@ -3,12 +3,15 @@ import os
 from functools import wraps
 
 import jwt
+import requests
 from flask import request, jsonify, _request_ctx_stack
 from flask_restful import Resource
 from werkzeug.local import LocalProxy
 
 # Authentication annotation
 current_user = LocalProxy(lambda: _request_ctx_stack.top.current_user)
+
+AUTH_URI = "https://ncimatch.auth0.com/oauth/ro"
 
 
 def requires_auth(function):
@@ -127,3 +130,31 @@ def validate_token(token, auth0_client_id, auth0_client_secret):
 
 class Auth0Resource(Resource):  # pragma: no cover
     method_decorators = [requires_auth]
+
+
+def create_authentication_token():
+    auth0_client_id = read_environment_variable('AUTH0_CLIENT_ID')
+    auth0_client_database = read_environment_variable('AUTH0_DATABASE')
+    auth0_username = read_environment_variable('AUTH0_USERNAME')
+    auth0_password = read_environment_variable('AUTH0_PASSWORD')
+
+    body = {
+        "client_id": auth0_client_id,
+        "connection": auth0_client_database,
+        "username": auth0_username,
+        "password": auth0_password,
+        "grant_type": "password",
+        "scope": "openid roles email",
+    }
+
+    headers = {"Content-Type": "application/json"}
+
+    response = requests.post(AUTH_URI, headers=headers, json=body)
+    response_data = response.json()
+
+    if 'error' in response_data:
+        raise AuthenticationError(response_data['error'], response_data['error_description'])
+    elif 'id_token' not in response_data:
+        raise AuthenticationError("unexpected_response", "'id_token' not found in response")
+
+    return "bearer " + response_data['id_token']
