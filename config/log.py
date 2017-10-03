@@ -4,19 +4,20 @@ Logging configuration
 
 import logging.config
 
-study_id = 'EAY131'
-prefix = 'NciAdultMatchTreatmentArmApi'
+# study_id = 'EAY131'
+PREFIX = 'NciAdultMatchTreatmentArmApi'
+
 
 def log_config():
-    """
-    Configures logging globally
-    """
-    LOGGER_CONFIGURATION = {
+    """Configure logging globally."""
+    logger_configuration = {
         'version': 1,
         'formatters': {
             'standard': {
-                'format': '%(asctime)s - %(levelname)s - {prefix} [{study_id}] - %(name)s.%(module)s.%(funcName)s:'
-                          '%(lineno)d - %(message)s'.format(prefix=prefix, study_id=study_id),
+                'format': '%(asctime)s {prefix} %(levelname)s %(name)s.%(module)s.%(funcName)s:'
+                          '%(lineno)d - %(message)s'.format(prefix=PREFIX),
+                # 'format': '%(asctime)s - %(levelname)s - {prefix} [{study_id}] - %(name)s.%(module)s.%(funcName)s:'
+                #           '%(lineno)d - %(message)s'.format(prefix=PREFIX, study_id=STUDY_ID),
             },
         },
         'handlers': {
@@ -30,9 +31,9 @@ def log_config():
         'loggers': {
             '': {
                 'handlers': ['console'],
-                'level':'DEBUG',
+                'level': 'DEBUG',
             }
         }
     }
 
-    logging.config.dictConfig(LOGGER_CONFIGURATION)
+    logging.config.dictConfig(logger_configuration)
