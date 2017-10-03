@@ -5,6 +5,7 @@ Logging configuration
 import logging.config
 
 study_id = 'EAY131'
+prefix = 'NciAdultMatchTreatmentArmApi'
 
 def log_config():
     """
@@ -14,7 +15,8 @@ def log_config():
         'version': 1,
         'formatters': {
             'standard': {
-                'format': '%(asctime)s - %(levelname)s - TREATMENT_ARM_API ['+study_id+'] - %(name)s.%(module)s.%(funcName)s:%(lineno)d - %(message)s',
+                'format': '%(asctime)s - %(levelname)s - {prefix} [{study_id}] - %(name)s.%(module)s.%(funcName)s:'
+                          '%(lineno)d - %(message)s'.format(prefix=prefix, study_id=study_id),
             },
         },
         'handlers': {
