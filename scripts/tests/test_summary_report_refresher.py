@@ -124,10 +124,11 @@ class RefresherTest(unittest.TestCase):
     )
     @unpack
     @patch('scripts.summary_report_refresher.refresher.logging')
+    @patch('scripts.summary_report_refresher.refresher.create_authentication_token')
     @patch('scripts.summary_report_refresher.refresher.PatientAccessor')
     @patch('scripts.summary_report_refresher.refresher.TreatmentArmsAccessor')
     def test_update_summary_report(self, patients, ta_data_for_sum_rpt, expected_sum_rpt_json, expected_ar_patients,
-                                   mock_ta_accessor, mock_patient_accessor, mock_logging):
+                                   mock_ta_accessor, mock_patient_accessor, mock_create_token, mock_logging):
 
         self.maxDiff = None
 
@@ -137,13 +138,16 @@ class RefresherTest(unittest.TestCase):
             ar_records.append(assmt_rec.get_json())
         expected_sum_rpt_json['assignmentRecords'] = ar_records
 
-        # Set up the mocked PatientAcessor
+        # Set up the mocked PatientAccessor
         pa_instance = mock_patient_accessor.return_value
         pa_instance.get_patients_by_treatment_arm_id.return_value = patients
 
         # Set up the mocked TreatmentArmsAccessor
         taa_instance = mock_ta_accessor.return_value
         taa_instance.update_summary_report = lambda _id, json: self.assertEqual(json, expected_sum_rpt_json)
+
+        # Set up the mocked create_authentication_token method
+        mock_create_token.return_value = "Bearer my_fake_authentication_token"
 
         sum_rpt = SummaryReport(ta_data_for_sum_rpt)
         r = Refresher()
@@ -155,13 +159,18 @@ class RefresherTest(unittest.TestCase):
         ([True, False, True, True]),
     )
     @patch('scripts.summary_report_refresher.refresher.logging')
+    @patch('scripts.summary_report_refresher.refresher.create_authentication_token')
     @patch('scripts.summary_report_refresher.refresher.PatientAccessor')
     @patch('scripts.summary_report_refresher.refresher.TreatmentArmsAccessor')
-    def test_run(self, update_summary_rpt_rets, mock_ta_accessor, mock_patient_accessor, mock_logging):
+    def test_run(self, update_summary_rpt_rets, mock_ta_accessor, mock_patient_accessor, mock_create_token, mock_logging):
         self.maxDiff = None
 
+        # Set up the mocked TreatmentArmsAccessor
         taa_instance = mock_ta_accessor.return_value
         taa_instance.get_arms_for_summary_report_refresh.return_value = [DEFAULT_TA] * len(update_summary_rpt_rets)
+
+        # Set up the mocked create_authentication_token method
+        mock_create_token.return_value = "Bearer my_fake_authentication_token"
 
         r = Refresher()
         r._update_summary_report = MagicMock(side_effect=update_summary_rpt_rets)
