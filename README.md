@@ -81,8 +81,8 @@ export AWS_ACCESS_KEY_ID={your_aws_access_key_id}
 export AUTH0_DATABASE={database_name}
 export AUTH0_CLIENT_ID={client_id}
 export AUTH0_CLIENT_SECRET={client_secret}
-export AUTH0_USERNAME={uour_auth0_username}
-export AUTH0_PASSWORD={uour_auth0_password}
+export AUTH0_USERNAME={your_auth0_username}
+export AUTH0_PASSWORD={your_auth0_password}
 export PYTHONPATH=.:{your path here}/nci-adult-match-treatment-arm-api
 ```
 
