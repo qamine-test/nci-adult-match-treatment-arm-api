@@ -7,6 +7,8 @@ import logging
 import requests
 
 from helpers.environment import Environment
+# from oauthlib.oauth2 import LegacyApplicationClient
+# from requests_oauthlib import OAuth2Session
 
 
 class PatientAccessor(object):
@@ -16,6 +18,14 @@ class PatientAccessor(object):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.url = "{}/{}".format(Environment().patient_api_url, 'by_treatment_arm')
+        # self.client = LegacyApplicationClient(client_id='')
+        # self.oauth = OAuth2Session(client=self.client)
+        # self.token = self.oauth.fetch_token(token_url="https://ncimatch.auth0.com/oauth/ro",
+        #                                     client_id='',
+        #                                     client_secret='',
+        #                                     username='matchbox-test@mail.nih.gov', password='',
+        #                                     connection='Adult-MATCH-IntTest')
+        # self.scope = "openid roles email".split(' ')
 
     def get_patients_by_treatment_arm_id(self, trtmt_id, authorization_token=None):
         """
@@ -29,9 +39,21 @@ class PatientAccessor(object):
         headers = {"authorization": authorization_token} if authorization_token else {}
 
         self.logger.debug('Retrieving Patients from {}'.format(trtmt_id_url))
-        response = requests.get(trtmt_id_url, headers=headers)
+        # self.logger.debug('Token: {}'.format(str(self.token)))
+        # self.logger.debug('Token: {}'.format(headers['authorization']))
+        try:
+            # oauth = OAuth2Session(client=self.client, token=self.token, scope=self.scope)
+            #
+            # response = oauth.get(trtmt_id_url)
+            response = requests.get(trtmt_id_url, headers=headers)
+
+        except Exception as e:
+            err_msg = "GET {url} resulted in exception: {exc}".format(url=self.url, exc=str(e))
+            raise Exception(err_msg)
+
         result = response.json()
 
+        self.logger.debug('status_code: {}'.format(response.status_code))
         if response.status_code != 200:
             desc = result['description'] if 'description' in result else str(result)
             err_msg = "{url} returned {code}: {description}".format(url=self.url, code=response.status_code,
@@ -39,7 +61,6 @@ class PatientAccessor(object):
             raise Exception(err_msg)
 
         return result
-
 
     # class PatientAccessor(MongoDbAccessor):
     #     """
