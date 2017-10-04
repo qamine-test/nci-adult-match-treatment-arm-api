@@ -5,6 +5,7 @@ from accessors.treatment_arm_accessor import TreatmentArmsAccessor
 from scripts.summary_report_refresher.assignment_record import AssignmentRecord
 from scripts.summary_report_refresher.patient import Patient
 from scripts.summary_report_refresher.summary_report import SummaryReport
+from resources.auth0_resource import create_authentication_token
 
 PATIENT_STATUS_FIELD = 'currentPatientStatus'
 ON_ARM_STATUS = 'ON_TREATMENT_ARM'
@@ -15,10 +16,11 @@ class Refresher(object):
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.pat_accessor = PatientAccessor()
-        self.ta_accessor = TreatmentArmsAccessor()
+        self.pat_accessor = PatientAccessor()  # provides access to the Patient API
+        self.ta_accessor = TreatmentArmsAccessor()  # provides access to the TreatmnetArms collection in MongoDB
         self.summary_rpts = [SummaryReport(ta_data)
                              for ta_data in self.ta_accessor.get_arms_for_summary_report_refresh()]
+        self.token = create_authentication_token()
 
     def run(self):
         sum_rpt_cnt = len(self.summary_rpts)
@@ -44,7 +46,9 @@ class Refresher(object):
         """
         # Get all patients associated with the Treatment Arm of the given Summary Report.
         # Patients are sorted by patientSequenceNumber (ascending) and patientAssignments.dateConfirmed (descending).
-        patients = [Patient(p) for p in self.pat_accessor.get_patients_by_treatment_arm_id(sum_rpt.treatmentArmId)]
+        # patients = [Patient(p) for p in self.pat_accessor.get_patients_by_treatment_arm_id(sum_rpt.treatmentArmId)]
+        patients = [Patient(p) for p in self.pat_accessor.get_patients_by_treatment_arm_id(sum_rpt.treatmentArmId,
+                                                                                           self.token)]
         self.logger.debug("{cnt} patients returned for '{trtmt_id}"
                           .format(cnt=len(patients), trtmt_id=sum_rpt.treatmentArmId))
 
