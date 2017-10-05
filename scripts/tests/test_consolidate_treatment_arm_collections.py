@@ -7,6 +7,7 @@ from ddt import ddt, data, unpack
 from mock import patch
 
 from scripts.consolidate_treatment_arm_collections import consolidate_treatment_arm_collections as ctac
+import uuid
 
 SCRIPT_PATH = 'scripts.consolidate_treatment_arm_collections.consolidate_treatment_arm_collections'
 
@@ -72,12 +73,15 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
          ),
     )
     @unpack
-    def test_TAConverter_convert(self, ta_doc, exp_result):
+    @patch(SCRIPT_PATH + '.uuid')
+    def test_TAConverter_convert(self, ta_doc, exp_result, mock_uuid):
+        uuid_string = '0de86534-4791-41ce-bd5a-44fad51caa66'
+        mock_uuid.uuid4.return_value = uuid.UUID(uuid_string)
+
         try:
             ret_doc = ctac.TAConverter().convert(ta_doc)
-            self.assertTrue('stateToken' in ret_doc and ret_doc['stateToken'])
-            del ret_doc['stateToken']  # stateToken is randomly generated so must be removed prior to next assertion
-            self.assertEqual(ret_doc, exp_result)
+            exp_result_with_state_token = dict(**exp_result, **{'stateToken': uuid_string})
+            self.assertEqual(ret_doc, exp_result_with_state_token)
         except Exception as e:
             self.assertEqual(str(e), exp_result)
 
@@ -212,13 +216,16 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
          ),
     )
     @unpack
-    def test_TAHConverter_convert(self, tah_doc, exp_result):
+    @patch(SCRIPT_PATH + '.uuid')
+    def test_TAHConverter_convert(self, tah_doc, exp_result, mock_uuid):
+        uuid_string = '0de86534-4791-41ce-bd5a-44fad51caa88'
+        mock_uuid.uuid4.return_value = uuid.UUID(uuid_string)
+
         try:
             ret_doc = ctac.TAHConverter().convert(tah_doc)
             self.assertTrue('summaryReport' not in ret_doc)
-            self.assertTrue('stateToken' in ret_doc and ret_doc['stateToken'])
-            del ret_doc['stateToken']  # stateToken is randomly generated so must be removed prior to next assertion
-            self.assertEqual(ret_doc, exp_result)
+            exp_result_with_state_token = dict(**exp_result, **{'stateToken': uuid_string})
+            self.assertEqual(ret_doc, exp_result_with_state_token)
         except Exception as e:
             self.assertEqual(str(e), exp_result)
 
