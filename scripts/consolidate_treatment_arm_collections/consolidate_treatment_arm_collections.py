@@ -63,7 +63,7 @@ class ConverterBase(object):
         if 'exclusionCriterias' in new_ta_doc:
             del new_ta_doc['exclusionCriterias']
         new_ta_doc['_class'] = 'gov.match.model.TreatmentArm'
-        new_ta_doc['stateToken'] = uuid.uuid4()
+        new_ta_doc['stateToken'] = str(uuid.uuid4())
 
 
 class TAConverter(ConverterBase):
