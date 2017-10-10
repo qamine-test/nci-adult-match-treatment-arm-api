@@ -241,7 +241,8 @@ export PROMPT_COMMAND='echo -ne "\033]0;${PWD/#$PROJECT_PATH/$VIRTUAL_ENV_NAME:}
 alias home='cd $PROJECT_PATH'
 home
 
-alias dbm='docker exec -it nciadultmatchtreatmentarmapi_mongo_1 bash'   # create a bash shell for accessing the dockerized MongoDB; dbm=DockerMongoBash
+alias dbm='docker exec -it nciadultmatchtreatmentarmapi_mongo_1 bash'   # create a bash shell for accessing the dockerized MongoDB; dbm=DockerBashMongo
+alias dbta='docker exec -it nciadultmatchtreatmentarmapi_treatment-arm-api_1 bash'  # create a bash shell for accessing the dockerized TreatmentArmApi; dbta=DockerBashTreatmentArm
 alias build='cd $PROJECT_PATH; docker build -t "fnlcr/nci-adult-match-treatment-arm-api:latest" .'  # builds the docker image
 alias up='docker-compose up' # starts the service in docker
 # For running all tests with coverage:
