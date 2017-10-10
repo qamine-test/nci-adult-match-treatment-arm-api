@@ -9,7 +9,7 @@ import requests
 from helpers.environment import Environment
 # from oauthlib.oauth2 import LegacyApplicationClient
 # from requests_oauthlib import OAuth2Session
-
+# from threading import Lock
 
 class PatientAccessor(object):
     """
@@ -18,6 +18,7 @@ class PatientAccessor(object):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.url = "{}/{}".format(Environment().patient_api_url, 'by_treatment_arm')
+        # self.lock = Lock()
         # self.client = LegacyApplicationClient(client_id='')
         # self.oauth = OAuth2Session(client=self.client)
         # self.token = self.oauth.fetch_token(token_url="https://ncimatch.auth0.com/oauth/ro",
@@ -36,11 +37,12 @@ class PatientAccessor(object):
         :return: array of JSON documents containing required fields for Summary Report Refresh analysis
         """
         trtmt_id_url = "{}/{}".format(self.url, trtmt_id)
-        headers = {"authorization": authorization_token} if authorization_token else {}
+        headers = {"Authorization": authorization_token} if authorization_token else {}
 
         self.logger.debug('Retrieving Patients from {}'.format(trtmt_id_url))
         # self.logger.debug('Token: {}'.format(str(self.token)))
-        # self.logger.debug('Token: {}'.format(headers['authorization']))
+        self.logger.debug('Token: {}'.format(headers.get('Authorization', None)))
+        # self.lock.acquire()
         try:
             # oauth = OAuth2Session(client=self.client, token=self.token, scope=self.scope)
             #
@@ -50,6 +52,8 @@ class PatientAccessor(object):
         except Exception as e:
             err_msg = "GET {url} resulted in exception: {exc}".format(url=self.url, exc=str(e))
             raise Exception(err_msg)
+        # finally:
+        #     self.lock.release()
 
         result = response.json()
 

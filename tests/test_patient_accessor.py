@@ -27,7 +27,7 @@ class PatientAccessorTests(unittest.TestCase):
 
     @data(
         (None, {}),
-        ("Bearer ThisIsMyFakeAuth0TokenId", {"authorization": "Bearer ThisIsMyFakeAuth0TokenId"})
+        ("Bearer ThisIsMyFakeAuth0TokenId", {"Authorization": "Bearer ThisIsMyFakeAuth0TokenId"})
     )
     @unpack
     @patch('accessors.patient_accessor.requests')
