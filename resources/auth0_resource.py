@@ -1,3 +1,6 @@
+"""
+Implements Auth0 authentication.
+"""
 # import base64
 import os
 from functools import wraps
@@ -8,6 +11,7 @@ from flask import request, jsonify, _request_ctx_stack
 from flask_restful import Resource
 from werkzeug.local import LocalProxy
 
+
 # Authentication annotation
 current_user = LocalProxy(lambda: _request_ctx_stack.top.current_user)
 
@@ -16,9 +20,10 @@ AUTH_URI = "https://ncimatch.auth0.com/oauth/ro"
 
 def requires_auth(function):
     if 'UNITTEST' in os.environ:
-        # print("************ returning function without authorization ************")
+        # print("************ returning function {} without authorization ************".format(function.__name__))
         return function
     else:
+        # print("************ returning function {} with authorization ************".format(function.__name__))
         return authenticated_function(function)
 
 
@@ -42,11 +47,12 @@ def authenticated_function(function):
     """
     @wraps(function)
     def decorated(*args, **kwargs):
-        # print("************ authorizing ************")
+        # print("Authenticating for {}".format(function.__name__))
         try:
             authenticate()
 
         except AuthenticationError as e:
+            print("authentication error: {} / }|".format(e.code, e.description))
             return error_response(e.code, e.description)
 
         # print("Executing function")
@@ -56,8 +62,10 @@ def authenticated_function(function):
 
 
 def authenticate():
+    # print("in authenticate")
     token = get_authentication_token()
 
+    # print("token={}".format(token))
     auth0_client_id = read_environment_variable('AUTH0_CLIENT_ID')
     auth0_client_secret = read_environment_variable('AUTH0_CLIENT_SECRET')
 
@@ -68,6 +76,7 @@ def authenticate():
 
 
 def read_environment_variable(env_var):
+    # print("in read_environment_variable with '{}'".format(env_var))
     try:
         auth0_client_id = os.environ[env_var]
     except KeyError:
@@ -82,7 +91,6 @@ def get_authentication_token():
     :raises AuthenticationError if the authorization header is not formatted correctly.
     """
     auth = request.headers.get('Authorization', None)
-    # print(str(auth))
     if not auth:
         raise AuthenticationError('authorization_header_missing', 'Authorization header is expected')
     parts = auth.split()
@@ -104,6 +112,7 @@ def validate_token(token, auth0_client_id, auth0_client_secret):
     :param auth0_client_secret: the client secret
     :raises AuthenticationError if the token can not be decoded or is missing one of the following: 'roles', 'email'
     """
+    # print("in validate_token")
     try:
         payload = jwt.decode(token, auth0_client_secret, audience=auth0_client_id)
 
@@ -112,15 +121,20 @@ def validate_token(token, auth0_client_id, auth0_client_secret):
     #   "TypeError: catching classes that do not inherit from BaseException is not allowed"
     # That error makes no sense as all five of these exception classes inherit from BaseException.
     except jwt.ExpiredSignatureError:  # pragma: no cover
+        # print("ExpiredSignatureError")
         raise AuthenticationError('token_expired', 'token is expired')
     except jwt.InvalidAudienceError:  # pragma: no cover
+        # print("InvalidAudienceError")
         raise AuthenticationError('invalid_audience', 'incorrect audience')
     except jwt.DecodeError:  # pragma: no cover
+        # print("DecodeError")
         raise AuthenticationError('token_invalid_signature', 'token signature is invalid')
     # Catch base exceptions
     except jwt.InvalidTokenError:  # pragma: no cover
+        # print("InvalidTokenError")
         raise AuthenticationError('invalid_token', 'token is invalid')
     except Exception as e:  # pragma: no cover
+        # print(str(e))
         raise AuthenticationError('unknown_exception_raised', str(e))
 
     # Check for proper parameters in token.
