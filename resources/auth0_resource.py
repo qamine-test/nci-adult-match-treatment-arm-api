@@ -52,7 +52,7 @@ def authenticated_function(function):
             authenticate()
 
         except AuthenticationError as e:
-            print("authentication error: {} / }|".format(e.code, e.description))
+            # print("authentication error: {} / {}".format(e.code, e.description))
             return error_response(e.code, e.description)
 
         # print("Executing function")
@@ -93,6 +93,7 @@ def get_authentication_token():
     auth = request.headers.get('Authorization', None)
     if not auth:
         raise AuthenticationError('authorization_header_missing', 'Authorization header is expected')
+
     parts = auth.split()
     if parts[0].lower() != 'bearer':
         raise AuthenticationError('invalid_header', 'Authorization header must start with Bearer')
@@ -100,6 +101,7 @@ def get_authentication_token():
         raise AuthenticationError('invalid_header', 'Token not found')
     elif len(parts) > 2:
         raise AuthenticationError('invalid_header', 'Authorization header must be Bearer + \s + token')
+
     token = parts[1]
     return token
 
