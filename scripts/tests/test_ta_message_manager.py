@@ -11,7 +11,8 @@ from scripts.ta_message_manager import ta_message_manager as mm
 logging.getLogger('botocore').propagate = False  # Disable boto logging for unit tests.
 
 TEST_QUEUE_URL = 'https://queue.amazonaws.com/127516845550/TreatmentArmQueue'
-
+TEST_QUEUE_NAME = 'TreatmentArmQueue'
+TEST_SLEEP_TIME = 25
 
 @ddt
 class TreatmentArmsMessageManagerTestCase(unittest.TestCase):
@@ -22,20 +23,27 @@ class TreatmentArmsMessageManagerTestCase(unittest.TestCase):
         queue_patcher = patch('scripts.ta_message_manager.ta_message_manager.SqsAccessor')
         self.addCleanup(queue_patcher.stop)
         self.mock_queue = queue_patcher.start()
+
         logging_patcher = patch('scripts.ta_message_manager.ta_message_manager.logging')
         self.addCleanup(logging_patcher.stop)
         self.mock_logger = logging_patcher.start().getLogger()
 
+        env_patcher = patch('scripts.ta_message_manager.ta_message_manager.Environment')
+        self.addCleanup(env_patcher.stop)
+        self.mock_env = env_patcher.start().return_value
+        self.mock_env.sqs_queue_name = TEST_QUEUE_NAME
+        self.mock_env.polling_interval = TEST_SLEEP_TIME
+
     # Test the TreatmentArmsMessageManager constructor method.
     def test_constructor(self):
         queue_instance = self.mock_queue.return_value
-        queue_instance.queue_name = mm.TA_QUEUE_NAME
+        queue_instance.queue_name = TEST_QUEUE_NAME
         queue_instance.queue_url = TEST_QUEUE_URL
 
         tamm = mm.TreatmentArmMessageManager()
         self.assertEqual(tamm.queue.queue_url, TEST_QUEUE_URL)
-        self.assertEqual(tamm.queue.queue_name, mm.TA_QUEUE_NAME)
-        self.assertEqual(tamm.sleep_time, mm.DEFAULT_SLEEP_TIME)
+        self.assertEqual(tamm.queue.queue_name, TEST_QUEUE_NAME)
+        self.assertEqual(tamm.sleep_time, TEST_SLEEP_TIME)
         self.mock_logger.info.assert_called_once()
 
     # Test the TreatmentArmsMessageManager run method.
