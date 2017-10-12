@@ -9,7 +9,8 @@ development:
   write_capacity: 5
   aws_download_time_limit: 600
   aws_upload_time_limit: 3600
-  patient_api_url: "http://localhost:5000/api/v1/patients"
+  patient_api_url: "http://patient-api:5000/api/v1/patients"
+#  patient_api_url: "http://localhost:5000/api/v1/patients"
 
 test:
   port: 5010
@@ -35,7 +36,7 @@ uat:
   write_capacity: 5
   aws_download_time_limit: 600
   aws_upload_time_limit: 3600
-  patient_api_url: "[TBD]"
+  patient_api_url: "https://match-uat.nci.nih.gov/api/v1/patients"
 
 production:
   port: 5010
