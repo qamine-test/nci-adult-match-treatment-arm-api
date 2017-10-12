@@ -4,11 +4,12 @@ development:
   region: "us-east-1"
   bucket: "adultmatch-dev"
   tmp_file_dir: "/tmp"
-  polling_interval: 10
+  polling_interval: 5
   read_capacity: 5
   write_capacity: 5
   aws_download_time_limit: 600
   aws_upload_time_limit: 3600
+  sqs_queue_name: 'adultmatch-dev_treatment_arms_queue'
   patient_api_url: "http://patient-api:5000/api/v1/patients"
 #  patient_api_url: "http://localhost:5000/api/v1/patients"
 
@@ -23,30 +24,33 @@ test:
   write_capacity: 5
   aws_download_time_limit: 600
   aws_upload_time_limit: 3600
+  sqs_queue_name: 'adultmatch-int_treatment_arms_queue'
   patient_api_url: "https://match-int.nci.nih.gov/api/v1/patients"
 
 uat:
   port: 5010
   visibility_timeout: '36000'
   region: "us-east-1"
-  bucket: "adultmatch-dev"
+  bucket: "adultmatch-uat"
   tmp_file_dir: "/tmp"
-  polling_interval: 10
+  polling_interval: 60
   read_capacity: 5
   write_capacity: 5
   aws_download_time_limit: 600
   aws_upload_time_limit: 3600
+  sqs_queue_name: 'adultmatch-uat_treatment_arms_queue'
   patient_api_url: "https://match-uat.nci.nih.gov/api/v1/patients"
 
 production:
   port: 5010
   visibility_timeout: '36000'
   region: "us-east-1"
-  bucket: "adultmatch-dev"
+  bucket: "adultmatch"
   tmp_file_dir: "/tmp"
-  polling_interval: 10
+  polling_interval: 300
   read_capacity: 5
   write_capacity: 5
   aws_download_time_limit: 600
   aws_upload_time_limit: 3600
+  sqs_queue_name: 'adultmatch_treatment_arms_queue'
   patient_api_url: "[TBD]"
