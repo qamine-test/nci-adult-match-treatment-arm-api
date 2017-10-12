@@ -3,19 +3,13 @@
 import logging
 import time
 
-# from flask import Flask
-
 from accessors.sqs_accessor import SqsAccessor
 from config import log
-# from config.flask_config import Configuration
+from helpers.environment import Environment
 from scripts.summary_report_refresher.refresher import Refresher
 
-# APP = Flask(__name__)
-# APP.config.from_object(Configuration)
-log.log_config()
 
-TA_QUEUE_NAME = "TreatmentArmQueue"
-DEFAULT_SLEEP_TIME = 10  # Time to sleep between checking for messages; in seconds.
+log.log_config()
 
 # Recognized messages:
 REFRESH_MSG = "RefreshSummaryReport"
@@ -24,16 +18,19 @@ STOP_MSG = "STOP"
 
 class TreatmentArmMessageManager(object):
 
-    def __init__(self, sleep_time=DEFAULT_SLEEP_TIME):
+    def __init__(self, sleep_time=None):
         """
         Creates the Treatment Arms API message queue.
         :param sleep_time: interval, in seconds, for checking the queue for messages.
         """
-        self.logger = logging.getLogger(__name__)
-        self.sleep_time = sleep_time
-        self.queue = SqsAccessor(TA_QUEUE_NAME)
+        env = Environment()
 
-        self.logger.info("SQS queue {qn} created at {url}".format(qn=TA_QUEUE_NAME, url=self.queue.queue_url))
+        self.logger = logging.getLogger(__name__)
+        self.sleep_time = sleep_time or env.polling_interval
+        self.queue = SqsAccessor(env.sqs_queue_name)
+
+        self.logger.info("Connected to SQS queue {qn} at {url}; polling interval = {pi} seconds"
+                         .format(qn=self.queue.queue_name, url=self.queue.queue_url, pi=self.sleep_time))
 
     def run(self):
         """
@@ -100,9 +97,10 @@ def send_message_to_ta_queue(msg):
     :param msg: the message body string
     :return: the response dict returned from SQS
     """
-    response = SqsAccessor(TA_QUEUE_NAME).send_message(msg)
+    response = SqsAccessor(Environment().sqs_queue_name).send_message(msg)
     # print(str(response))
     return response
+
 
 if __name__ == '__main__':
     logger = logging.getLogger(__name__)
