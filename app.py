@@ -80,20 +80,20 @@ def run_message_manager():
     LOGGER.info("Exiting the Treatment Arm API Message Queue")
 
 
-# if __name__ == '__main__':
-    # api = Thread(target=run_api_server)
-    # mm = Thread(target=run_message_manager)
-    # mm.setDaemon(True)
-    #
-    # api.start()
-    # mm.start()
+if __name__ == '__main__':
+    api = Thread(target=run_api_server)
+    mm = Thread(target=run_message_manager)
+    mm.setDaemon(True)
+
+    api.start()
+    mm.start()
 
     # api.join()
     # mm.join()
 
-if __name__ == '__main__':
-    port = Environment().port
-    LOGGER.debug("server starting on port :" + str(port))
-    HTTP_SERVER = HTTPServer(WSGIContainer(APP))
-    HTTP_SERVER.listen(port=port)
-    IOLoop.instance().start()
+# if __name__ == '__main__':
+#     port = Environment().port
+#     LOGGER.debug("server starting on port :" + str(port))
+#     HTTP_SERVER = HTTPServer(WSGIContainer(APP))
+#     HTTP_SERVER.listen(port=port)
+#     IOLoop.instance().start()
