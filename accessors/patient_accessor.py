@@ -41,7 +41,7 @@ class PatientAccessor(object):
 
         self.logger.debug('Retrieving Patients from {}'.format(trtmt_id_url))
         # self.logger.debug('Token: {}'.format(str(self.token)))
-        self.logger.debug('Token: {}'.format(headers.get('Authorization', None)))
+        # self.logger.debug('Token: {}'.format(headers.get('Authorization', None)))
         # self.lock.acquire()
         try:
             # oauth = OAuth2Session(client=self.client, token=self.token, scope=self.scope)
