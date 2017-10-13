@@ -63,9 +63,11 @@ class TreatmentArmsAccessor(MongoDbAccessor):
         Updates a single summary report for the document identified by ta_id.
         :param ta_id:  the unique _id for the document in the collection
         :param sum_rpt_json:  the updated summary report
-        :returns True/False indicating if it was successful updating the summary report
+        :returns True/False indicating if it was successful updating the summary report (does NOT imply that it
+                 changed any values as it is entirely valid for sum_rpt_json to be exactly the same as what is
+                 already in the document)
         """
         ta_id_str = ta_id['$oid']
         self.logger.debug('Updating TreatmentArms with new Summary Report for {_id}'.format(_id=ta_id_str))
         result = self.update_one({'_id': ObjectId(ta_id_str)}, {'$set': {'summaryReport': sum_rpt_json}})
-        return result.modified_count == 1
+        return result.matched_count == 1  # indicates that it matched an existing document, not that it modified it
