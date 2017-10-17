@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
+"""
+A unit test script for the accessors/mongo_db_accessor.py module.
+(Since that module's method are primarily one-line methods, the unit tests here are equally trivial.)
+"""
 
+import datetime
 import unittest
+
+from bson import ObjectId
 from ddt import ddt, data, unpack
 from mock import patch
+
 from accessors.mongo_db_accessor import MongoDbAccessor
-import datetime
-from bson import ObjectId
 
 DB = 'my_db'
-
 URI = 'my_uri'
-
 COLL_NAME = 'my_coll_name'
 
 
@@ -113,6 +117,63 @@ class MongoDbAccessorTest(unittest.TestCase):
         result = mongo_db_accessor.count(query)
         self.assertEqual(result, exp_result)
         self.mock_collection.count.assert_called_once_with(query)
+
+    # Test the MongoDbAccessor.aggregate method
+    @data(
+        ([], []),
+        ([{"match": {'currentPatientStatus': 'ON_ARM'}}],
+         [{'currentPatientStatus': 'ON_ARM'},{'currentPatientStatus': 'ON_ARM'}]),
+    )
+    @unpack
+    def test_aggregate(self, pipeline, mock_documents):
+        mongo_db_accessor = MongoDbAccessor(COLL_NAME, self.mock_logger)
+        self.mock_collection.aggregate.return_value = mock_documents
+
+        exp_result = [MongoDbAccessor.mongo_to_python(doc) for doc in mock_documents]
+
+        result = mongo_db_accessor.aggregate(pipeline)
+        self.assertEqual(result, exp_result)
+        self.mock_collection.aggregate.assert_called_once_with(pipeline)
+
+    # Test the MongoDbAccessor.update_one method
+    @data(
+        ({'patientSequenceNumber': '1'},
+         {'$set': {'currentPatientStatus': 'OFF_TRIAL'}},
+         {'matched': True, 'modified': True}),
+    )
+    @unpack
+    def test_update_one(self, query, update, mock_update_return):
+        """A trivial test:  Only tests that the collection's update_one function is called with the correct parameters
+           and that its return value is what is returned from MongoDbAccessor.update_one.
+        """
+        mongo_db_accessor = MongoDbAccessor(COLL_NAME, self.mock_logger)
+        self.mock_collection.update_one.return_value = mock_update_return
+
+        exp_result = mock_update_return
+
+        result = mongo_db_accessor.update_one(query, update)
+        self.assertEqual(result, exp_result)
+        self.mock_collection.update_one.assert_called_once_with(query, update)
+
+    # Test the MongoDbAccessor.update_many method
+    @data(
+        ({'currentPatientStatus': 'ON_ARM'},
+         {'$set': {'currentPatientStatus': 'OFF_TRIAL'}},
+         {'matched_count': 4, 'modified_count': 4}),
+    )
+    @unpack
+    def test_update_many(self, query, update, mock_update_return):
+        """A trivial test:  Only tests that the collection's update_many function is called with the correct parameters
+           and that its return value is what is returned from MongoDbAccessor.update_many.
+        """
+        mongo_db_accessor = MongoDbAccessor(COLL_NAME, self.mock_logger)
+        self.mock_collection.update_many.return_value = mock_update_return
+
+        exp_result = mock_update_return
+
+        result = mongo_db_accessor.update_many(query, update)
+        self.assertEqual(result, exp_result)
+        self.mock_collection.update_many.assert_called_once_with(query, update)
 
 
 if __name__ == '__main__':
