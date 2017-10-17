@@ -30,6 +30,38 @@ class TreatmentArmsAccessor(MongoDbAccessor):
                                         'treatmentArmStatus': 1,
                                         'stateToken': 1}
 
+    IDENTIFIER_MATCH_STEP = {
+        'singleNucleotideVariants': {"variantReport.singleNucleotideVariants": {"$ne": []}},
+        'copyNumberVariants': {"variantReport.copyNumberVariants": {"$ne": []}},
+        'geneFusions': {"variantReport.geneFusions": {"$ne": []}},
+        'indels': {"variantReport.indels": {"$ne": []}},
+    }
+
+    IDENTIFIER_UNWIND_STEP = {
+        'singleNucleotideVariants': "$variantReport.singleNucleotideVariants",
+        'copyNumberVariants': "$variantReport.copyNumberVariants",
+        'geneFusions': "$variantReport.geneFusions",
+        'indels': "$variantReport.indels",
+    }
+    IDENTIFIER_PROJECT_STATIC = {"treatmentArmId": 1, "version": 1, "dateArchived": 1,
+                                 "treatmentArmStatus": 1, "type": "Hotspot"}
+    IDENTIFIER_PROJECT_STEP = {
+        'singleNucleotideVariants': dict(**IDENTIFIER_PROJECT_STATIC,
+                                         **{'identifier': "$variantReport.singleNucleotideVariants.identifier",
+                                            'inclusion': "$variantReport.singleNucleotideVariants.inclusion"}),
+        'copyNumberVariants': dict(**IDENTIFIER_PROJECT_STATIC,
+                                   **{'identifier': "$variantReport.copyNumberVariants.identifier",
+                                      'inclusion': "$variantReport.copyNumberVariants.inclusion"}),
+        'geneFusions': dict(**IDENTIFIER_PROJECT_STATIC,
+                            **{'identifier': "$variantReport.geneFusions.identifier",
+                               'inclusion': "$variantReport.geneFusions.inclusion"}),
+        'indels': dict(**IDENTIFIER_PROJECT_STATIC,
+                       **{'identifier': "$variantReport.indels.identifier",
+                          'inclusion': "$variantReport.indels.inclusion"}),
+    }
+
+
+
     def __init__(self):
         MongoDbAccessor.__init__(self, 'treatmentArms', logging.getLogger(__name__))
 
@@ -37,23 +69,15 @@ class TreatmentArmsAccessor(MongoDbAccessor):
         self.logger.debug('Retrieving TreatmentArms non-Hotspot Rules from database')
         return [ta_nhr for ta_nhr in self.aggregate(self.NON_HOTSPOT_RULES_PIPELINE)]
 
-
     def get_ta_identifier_rules(self, variant_type):
         self.logger.debug('Retrieving TreatmentArms Hotspot Rules from database')
         if variant_type not in ['singleNucleotideVariants', 'copyNumberVariants', 'geneFusions', 'indels']:
             raise Exception( "Unknown variant_type '%s' passed to %s" % (variant_type, self.__class__.__name__))
 
         return [ta_ir for ta_ir in self.aggregate([
-            {"$match": {"variantReport."+variant_type: {"$ne": []}}},
-            {"$unwind": "$variantReport."+variant_type},
-            {"$project": {"treatmentArmId": 1,
-                          "version": 1,
-                          "dateArchived": 1,
-                          "treatmentArmStatus": 1,
-                          "identifier": "$variantReport."+variant_type+".identifier",
-                          "inclusion": "$variantReport."+variant_type+".inclusion",
-                          "type": "Hotspot"
-                          }}
+            {"$match": self.IDENTIFIER_MATCH_STEP[variant_type]},
+            {"$unwind": self.IDENTIFIER_UNWIND_STEP[variant_type]},
+            {"$project": self.IDENTIFIER_PROJECT_STEP[variant_type]},
             ])]
 
     def get_arms_for_summary_report_refresh(self):
