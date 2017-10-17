@@ -8,28 +8,34 @@ class TreatmentArmsAccessor(MongoDbAccessor):
     """
     The TreatmentArm data accessor
     """
+    NON_HOTSPOT_RULES_PIPELINE = [
+        {"$match": {"variantReport.nonHotspotRules": {"$ne": []}}},
+        {"$unwind": "$variantReport.nonHotspotRules"},
+        {"$project": {"treatmentArmId": 1,
+                      "version": 1,
+                      "dateArchived": 1,
+                      "treatmentArmStatus": 1,
+                      "inclusion": "$variantReport.nonHotspotRules.inclusion",
+                      "exon": "$variantReport.nonHotspotRules.exon",
+                      "function": "$variantReport.nonHotspotRules.function",
+                      "gene": "$variantReport.nonHotspotRules.gene",
+                      "oncominevariantclass": "$variantReport.nonHotspotRules.oncominevariantclass",
+                      "type": "NonHotspot"
+                      }}
+    ]
+
+    SUMMARY_REPORT_REFRESH_QUERY = {'dateArchived': None}
+    SUMMARY_REPORT_REFRESH_PROJECTION = {'treatmentArmId': 1,
+                                        'version': 1,
+                                        'treatmentArmStatus': 1,
+                                        'stateToken': 1}
 
     def __init__(self):
         MongoDbAccessor.__init__(self, 'treatmentArms', logging.getLogger(__name__))
-        # self.logger = logging.getLogger(__name__)
 
     def get_ta_non_hotspot_rules(self):
         self.logger.debug('Retrieving TreatmentArms non-Hotspot Rules from database')
-        return [ta_nhr for ta_nhr in self.aggregate([
-            {"$match": {"variantReport.nonHotspotRules": {"$ne": []}}},
-            {"$unwind": "$variantReport.nonHotspotRules"},
-            {"$project": {"treatmentArmId": 1,
-                          "version": 1,
-                          "dateArchived": 1,
-                          "treatmentArmStatus": 1,
-                          "inclusion": "$variantReport.nonHotspotRules.inclusion",
-                          "exon": "$variantReport.nonHotspotRules.exon",
-                          "function": "$variantReport.nonHotspotRules.function",
-                          "gene": "$variantReport.nonHotspotRules.gene",
-                          "oncominevariantclass": "$variantReport.nonHotspotRules.oncominevariantclass",
-                          "type": "NonHotspot"
-                          }}
-            ])]
+        return [ta_nhr for ta_nhr in self.aggregate(self.NON_HOTSPOT_RULES_PIPELINE)]
 
 
     def get_ta_identifier_rules(self, variant_type):
@@ -52,11 +58,8 @@ class TreatmentArmsAccessor(MongoDbAccessor):
 
     def get_arms_for_summary_report_refresh(self):
         self.logger.debug('Retrieving TreatmentArms from database for Summary Report Refresh')
-        return [ta for ta in self.find({'dateArchived': None},
-                                       {'treatmentArmId': 1,
-                                        'version': 1,
-                                        'treatmentArmStatus': 1,
-                                        'stateToken': 1})]
+        return [ta for ta in self.find(self.SUMMARY_REPORT_REFRESH_QUERY,
+                                       self.SUMMARY_REPORT_REFRESH_PROJECTION)]
 
     def update_summary_report(self, ta_id, sum_rpt_json):
         """
