@@ -5,7 +5,7 @@ import unittest
 
 from bson import ObjectId
 from ddt import ddt, data, unpack
-from mock import patch
+from mock import patch, Mock
 
 from accessors.treatment_arm_accessor import TreatmentArmsAccessor
 
@@ -122,6 +122,40 @@ class TreatmentArmAccessorTests(unittest.TestCase):
         else:
             pipeline = TreatmentArmsAccessor._create_identifier_rules_pipeline(variant_type)
             self.assertEqual(pipeline, exp_pipeline)
+
+    # Test the TreatmentArmsAccessor.get_arms_for_summary_report_refresh method
+    def test_get_arms_for_summary_report_refresh(self):
+        """
+        A trivial test:  Only tests that the collection's find function is called with the correct parameters and
+        that its return value is what is returned from TreatmentArmsAccessor.get_arms_for_summary_report_refresh.
+        """
+        mock_documents = [{'doc_num': 4}, {'doc_num': 6}]
+        self.mock_collection.find.return_value = mock_documents
+
+        exp_result = [TreatmentArmsAccessor.mongo_to_python(doc) for doc in mock_documents]
+
+        result = TreatmentArmsAccessor().get_arms_for_summary_report_refresh()
+        self.assertEqual(result, exp_result)
+        self.mock_collection.find.assert_called_once_with(TreatmentArmsAccessor.SUMMARY_REPORT_REFRESH_QUERY,
+                                                          TreatmentArmsAccessor.SUMMARY_REPORT_REFRESH_PROJECTION)
+
+    # Test the TreatmentArmsAccessor.update_summary_report method
+    @data(
+        ({'$oid': '598386900e04839ba1fabcfa'}, 1, True),
+        ({'$oid': '598386900e04839ba1fabcfa'}, 0, False),
+    )
+    @unpack
+    def test_update_summary_report(self, ta_id, mocked_match_count, exp_result):
+        mocked_update_result = Mock()
+        mocked_update_result.matched_count = mocked_match_count
+        self.mock_collection.update_one.return_value = mocked_update_result
+
+        summary_report_json = {"sum1": 23, "sum2": 7}
+
+        result = TreatmentArmsAccessor().update_summary_report(ta_id, summary_report_json)
+        self.assertEqual(result, exp_result)
+        self.mock_collection.update_one.assert_called_once_with({'_id': ObjectId(ta_id['$oid'])},
+                                                                {'$set': {'summaryReport': summary_report_json}})
 
 if __name__ == '__main__':
     unittest.main()
