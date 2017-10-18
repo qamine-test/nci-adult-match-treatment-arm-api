@@ -28,7 +28,7 @@
     
     Open your **.bashrc** and add the following:
     ```bash
-    export VIRTUALENVWRAPPER_PYTHON=[path to python3]
+    export VIRTUALENVWRAPPER_PYTHON=[path_to_python3]
     export WORKON_HOME=~/.virtualenvs
     source /usr/local/bin/virtualenvwrapper.sh
     ```
@@ -203,8 +203,16 @@ to make development and testing easier.
 python3 scripts/summary_report_refresher/refresh_summary_report.py
 ```
 
+#### update_refresh_lambda
+Run this to update the AWS Lambda function *SendSummaryReportRefreshMessage* with the contents of
+`send_refresh_message.py`.
+
+```bash
+python3 scripts/ta_message_manager/update_refresh_lambda.py
+```
+
 #### ta_message_manager
-Creates and monitors the TreatmentArmQueue in SQS.
+FOR DEVELOPMENT ONLY:  Creates and monitors the TreatmentArmQueue in SQS.
 ```bash
 python3 scripts/ta_message_manager/ta_message_manager.py
 ```
@@ -227,6 +235,35 @@ There are a handful of changes to the Adult Match production database that are r
 4.  In the **PatientAPI** project, create the Patient UI Views on the **Patient** collection. 
 5.  In the **PatientAPI** project, run the script to update the field name for the Treatment Arm ID.
 
+## AWS SQS Setup
+A normal SQS Queue must be setup with the default settings in the AWS environment.  Its name depends on the
+environment:
+* **development:** treatment-arm-api-dev-<username>-queue
+* **integratrion:** treatment-arm-api-int-queue
+* **uat:** treatment-arm-api-uat-queue
+* **production:** treatment-arm-api-queue
+
+## AWS Lambda Setup
+##### Initial Setup
+1.  Create a Lambda function with the following settings:
+    * **Name**: SendSummaryReportRefreshMessage
+    * **Runtime**: Python 3.6
+    * **Handler**: send_refresh_message.lambda_handler
+    * **Role**: LambdaRole
+
+    Don't worry about the code intially; run **update_refresh_lambda** (see script instructions above)
+    after it is created.
+
+2.  Add a CloudWatch Event Trigger to run the *SendSummaryReportRefreshMessage* Lambda function every three hours.
+    Add *SendSummaryReportRefreshMessage* as a target with a JSON Constant Input.  This input should look like this:
+    ```json
+    {"queue_name": "treatment-arm-api-int-queue"}
+    ```
+    Change the name of the queue as appropriate for the environment.
+
+##### Update the Lambda Function
+Run **update_refresh_lambda** (see script instructions above) whenever the
+`scripts/ta_message_manager/update_refresh_lambda.py` file is modified.
 
 ## Customizing the TreatmentArm API Virtual Environment
 Create custom environment variables and aliases to simplify development within the virtual environment.
