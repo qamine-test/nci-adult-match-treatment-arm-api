@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+"""
+A unit test script for the accessors/treatment_arm_accessor.py module.
+"""
 
-import datetime
 import unittest
 
 from bson import ObjectId
@@ -16,6 +18,7 @@ COLL_NAME = 'treatmentArms'
 
 @ddt
 class TreatmentArmAccessorTests(unittest.TestCase):
+    # Constants used in the test of the TreatmentArmsAccessor.get_ta_identifier_rules method:
     SNV_IDENTIFIER_RULES_PIPELINE = TreatmentArmsAccessor._create_identifier_rules_pipeline('singleNucleotideVariants')
     CNV_IDENTIFIER_RULES_PIPELINE = TreatmentArmsAccessor._create_identifier_rules_pipeline('copyNumberVariants')
     GENE_FUSION_IDENTIFIER_RULES_PIPELINE = TreatmentArmsAccessor._create_identifier_rules_pipeline('geneFusions')
@@ -60,12 +63,11 @@ class TreatmentArmAccessorTests(unittest.TestCase):
     )
     @unpack
     def test_get_ta_non_hotspot_rules(self, mock_documents):
-        treatment_arms_accessor = TreatmentArmsAccessor()
         self.mock_collection.aggregate.return_value = mock_documents
 
         exp_result = [TreatmentArmsAccessor.mongo_to_python(doc) for doc in mock_documents]
 
-        result = treatment_arms_accessor.get_ta_non_hotspot_rules()
+        result = TreatmentArmsAccessor().get_ta_non_hotspot_rules()
         self.assertEqual(result, exp_result)
         self.mock_collection.aggregate.assert_called_once_with(TreatmentArmsAccessor.NON_HOTSPOT_RULES_PIPELINE)
 
