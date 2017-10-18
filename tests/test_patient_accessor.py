@@ -60,8 +60,11 @@ class PatientAccessorTests(unittest.TestCase):
     @unpack
     @patch('accessors.patient_accessor.requests')
     def test_get_patients_by_treatment_arm_id_with_exc(self, status_code, response_data, exp_exc_msg, mock_requests):
+        """
+        Tests that an exception is raised when called service returns a status code other than 200.
+        """
         # Doesn't really matter what the treatment arm ID is; just verifying here that the service
-        # is called correctly and the returned data is formatted correctly in an exception.
+        # is called correctly and the exception message is formatted correctly.
         treatment_id = "TA_ID_5"
 
         mock_response = Mock()
@@ -78,6 +81,27 @@ class PatientAccessorTests(unittest.TestCase):
         mock_response.json.assert_called_once_with()
         self.assertEqual(str(cm.exception), exp_exc_msg)
 
+    @patch('accessors.patient_accessor.requests')
+    def test_get_patients_by_treatment_arm_id_with_requests_exc(self, mock_requests):
+        """
+        Tests that an exception is raised when called service raises an exception.
+        """
+        # Doesn't really matter what the treatment arm ID is; just verifying here that the service
+        # is called correctly and the exception message is formatted correctly.
+        treatment_id = "TA_ID_5"
+
+        test_exception = Exception("something unexpected happened")
+        mock_requests.get.side_effect = test_exception
+
+        patient_accessor = PatientAccessor()
+        with self.assertRaises(Exception) as cm:
+            patient_accessor.get_patients_by_treatment_arm_id(treatment_id, {})
+
+        exp_url = TEST_PATIENT_API_URL + '/by_treatment_arm/' + treatment_id
+        mock_requests.get.assert_called_once_with(exp_url, headers={})
+        exp_exc_message = "GET {url} resulted in exception: {exc}"\
+            .format(url=TEST_PATIENT_API_URL + '/by_treatment_arm', exc=str(test_exception))
+        self.assertEqual(str(cm.exception), exp_exc_message)
 
 if __name__ == '__main__':
     unittest.main()
