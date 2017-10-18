@@ -74,11 +74,15 @@ class TreatmentArmsAccessor(MongoDbAccessor):
         if variant_type not in ['singleNucleotideVariants', 'copyNumberVariants', 'geneFusions', 'indels']:
             raise Exception( "Unknown variant_type '%s' passed to %s" % (variant_type, self.__class__.__name__))
 
-        return [ta_ir for ta_ir in self.aggregate([
-            {"$match": self.IDENTIFIER_MATCH_STEP[variant_type]},
-            {"$unwind": self.IDENTIFIER_UNWIND_STEP[variant_type]},
-            {"$project": self.IDENTIFIER_PROJECT_STEP[variant_type]},
-            ])]
+        return [ta_ir for ta_ir in self.aggregate(self._create_identifier_rules_pipeline(variant_type))]
+
+    @classmethod
+    def _create_identifier_rules_pipeline(cls, variant_type):
+        return [
+            {"$match": cls.IDENTIFIER_MATCH_STEP[variant_type]},
+            {"$unwind": cls.IDENTIFIER_UNWIND_STEP[variant_type]},
+            {"$project": cls.IDENTIFIER_PROJECT_STEP[variant_type]},
+        ]
 
     def get_arms_for_summary_report_refresh(self):
         self.logger.debug('Retrieving TreatmentArms from database for Summary Report Refresh')
