@@ -16,6 +16,11 @@ COLL_NAME = 'treatmentArms'
 
 @ddt
 class TreatmentArmAccessorTests(unittest.TestCase):
+    SNV_IDENTIFIER_RULES_PIPELINE = TreatmentArmsAccessor._create_identifier_rules_pipeline('singleNucleotideVariants')
+    CNV_IDENTIFIER_RULES_PIPELINE = TreatmentArmsAccessor._create_identifier_rules_pipeline('copyNumberVariants')
+    GENE_FUSION_IDENTIFIER_RULES_PIPELINE = TreatmentArmsAccessor._create_identifier_rules_pipeline('geneFusions')
+    INDEL_IDENTIFIER_RULES_PIPELINE = TreatmentArmsAccessor._create_identifier_rules_pipeline('indels')
+
     def setUp(self):
         mongo_db_patcher = patch('accessors.mongo_db_accessor.MongoClient')
         self.addCleanup(mongo_db_patcher.stop)
@@ -64,7 +69,59 @@ class TreatmentArmAccessorTests(unittest.TestCase):
         self.assertEqual(result, exp_result)
         self.mock_collection.aggregate.assert_called_once_with(TreatmentArmsAccessor.NON_HOTSPOT_RULES_PIPELINE)
 
+    # Test the TreatmentArmsAccessor.get_ta_identifier_rules method
+    @data(
+        ('singleNucleotideVariants', SNV_IDENTIFIER_RULES_PIPELINE),
+        ('copyNumberVariants', CNV_IDENTIFIER_RULES_PIPELINE),
+        ('geneFusions', GENE_FUSION_IDENTIFIER_RULES_PIPELINE),
+        ('indels', INDEL_IDENTIFIER_RULES_PIPELINE),
+        ('INVALID_VAR_TYPE', Exception("Unknown variant_type 'INVALID_VAR_TYPE' passed to TreatmentArmsAccessor")),
+    )
+    @unpack
+    def test_get_ta_identifier_rules(self, variant_type, exp_pipeline):
+        treatment_arms_accessor = TreatmentArmsAccessor()
 
+        if isinstance(exp_pipeline, Exception):
+            with self.assertRaises(Exception) as cm:
+                treatment_arms_accessor.get_ta_identifier_rules(variant_type)
+            self.assertEqual(str(cm.exception), str(exp_pipeline))
+        else:
+            mock_documents = [{'doc_num': 1}, {'doc_num': 2}]
+            self.mock_collection.aggregate.return_value = mock_documents
+
+            exp_result = [TreatmentArmsAccessor.mongo_to_python(doc) for doc in mock_documents]
+
+            result = treatment_arms_accessor.get_ta_identifier_rules(variant_type)
+            self.assertEqual(result, exp_result)
+            self.mock_collection.aggregate.assert_called_once_with(exp_pipeline)
+
+    # Test the TreatmentArmsAccessor._create_identifier_rules_pipeline method
+    @data(
+        ('indels',
+         [
+             {"$match": {"variantReport.indels": {"$ne": []}}},
+             {"$unwind": "$variantReport.indels"},
+             {"$project": {"treatmentArmId": 1,
+                           "version": 1,
+                           "dateArchived": 1,
+                           "treatmentArmStatus": 1,
+                           "identifier": "$variantReport.indels.identifier",
+                           "inclusion": "$variantReport.indels.inclusion",
+                           "type": "Hotspot"
+                           }}
+         ]
+         ),
+        ('INVALID_VAR_TYPE', KeyError("INVALID_VAR_TYPE")),
+    )
+    @unpack
+    def test_create_identifier_rules_pipeline(self, variant_type, exp_pipeline):
+        if isinstance(exp_pipeline, KeyError):
+            with self.assertRaises(KeyError) as cm:
+                TreatmentArmsAccessor._create_identifier_rules_pipeline(variant_type)
+            self.assertEqual(str(cm.exception), str(exp_pipeline))
+        else:
+            pipeline = TreatmentArmsAccessor._create_identifier_rules_pipeline(variant_type)
+            self.assertEqual(pipeline, exp_pipeline)
 
 if __name__ == '__main__':
     unittest.main()
