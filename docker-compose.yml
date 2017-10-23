@@ -55,7 +55,7 @@ services:
 #      - adult-match-net
 
   mongo:
-    image: mongo:3.4.0
+    image: fnlcr/nci-adult-match-datastore:latest
     volumes:
       - ./data_setup/match:/backup
     ports:
