@@ -72,7 +72,7 @@ Also, see section below on customizing the TreatmentArm API virtual environment.
 
 ## To run locally
 
-### Export environment variable for shell session
+#### Export environment variable for shell session
 ```bash
 export MONGODB_URI=mongodb://localhost:27017/Match
 export ENVIRONMENT='development'
@@ -86,10 +86,11 @@ export AUTH0_PASSWORD={your_auth0_password}
 export PYTHONPATH=.:{your path here}/nci-adult-match-treatment-arm-api
 ```
 
-### Set explicitly for a specific command execution
+#### Set explicitly for a specific command execution
 ```bash
 MONGODB_URI=mongodb://localhost:27017/Match python app.py
 ```
+
 
 ## Dockerization
 
@@ -117,37 +118,17 @@ Example with connecting to `nciadultmatchui_adult-match-net` Docker network. Rep
 docker run --name ncimatch-adult-treatment-arm-api -it --network nciadultmatchui_adult-match-net -e ENVIRONMENT=test -e MONGODB_URI=mongodb://mongo:27017/Match -p 5010:5010 fnlcr/nci-adult-match-treatment-arm-api:latest
 ```
 
-## Restoring Data to Mongo DB for Local Development
-These instructions apply both to dockerized MongoDB (see above for how to access this) and to a local copy
-of MongoDB you may have installed.
-
-Do the restore from from the Linux shell to dockerized Mongo:
+#### Restoring Data to Mongo DB for Local Development
+The testing team maintains seed data for the Mongo DB match database instance that runs within Docker.
+To make sure that your container has the latest copy of that data, execute the following command:
 ```bash
-docker exec -it nciadultmatchtreatmentarmapi_mongo_1 bash
-mongo Match --eval "db.dropDatabase()"
-mongorestore --db Match ./backup
+docker-compose down && docker-compose pull
 ```
-
-Do the restore from from the Linux shell to local Mongo:
-```bash
-mongo Match --eval "db.dropDatabase()"
-mongorestore --db Match ./data_setup/match
-```
-
-After you've restored the backup you may check the restored data:
-```bash
-mongo shell
-show dbs
-use Match
-show collections
-db.treatmentArms.count()
-```
-
-Exit from MongoDB shell by pressing `Ctrl+C` or typing `exit`.
 
 
 ## Configuration
 Various configuration settings can be customized in the `config/environment.yml` file.
+
 
 ## Misc
 
@@ -160,6 +141,8 @@ To kill a service on a specific port
 ```bash
 kill -9 $(lsof -n -i4TCP:5010)
 ```
+
+
 ## Unit Tests
 To run the unit tests, make sure that the path to the TreatmentArmAPI root directory is included in the PYTHONPATH
 environment variable.
