@@ -90,5 +90,13 @@ if 'TOKEN_ID' in os.environ:
     headers = {"Authorization": "Bearer {}".format(os.environ['TOKEN_ID'])}
     resp = requests.patch('http://localhost:5010/api/v1/treatment_arms/amois', json=vr, headers=headers)
     pprint.pprint(resp.json())
+    print("")
+
+    is_amoi_json = {"type": "singleNucleotideVariants", "variants": vr['singleNucleotideVariants']}
+    resp = requests.get('http://localhost:5010/api/v1/treatment_arms/is_amoi', json=is_amoi_json, headers=headers)
+    pprint.pprint(resp.json())
+    print("")
+
+
 else:
     print("TOKEN_ID environment variable not found.")
