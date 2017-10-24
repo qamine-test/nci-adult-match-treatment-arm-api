@@ -106,61 +106,104 @@ class VariantRulesMgr:
                 return False
         return True
 
+    @staticmethod
+    def _matches_nonhotspot_rule(pv, r):
+        return pv['confirmed'] and VariantRulesMgr._match_var_to_nhr(pv, r)
+
     def get_matching_nonhotspot_rules(self, patient_variants):
         """
-        Matches each of the variants to the NonHotspotRules in self.
-        :param patient_variants:
+        Matches each of the variants to the NonHotspotRules in self.  NotHotSpotRules are another way of identifying
+        if an indel or SNV variant is an aMOI.
+        :param patient_variants: a list of indel and/or SNV variants
         :return: an array containing the rules that matched.
         """
-        def _matches(pv, r):
-            return pv['confirmed'] and VariantRulesMgr._match_var_to_nhr(pv, r)
-
-        return [r for r in self.nhs_rules for pv in patient_variants if _matches(pv, r)]
+        return [r for r in self.nhs_rules for pv in patient_variants if self._matches_nonhotspot_rule(pv, r)]
 
     @staticmethod
-    def _get_matching_identifier_rules(rule_list, patient_variants):
+    def _matches_identifier_rule(pv, r):  # pv=patient variant; r=rule
+        return pv['confirmed'] and r['identifier'] == pv['identifier']
+
+    @classmethod
+    def _get_matching_identifier_rules(cls, rule_list, patient_variants):
         """
         Matches each of the variants to each of the rules in rule_list.
         :param rule_list: list of rules with an identifier field
         :param patient_variants: list of variants with an identifier field
         :return: an array containing the rules that matched.
         """
-        def _matches(pv, r):  # pv=patient variant; r=rule
-            return pv['confirmed'] and r['identifier'] == pv['identifier']
+        return [r for r in rule_list for pv in patient_variants if cls._matches_identifier_rule(pv, r)]
 
-        return [r for r in rule_list for pv in patient_variants if _matches(pv, r)]
-
-    def get_matching_copy_number_variant_rules(self, patient_variants):
+    def get_matching_copy_number_variant_rules(self, patient_cnv_variants):
         """
         Matches each of the variants to the CopyNumberVariant rules in self.
-        :param patient_variants: list of variants with an identifier field
+        :param patient_cnv_variants: list of CNV variants with an identifier field
         :return: an array containing the rules that matched.
         """
-        return VariantRulesMgr._get_matching_identifier_rules(self.cnv_rules, patient_variants)
+        return VariantRulesMgr._get_matching_identifier_rules(self.cnv_rules, patient_cnv_variants)
 
-    def get_matching_single_nucleotide_variants_rules(self, patient_variants):
+    def get_matching_single_nucleotide_variants_rules(self, patient_snv_variants):
         """
         Matches each of the variants to the singleNucleotideVariants rules in self.
-        :param patient_variants: list of variants with an identifier field
+        :param patient_snv_variants: list of SNV variants with an identifier field
         :return: an array containing the rules that matched.
         """
-        return VariantRulesMgr._get_matching_identifier_rules(self.snv_rules, patient_variants)
+        return VariantRulesMgr._get_matching_identifier_rules(self.snv_rules, patient_snv_variants)
 
-    def get_matching_gene_fusions_rules(self, patient_variants):
+    def get_matching_gene_fusions_rules(self, patient_gf_variants):
         """
         Matches each of the variants to the geneFusions rules in self.
-        :param patient_variants: list of variants with an identifier field
+        :param patient_gf_variants: list of gene fusion variants with an identifier field
         :return: an array containing the rules that matched.
         """
-        return VariantRulesMgr._get_matching_identifier_rules(self.gf_rules, patient_variants)
+        return VariantRulesMgr._get_matching_identifier_rules(self.gf_rules, patient_gf_variants)
 
-    def get_matching_indel_rules(self, patient_variants):
+    def get_matching_indel_rules(self, patient_indel_variants):
         """
         Matches each of the variants to the indel rules in self.
-        :param patient_variants: list of variants with an identifier field
+        :param patient_indel_variants: list of indel variants with an identifier field
         :return: an array containing the rules that matched.
         """
-        return VariantRulesMgr._get_matching_identifier_rules(self.indel_rules, patient_variants)
+        return VariantRulesMgr._get_matching_identifier_rules(self.indel_rules, patient_indel_variants)
+
+    def _is_indel_amoi(self, patient_variant):
+        if [r for r in self.indel_rules if self._matches_identifier_rule(patient_variant, r)]:
+            return True
+        elif [r for r in self.nhs_rules if self._matches_nonhotspot_rule(patient_variant, r)]:
+            return True
+        else:
+            return False
+
+    def _is_single_nucleotide_variant_amoi(self, patient_variant):
+        if [r for r in self.snv_rules if self._matches_identifier_rule(patient_variant, r)]:
+            return True
+        elif [r for r in self.nhs_rules if self._matches_nonhotspot_rule(patient_variant, r)]:
+            return True
+        else:
+            return False
+
+    def _is_gene_fusion_amoi(self, patient_variant):
+        if [r for r in self.gf_rules if self._matches_identifier_rule(patient_variant, r)]:
+            return True
+        else:
+            return False
+
+    def _is_copy_number_variant_amoi(self, patient_variant):
+        if [r for r in self.cnv_rules if self._matches_identifier_rule(patient_variant, r)]:
+            return True
+        else:
+            return False
+
+    def is_amoi(self, patient_variant, variant_type):
+        if variant_type == 'indels':
+            return self._is_indel_amoi(patient_variant)
+        elif variant_type == 'singleNucleotideVariants':
+            return self._is_single_nucleotide_variant_amoi(patient_variant)
+        elif variant_type == 'copyNumberVariants':
+            return self._is_copy_number_variant_amoi(patient_variant)
+        elif variant_type == 'unifiedGeneFusions':
+            return self._is_gene_fusion_amoi(patient_variant)
+        else:
+            raise Exception("Unknown variant type: {}".format(variant_type))
 
 
 class AmoisAnnotator:
@@ -295,7 +338,7 @@ class AmoisResource(Resource):
         "amois": { STATE: [{treatmentArmId, version, inclusion(True|False), type(Hotspot|NonHotspot|Both)}, ...], ... }
 
         """
-        self.logger.debug("Getting annotated aMOI information for Patient Variant Report")
+        self.logger.info("Getting annotated aMOI information for Patient Variant Report")
         ret_val = None
         status_code = 200
         try:
@@ -322,6 +365,49 @@ class AmoisResource(Resource):
                 self.logger.debug("No aMOIs found")
 
             ret_val = vr
+        except Exception as exc:
+            ret_val = str(exc)
+            self.logger.error(ret_val)
+            status_code = 404
+        return ret_val, status_code
+
+
+class IsAmoisResource(Resource):
+    VARIANT_TYPES = ['indels', 'singleNucleotideVariants', 'copyNumberVariants', 'unifiedGeneFusions']
+    REQ_INPUT_FIELDS = ['variants', 'type']
+
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+
+    @staticmethod
+    def get_variants():
+        # print("request is %s" % type(request))
+        args = request.get_json()
+
+        # self.logger.debug("ARGS:\n"+pformat(args, width=140, indent=2))
+        missing_fields = [f for f in IsAmoisResource.REQ_INPUT_FIELDS if f not in args]
+        if missing_fields:
+            err_msg = ("The following required fields were missing from the input data: "
+                       + ", ".join(missing_fields))
+            raise Exception(err_msg)
+
+        if args['type'] not in IsAmoisResource.VARIANT_TYPES:
+            err_msg = "The following is not a valid variant type: '{}'".format(args['type'])
+            raise Exception(err_msg)
+
+        return args['type'], args['variants']
+
+    @requires_auth
+    def get(self):
+        self.logger.info("Getting aMOI information for variants")
+        status_code = 200
+        try:
+            variant_type, variant_list = self.get_variants()
+            self.logger.debug("Variant Type = {}".format(variant_type))
+            self.logger.debug(pformat(variant_list))
+            var_rules_mgr = VariantRulesMgr()
+            result_list = [var_rules_mgr.is_amoi(variant, variant_type) for variant in variant_list]
+            ret_val = result_list
         except Exception as exc:
             ret_val = str(exc)
             self.logger.error(ret_val)
