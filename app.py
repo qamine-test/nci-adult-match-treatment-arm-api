@@ -20,6 +20,7 @@ from config import flask_config
 from config import log
 from helpers.environment import Environment
 from resources.amois import AmoisResource
+from resources.amois import IsAmoisResource
 from resources.healthcheck import HealthCheck
 from resources.treatment_arm import TreatmentArms
 from resources.treatment_arm import TreatmentArmsById
@@ -59,6 +60,7 @@ def unhandled_exception(e):
 
 
 API.add_resource(AmoisResource, '/api/v1/treatment_arms/amois')
+API.add_resource(IsAmoisResource, '/api/v1/treatment_arms/is_amoi')
 API.add_resource(HealthCheck, '/api/v1/treatment_arms/healthcheck', endpoint='get_healthcheck')
 API.add_resource(TreatmentArms, '/api/v1/treatment_arms', endpoint='get_all')
 API.add_resource(TreatmentArmsById, '/api/v1/treatment_arms/<string:arm_id>', endpoint='get_by_id')
