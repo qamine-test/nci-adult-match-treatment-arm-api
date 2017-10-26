@@ -2,6 +2,7 @@
 import datetime
 import json
 import unittest
+from unittest import TestCase
 
 import flask
 from ddt import ddt, data, unpack
@@ -13,6 +14,7 @@ from resources import amois
 
 APP = None
 API = None
+
 
 # The following function is called by the Python unittest framework and sets up the Flask application that is
 # required in order to test the functionality of the Amois Resource.
@@ -158,18 +160,23 @@ class TestAmoisAnnotator(unittest.TestCase):
     @data(
         ([], {}),
         ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN")],
-         {'CURRENT': [{'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}]}),
+         {'CURRENT':
+            [{'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}]}),
         ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', True, "OPEN"),
           ta_nh_rule("1", "1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
           ta_id_rule("EDBCA", 'EAY131-P', '2016-11-11', True)],
-         {'CURRENT': [{'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True, 'type': 'Both'},
-                      {'treatmentArmId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False, 'type': 'NonHotspot'}]}),
+         {'CURRENT':
+            [{'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True, 'type': 'Both'},
+             {'treatmentArmId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False, 'type': 'NonHotspot'}]}),
         ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN", True),
           ta_nh_rule("1", "1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
           ta_id_rule('COSM6240', 'EAY131-R', '2016-12-12', False, "CLOSED")],
-         {'PREVIOUS': [{'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}],
-          'CURRENT': [{'treatmentArmId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False, 'type': 'NonHotspot'}],
-          'PRIOR': [{'treatmentArmId': 'EAY131-R', 'version': '2016-12-12', 'inclusion': False, 'type': 'Hotspot'}]}),
+         {'PREVIOUS':
+            [{'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}],
+          'CURRENT':
+            [{'treatmentArmId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False, 'type': 'NonHotspot'}],
+          'PRIOR':
+            [{'treatmentArmId': 'EAY131-R', 'version': '2016-12-12', 'inclusion': False, 'type': 'Hotspot'}]}),
     )
     @unpack
     def test_create_amois_annotation(self, amois_list, exp_annotation):
@@ -177,11 +184,17 @@ class TestAmoisAnnotator(unittest.TestCase):
         self.assertEqual(amois.create_amois_annotation(amois_list), exp_annotation)
 
 
+class AmoisModuleTestCase(TestCase):
+
+    def setUp(self):
+        ta_accessor_patcher = patch('resources.amois.TreatmentArmsAccessor')
+        self.addCleanup(ta_accessor_patcher.stop)
+        self.mock_ta_accessor = ta_accessor_patcher.start().return_value
+
+
 # ******** Test the VariantRulesMgr class in amois.py. ******** #
 @ddt
-@patch('resources.amois.TreatmentArmsAccessor')
-class TestVariantRulesMgr(unittest.TestCase):
-
+class TestVariantRulesMgr(AmoisModuleTestCase):
     # Test the VariantRulesMgr._match_item function.
     @data(
         ('string_data', 'string_data', True),
@@ -194,7 +207,7 @@ class TestVariantRulesMgr(unittest.TestCase):
         ('', '19', True),
     )
     @unpack
-    def test_match_item(self, vr_item, nhr_item, exp_result, mock_ta_accessor):
+    def test_match_item(self, vr_item, nhr_item, exp_result):
         self.assertEqual(amois.VariantRulesMgr._match_item(vr_item, nhr_item), exp_result)
 
     # Test the VariantRulesMgr._match_var_to_nhr function.
@@ -215,7 +228,7 @@ class TestVariantRulesMgr(unittest.TestCase):
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Deleterious'), False),
     )
     @unpack
-    def test_match_var_to_nhr(self, patient_variant, nhr, exp_result, mock_ta_accessor):
+    def test_match_var_to_nhr(self, patient_variant, nhr, exp_result):
         self.assertEqual(amois.VariantRulesMgr._match_var_to_nhr(patient_variant, nhr), exp_result)
 
     # Test the VariantRulesMgr.get_matching_nonhotspot_rules function.
@@ -247,7 +260,7 @@ class TestVariantRulesMgr(unittest.TestCase):
          []),
     )
     @unpack
-    def test_get_matching_nonhotspot_rules(self, patient_variants, nhr_list, exp_amois_indexes, mock_ta_accessor):
+    def test_get_matching_nonhotspot_rules(self, patient_variants, nhr_list, exp_amois_indexes):
         with APP.test_request_context(''):
             vrm = amois.VariantRulesMgr(nhr_list, {}, {}, {}, {})
             exp_amois = [nhr_list[i] for i in exp_amois_indexes]
@@ -275,7 +288,7 @@ class TestVariantRulesMgr(unittest.TestCase):
          [0, 1]),
     )
     @unpack
-    def test_get_matching_identifier_rules(self, patient_variants, ta_id_rules, exp_amois_indexes, mock_ta_accessor):
+    def test_get_matching_identifier_rules(self, patient_variants, ta_id_rules, exp_amois_indexes):
         with APP.test_request_context(''):
             exp_amois = [ta_id_rules[i] for i in exp_amois_indexes]
 
@@ -299,7 +312,7 @@ class TestVariantRulesMgr(unittest.TestCase):
          [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')], True),
     )
     @unpack
-    def test_is_indel_amoi(self, patient_variant, indel_id_rules, nhr_list, exp_result, mock_ta_accessor):
+    def test_is_indel_amoi(self, patient_variant, indel_id_rules, nhr_list, exp_result):
         vrm = amois.VariantRulesMgr(nhr_list, {}, {}, {}, indel_id_rules)
         result = vrm._is_indel_amoi(patient_variant)
         self.assertEqual(result, exp_result)
@@ -312,7 +325,7 @@ class TestVariantRulesMgr(unittest.TestCase):
          [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')], True),
     )
     @unpack
-    def test_is_single_nucleotide_variant_amoi(self, patient_variant, snv_id_rules, nhr_list, exp_result, mock_ta_accessor):
+    def test_is_single_nucleotide_variant_amoi(self, patient_variant, snv_id_rules, nhr_list, exp_result):
         vrm = amois.VariantRulesMgr(nhr_list, {}, snv_id_rules, {}, {})
         result = vrm._is_single_nucleotide_variant_amoi(patient_variant)
         self.assertEqual(result, exp_result)
@@ -323,7 +336,7 @@ class TestVariantRulesMgr(unittest.TestCase):
         (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], True),
     )
     @unpack
-    def test_is_copy_number_variant_amoi(self, patient_variant, cnv_id_rules, exp_result, mock_ta_accessor):
+    def test_is_copy_number_variant_amoi(self, patient_variant, cnv_id_rules, exp_result):
         vrm = amois.VariantRulesMgr({}, cnv_id_rules, {}, {}, {})
         result = vrm._is_copy_number_variant_amoi(patient_variant)
         self.assertEqual(result, exp_result)
@@ -334,7 +347,7 @@ class TestVariantRulesMgr(unittest.TestCase):
         (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], True),
     )
     @unpack
-    def test_is_gene_fusion_amoi(self, patient_variant, gf_id_rules, exp_result, mock_ta_accessor):
+    def test_is_gene_fusion_amoi(self, patient_variant, gf_id_rules, exp_result):
         vrm = amois.VariantRulesMgr({}, {}, {}, gf_id_rules, {})
         result = vrm._is_gene_fusion_amoi(patient_variant)
         self.assertEqual(result, exp_result)
@@ -347,7 +360,7 @@ class TestVariantRulesMgr(unittest.TestCase):
          [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')], True),
     )
     @unpack
-    def test_is_single_nucleotide_variant_amoi(self, patient_variant, snv_id_rules, nhr_list, exp_result, mock_ta_accessor):
+    def test_is_single_nucleotide_variant_amoi(self, patient_variant, snv_id_rules, nhr_list, exp_result):
         vrm = amois.VariantRulesMgr(nhr_list, {}, snv_id_rules, {}, {})
         result = vrm._is_single_nucleotide_variant_amoi(patient_variant)
         self.assertEqual(result, exp_result)
@@ -358,7 +371,7 @@ class TestVariantRulesMgr(unittest.TestCase):
         (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], [], True),
     )
     @unpack
-    def test_is_amoi(self, patient_variant, ta_id_rules, nhr_list, exp_result, mock_ta_accessor):
+    def test_is_amoi(self, patient_variant, ta_id_rules, nhr_list, exp_result):
         # Test as CNV
         vrm = amois.VariantRulesMgr(nhr_list, ta_id_rules, {}, {}, {})
         result = vrm.is_amoi(patient_variant, 'copyNumberVariants')
@@ -380,12 +393,13 @@ class TestVariantRulesMgr(unittest.TestCase):
         self.assertEqual(result, exp_result)
 
     # Test the VariantRulesMgr.is_amoi function when invalid variant type causes an exception to be raised.
-    def test_is_amoi_with_exc(self, mock_ta_accessor):
+    def test_is_amoi_with_exc(self):
         invalid_variant_type = 'invalidVariant'
         vrm = amois.VariantRulesMgr({}, {}, {}, {}, {})
         with self.assertRaises(Exception) as cm:
             vrm.is_amoi(variant("9", '1', '1', '1', 'ABCDE', True), invalid_variant_type)
         self.assertEqual(str(cm.exception), "Unknown variant type: {}".format(invalid_variant_type))
+
 
 # ******** These variables contain source data for the find_amois and AmoisResource tests that follow. ******** #
 INCLUSION = True
@@ -419,8 +433,7 @@ indel_rules = list(
 
 # ******** Test the find_amois function in amois.py. ******** #
 @ddt
-@patch('resources.amois.TreatmentArmsAccessor')
-class TestFindAmoisFunction(unittest.TestCase):
+class TestFindAmoisFunction(AmoisModuleTestCase):
     @classmethod
     def setUpClass(cls):
         with APP.test_request_context(''):
@@ -472,7 +485,7 @@ class TestFindAmoisFunction(unittest.TestCase):
          [])
         )
     @unpack
-    def test(self, var_rpt, exp_amois_list, mock_ta_accessor):
+    def test(self, var_rpt, exp_amois_list):
         self.maxDiff = None
         vrm = amois.VariantRulesMgr(nh_rules, cnv_rules, snv_rules, gf_rules, indel_rules)
         amois_list = amois.find_amois(var_rpt, vrm)
@@ -481,9 +494,7 @@ class TestFindAmoisFunction(unittest.TestCase):
 
 # ******** Test the AmoisResource class in amois.py. ******** #
 @ddt
-@patch('resources.amois.TreatmentArmsAccessor')
-@patch('resources.amois.find_amois')
-class TestAmoisResource(unittest.TestCase):
+class TestAmoisResource(AmoisModuleTestCase):
     @classmethod
     def setUpClass(cls):
         with APP.test_request_context(''):
@@ -541,7 +552,8 @@ class TestAmoisResource(unittest.TestCase):
 
         )
     @unpack
-    def test_patch(self, vr_json, exp_anno_amois, mock_find_amois_ret_val, mock_find_amois, mock_ta_accessor):
+    @patch('resources.amois.find_amois')
+    def test_patch(self, vr_json, exp_anno_amois, mock_find_amois_ret_val, mock_find_amois):
         self.maxDiff = None
 
         mock_find_amois.return_value = mock_find_amois_ret_val
@@ -576,7 +588,7 @@ class TestAmoisResource(unittest.TestCase):
         )
     @unpack
     @patch('resources.amois.logging')
-    def test_patch_with_error(self, vr_json, exp_anno_amois, mock_logging, mock_find_amois, mock_ta_accessor):
+    def test_patch_with_error(self, vr_json, exp_anno_amois, mock_logging):
         with APP.test_request_context(''):
             exp_result = vr_json
             if exp_anno_amois:
