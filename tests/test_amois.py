@@ -291,6 +291,54 @@ class TestVariantRulesMgr(unittest.TestCase):
             vrm = amois.VariantRulesMgr({}, {}, {}, {}, ta_id_rules)
             self.assertEqual(vrm.get_matching_indel_rules(patient_variants), exp_amois, "Indel")
 
+    # Test the VariantRulesMgr._is_indel_amoi function.
+    @data(
+        (variant("9", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], [], False),
+        (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], [], True),
+        (variant("14", 'missense', 'IDH2', 'Hotspot'), [ta_id_rule('ABCDE')],
+         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')], True),
+    )
+    @unpack
+    def test_is_indel_amoi(self, patient_variant, indel_id_rules, nhr_list, exp_result, mock_ta_accessor):
+        vrm = amois.VariantRulesMgr(nhr_list, {}, {}, {}, indel_id_rules)
+        result = vrm._is_indel_amoi(patient_variant)
+        self.assertEqual(result, exp_result)
+
+    # Test the VariantRulesMgr._is_single_nucleotide_variant_amoi function.
+    @data(
+        (variant("9", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], [], False),
+        (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], [], True),
+        (variant("14", 'missense', 'IDH2', 'Hotspot'), [ta_id_rule('ABCDE')],
+         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')], True),
+    )
+    @unpack
+    def test_is_single_nucleotide_variant_amoi(self, patient_variant, snv_id_rules, nhr_list, exp_result, mock_ta_accessor):
+        vrm = amois.VariantRulesMgr(nhr_list, {}, snv_id_rules, {}, {})
+        result = vrm._is_single_nucleotide_variant_amoi(patient_variant)
+        self.assertEqual(result, exp_result)
+
+    # Test the VariantRulesMgr._is_copy_number_variant_amoi function.
+    @data(
+        (variant("9", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], False),
+        (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], True),
+    )
+    @unpack
+    def test_is_copy_number_variant_amoi(self, patient_variant, cnv_id_rules, exp_result, mock_ta_accessor):
+        vrm = amois.VariantRulesMgr({}, cnv_id_rules, {}, {}, {})
+        result = vrm._is_copy_number_variant_amoi(patient_variant)
+        self.assertEqual(result, exp_result)
+
+    # Test the VariantRulesMgr._is_gene_fusion_amoi function.
+    @data(
+        (variant("9", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], False),
+        (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], True),
+    )
+    @unpack
+    def test_is_gene_fusion_amoi(self, patient_variant, gf_id_rules, exp_result, mock_ta_accessor):
+        vrm = amois.VariantRulesMgr({}, {}, {}, gf_id_rules, {})
+        result = vrm._is_gene_fusion_amoi(patient_variant)
+        self.assertEqual(result, exp_result)
+
 
 # ******** These variables contain source data for the find_amois and AmoisResource tests that follow. ******** #
 INCLUSION = True
