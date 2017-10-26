@@ -339,6 +339,53 @@ class TestVariantRulesMgr(unittest.TestCase):
         result = vrm._is_gene_fusion_amoi(patient_variant)
         self.assertEqual(result, exp_result)
 
+    # Test the VariantRulesMgr._is_single_nucleotide_variant_amoi function.
+    @data(
+        (variant("9", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], [], False),
+        (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], [], True),
+        (variant("14", 'missense', 'IDH2', 'Hotspot'), [ta_id_rule('ABCDE')],
+         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')], True),
+    )
+    @unpack
+    def test_is_single_nucleotide_variant_amoi(self, patient_variant, snv_id_rules, nhr_list, exp_result, mock_ta_accessor):
+        vrm = amois.VariantRulesMgr(nhr_list, {}, snv_id_rules, {}, {})
+        result = vrm._is_single_nucleotide_variant_amoi(patient_variant)
+        self.assertEqual(result, exp_result)
+
+    # Test the VariantRulesMgr.is_amoi function with normal execution
+    @data(
+        (variant("9", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], [], False),
+        (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], [], True),
+    )
+    @unpack
+    def test_is_amoi(self, patient_variant, ta_id_rules, nhr_list, exp_result, mock_ta_accessor):
+        # Test as CNV
+        vrm = amois.VariantRulesMgr(nhr_list, ta_id_rules, {}, {}, {})
+        result = vrm.is_amoi(patient_variant, 'copyNumberVariants')
+        self.assertEqual(result, exp_result)
+
+        # Test as SNV
+        vrm = amois.VariantRulesMgr(nhr_list, {}, ta_id_rules, {}, {})
+        result = vrm.is_amoi(patient_variant, 'singleNucleotideVariants')
+        self.assertEqual(result, exp_result)
+
+        # Test as unifiedGeneFusions
+        vrm = amois.VariantRulesMgr(nhr_list, {}, {}, ta_id_rules, {})
+        result = vrm.is_amoi(patient_variant, 'unifiedGeneFusions')
+        self.assertEqual(result, exp_result)
+
+        # Test as indels
+        vrm = amois.VariantRulesMgr(nhr_list, {}, {}, {}, ta_id_rules)
+        result = vrm.is_amoi(patient_variant, 'indels')
+        self.assertEqual(result, exp_result)
+
+    # Test the VariantRulesMgr.is_amoi function when invalid variant type causes an exception to be raised.
+    def test_is_amoi_with_exc(self, mock_ta_accessor):
+        invalid_variant_type = 'invalidVariant'
+        vrm = amois.VariantRulesMgr({}, {}, {}, {}, {})
+        with self.assertRaises(Exception) as cm:
+            vrm.is_amoi(variant("9", '1', '1', '1', 'ABCDE', True), invalid_variant_type)
+        self.assertEqual(str(cm.exception), "Unknown variant type: {}".format(invalid_variant_type))
 
 # ******** These variables contain source data for the find_amois and AmoisResource tests that follow. ******** #
 INCLUSION = True
