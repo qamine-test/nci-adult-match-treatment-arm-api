@@ -35,6 +35,7 @@ def setUpModule():
     global API
     API = Api(APP)
     API.add_resource(amois.AmoisResource, '/amois', endpoint='get_amois')
+    API.add_resource(amois.IsAmoisResource, '/is_amoi')
 
 
 # ******** Helper functions to build data structures used in test cases ******** #
@@ -501,6 +502,7 @@ class TestAmoisResource(AmoisModuleTestCase):
             cls.app = API.app.test_client()
 
     @data(
+        # 1. Test case with two matches
         ({
             "singleNucleotideVariants": [
                 {  # should match on identifier
@@ -531,6 +533,7 @@ class TestAmoisResource(AmoisModuleTestCase):
                        'inclusion': True, 'type': 'NonHotspot'}],
           },
          [snv_rules[0], nh_rules[2]]),
+        # 2. Test case with no matches
         ({
              "singleNucleotideVariants": [
                  {  # should NOT match because not confirmed
@@ -603,6 +606,95 @@ class TestAmoisResource(AmoisModuleTestCase):
 
             mock_logger = mock_logging.getLogger()
             mock_logger.error.assert_called_once()
+
+
+# ******** Test the IsAmoisResource class in amois.py. ******** #
+@ddt
+class TestIsAmoisResource(AmoisModuleTestCase):
+    @classmethod
+    def setUpClass(cls):
+        with APP.test_request_context(''):
+            cls.app = API.app.test_client()
+
+    @data(
+        # 1. Valid input of type indels
+        ({'type': 'indels',
+          'variants': [variant("14", 'missense', 'IDH2', 'Hotspot'), variant("9", '1', '1', '1', 'ABCDE', False)]
+          },
+         ('indels', [variant("14", 'missense', 'IDH2', 'Hotspot'), variant("9", '1', '1', '1', 'ABCDE', False)])),
+        # 2. Valid input of type singleNucleotideVariants
+        ({'type': 'singleNucleotideVariants',
+          'variants': [variant("14", 'missense', 'IDH2', 'Hotspot')]
+          },
+         ('singleNucleotideVariants', [variant("14", 'missense', 'IDH2', 'Hotspot')])),
+        # 3. Valid input of type copyNumberVariants
+        ({'type': 'copyNumberVariants',
+          'variants': [variant("9", '1', '1', '1', 'ABCDE', False)]
+          },
+         ('copyNumberVariants', [variant("9", '1', '1', '1', 'ABCDE', False)])),
+        # 4. Valid input of type unifiedGeneFusions
+        ({'type': 'unifiedGeneFusions',
+          'variants': [variant("9", '1', '1', '1', 'ABCDE', True)]
+          },
+         ('unifiedGeneFusions', [variant("9", '1', '1', '1', 'ABCDE', True)])),
+        # 5. Invalid variant type results in raised exception
+        ({'type': 'invalidVariantType',
+          'variants': [variant("9", '1', '1', '1', 'ABCDE', True)]
+          },
+         Exception("The following is not a valid variant type: 'invalidVariantType'")),
+        # 6. Missing input field 'variants' results in raised exception
+        ({'type': 'unifiedGeneFusions',
+          },
+         Exception("The following required fields were missing from the input data: variants")),
+        # 7. Missing input field 'type' results in raised exception
+        ({'variants': [variant("9", '1', '1', '1', 'ABCDE', True)],
+          },
+         Exception("The following required fields were missing from the input data: type")),
+        # 8. Missing input fields 'variants' and 'type' results in raised exception
+        ({'variables': [variant("9", '1', '1', '1', 'ABCDE', True)],
+          },
+         Exception("The following required fields were missing from the input data: variants, type")),
+    )
+    @unpack
+    @patch('resources.amois.request')
+    def test_get_variants(self, json_arg, exp_result, mock_request):
+        mock_request.get_json.return_value = json_arg
+
+        if isinstance(exp_result, Exception):
+            with self.assertRaises(Exception) as cm:
+                amois.IsAmoisResource._get_variants()
+            self.assertEqual(str(cm.exception), str(exp_result))
+        else:
+            result = amois.IsAmoisResource._get_variants()
+            self.assertEqual(result, exp_result)
+
+    @data(
+        ({"type": "unifiedGeneFusions",
+          "variants": [variant("9", "1", "1", "1", "ABCDE", True), variant("9", "1", "2", "1", "EDB", False)]
+          }, [True, False], [True, False], 200),
+        ({"type": "invalidVariantType",
+          "variants": [variant("9", "1", "1", "1", "ABCDE", True)]
+          }, [True], "The following is not a valid variant type: 'invalidVariantType'", 404)
+    )
+    @unpack
+    @patch('resources.amois.logging')
+    @patch('resources.amois.VariantRulesMgr')
+    def test_get(self, json_arg, mock_is_amoi_results, exp_data, exp_status_code, mock_var_rules_mgr, mock_logging):
+        mock_var_rules_mgr_inst = mock_var_rules_mgr.return_value
+        mock_var_rules_mgr_inst.is_amoi.side_effect = mock_is_amoi_results
+
+        with APP.test_request_context(''):
+            response = self.app.get('/is_amoi',
+                                    data=json.dumps(json_arg),
+                                    content_type='application/json')
+            result_data = json.loads(response.get_data().decode("utf-8"))
+
+            self.assertEqual(result_data, exp_data)
+            self.assertEqual(response.status_code, exp_status_code)
+
+            if exp_status_code != 200:
+                mock_logger = mock_logging.getLogger()
+                mock_logger.error.assert_called_once_with(exp_data)
 
 
 if __name__ == '__main__':
