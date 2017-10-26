@@ -358,19 +358,6 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
         result = vrm._is_gene_fusion_amoi(patient_variant)
         self.assertEqual(result, exp_result)
 
-    # Test the VariantRulesMgr._is_single_nucleotide_variant_amoi function.
-    @data(
-        (variant("9", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], [], False),
-        (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], [], True),
-        (variant("14", 'missense', 'IDH2', 'Hotspot'), [ta_id_rule('ABCDE')],
-         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')], True),
-    )
-    @unpack
-    def test_is_single_nucleotide_variant_amoi(self, patient_variant, snv_id_rules, nhr_list, exp_result):
-        vrm = amois.VariantRulesMgr(nhr_list, {}, snv_id_rules, {}, {})
-        result = vrm._is_single_nucleotide_variant_amoi(patient_variant)
-        self.assertEqual(result, exp_result)
-
     # Test the VariantRulesMgr.is_amoi function with normal execution
     @data(
         (variant("9", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], [], False),
