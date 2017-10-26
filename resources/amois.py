@@ -380,7 +380,7 @@ class IsAmoisResource(Resource):
         self.logger = logging.getLogger(__name__)
 
     @staticmethod
-    def get_variants():
+    def _get_variants():
         # print("request is %s" % type(request))
         args = request.get_json()
 
@@ -399,10 +399,14 @@ class IsAmoisResource(Resource):
 
     @requires_auth
     def get(self):
+        """
+        Given a list of variants of a single, recognized type, returns a list of boolean values that indicates
+        if each is an aMOI or not.
+        """
         self.logger.info("Getting aMOI information for variants")
         status_code = 200
         try:
-            variant_type, variant_list = self.get_variants()
+            variant_type, variant_list = self._get_variants()
             self.logger.debug("Variant Type = {}".format(variant_type))
             self.logger.debug(pformat(variant_list))
             var_rules_mgr = VariantRulesMgr()
