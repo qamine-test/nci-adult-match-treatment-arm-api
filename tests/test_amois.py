@@ -187,6 +187,11 @@ class TestAmoisAnnotator(unittest.TestCase):
 
 class AmoisModuleTestCase(TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        with APP.test_request_context(''):
+            cls.app = API.app.test_client()
+
     def setUp(self):
         ta_accessor_patcher = patch('resources.amois.TreatmentArmsAccessor')
         self.addCleanup(ta_accessor_patcher.stop)
@@ -435,10 +440,6 @@ indel_rules = list(
 # ******** Test the find_amois function in amois.py. ******** #
 @ddt
 class TestFindAmoisFunction(AmoisModuleTestCase):
-    @classmethod
-    def setUpClass(cls):
-        with APP.test_request_context(''):
-            cls.app = API.app.test_client()
 
     @data(
         ({
@@ -496,10 +497,6 @@ class TestFindAmoisFunction(AmoisModuleTestCase):
 # ******** Test the AmoisResource class in amois.py. ******** #
 @ddt
 class TestAmoisResource(AmoisModuleTestCase):
-    @classmethod
-    def setUpClass(cls):
-        with APP.test_request_context(''):
-            cls.app = API.app.test_client()
 
     @data(
         # 1. Test case with two matches
@@ -611,10 +608,6 @@ class TestAmoisResource(AmoisModuleTestCase):
 # ******** Test the IsAmoisResource class in amois.py. ******** #
 @ddt
 class TestIsAmoisResource(AmoisModuleTestCase):
-    @classmethod
-    def setUpClass(cls):
-        with APP.test_request_context(''):
-            cls.app = API.app.test_client()
 
     @data(
         # 1. Valid input of type indels
