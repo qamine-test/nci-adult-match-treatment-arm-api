@@ -404,24 +404,61 @@ nh_rules = list(
      ta_nh_rule("16", 'func2', 'EGFR', 'OCV1', 'NONHOTSPOTARM-B', '2016-11-20', INCLUSION, 'OPEN', False),
      ta_nh_rule(None, 'func3', 'EGFR', 'OCV1', 'NONHOTSPOTARM-C', '2016-10-20', EXCLUSION, 'OPEN', False),
      ])
-
 cnv_rules = list(
     [ta_id_rule('CNVOSM', 'CNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-
      ])
-
 snv_rules = list(
     [ta_id_rule('SNVOSM', 'SNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-
      ])
 gf_rules = list(
     [ta_id_rule('GFOSM', 'GENEFUSARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-
      ])
 indel_rules = list(
     [ta_id_rule('INDOSM', 'INDELARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-
      ])
+
+VR_WITH_TWO_SNV_AMOIS = {
+    "singleNucleotideVariants": [
+        {  # should match on identifier
+            "confirmed": True,
+            "gene": "EFGR",
+            "oncominevariantclass": "Hotspot",
+            "exon": "4",
+            "function": "missense",
+            "identifier": "SNVOSM",
+            "inclusion": True,
+        },
+        {  # should match on NonHotspot Rule
+            "confirmed": True,
+            "gene": "EGFR",
+            "oncominevariantclass": "OCV1",
+            "exon": "16",
+            "function": "func2",
+            "identifier": "COSM28747",
+            "inclusion": True,
+        },
+    ],
+    "indels": [],
+    "copyNumberVariants": [],
+    "unifiedGeneFusions": [],
+}
+
+VR_WITH_NO_AMOIS = {
+    "singleNucleotideVariants": [
+        {  # should NOT match because not confirmed
+            "confirmed": False,
+            "gene": "EFGR",
+            "oncominevariantclass": "Deleterious",
+            "exon": "4",
+            "function": "func3",
+            "identifier": "SNVOSM",
+            "inclusion": True,
+        },
+    ],
+    "indels": [],
+    "copyNumberVariants": [],
+    "unifiedGeneFusions": [],
+}
 
 
 # ******** Test the find_amois function in amois.py. ******** #
@@ -429,49 +466,8 @@ indel_rules = list(
 class TestFindAmoisFunction(AmoisModuleTestCase):
 
     @data(
-        ({
-            "singleNucleotideVariants": [
-                {  # should match on identifier
-                    "confirmed": True,
-                    "gene": "EFGR",
-                    "oncominevariantclass": "Hotspot",
-                    "exon": "4",
-                    "function": "missense",
-                    "identifier": "SNVOSM",
-                    "inclusion": True,
-                },
-                {  # should match on NonHotspot Rule
-                    "confirmed": True,
-                    "gene": "EGFR",
-                    "oncominevariantclass": "OCV1",
-                    "exon": "16",
-                    "function": "func2",
-                    "identifier": "COSM28747",
-                    "inclusion": True,
-                },
-            ],
-            "indels": [],
-            "copyNumberVariants": [],
-            "unifiedGeneFusions": [],
-          },
-         [snv_rules[0], nh_rules[2]]),
-        ({
-             "singleNucleotideVariants": [
-                 {  # should NOT match because not confirmed
-                     "confirmed": False,
-                     "gene": "EFGR",
-                     "oncominevariantclass": "Deleterious",
-                     "exon": "4",
-                     "function": "func3",
-                     "identifier": "SNVOSM",
-                     "inclusion": True,
-                 },
-             ],
-             "indels": [],
-             "copyNumberVariants": [],
-             "unifiedGeneFusions": [],
-         },
-         [])
+        (VR_WITH_TWO_SNV_AMOIS, [snv_rules[0], nh_rules[2]]),
+        (VR_WITH_NO_AMOIS, [])
         )
     @unpack
     def test(self, var_rpt, exp_amois_list):
@@ -485,59 +481,18 @@ class TestFindAmoisFunction(AmoisModuleTestCase):
 @ddt
 class TestAmoisResource(AmoisModuleTestCase):
 
+    # Test the AmoisResource.patch function with normal execution
     @data(
         # 1. Test case with two matches
-        ({
-            "singleNucleotideVariants": [
-                {  # should match on identifier
-                    "confirmed": True,
-                    "gene": "EFGR",
-                    "oncominevariantclass": "Hotspot",
-                    "exon": "4",
-                    "function": "missense",
-                    "identifier": "SNVOSM",
-                    "inclusion": True,
-                },
-                {  # should match on NonHotspot Rule
-                    "confirmed": True,
-                    "gene": "EGFR",
-                    "oncominevariantclass": "OCV1",
-                    "exon": "16",
-                    "function": "func2",
-                    "identifier": "COSM28746",
-                    "inclusion": True,
-                },
-            ],
-            "copyNumberVariants": [],
-            "indels": [],
-            "unifiedGeneFusions": [],
-          },
+        (VR_WITH_TWO_SNV_AMOIS,
          {'PRIOR': [{'treatmentArmId': 'SNVARM-A', 'version': '2016-12-20', 'inclusion': True, 'type': 'Hotspot'}],
           'CURRENT': [{'treatmentArmId': 'NONHOTSPOTARM-B', 'version': '2016-11-20',
                        'inclusion': True, 'type': 'NonHotspot'}],
           },
          [snv_rules[0], nh_rules[2]]),
         # 2. Test case with no matches
-        ({
-             "singleNucleotideVariants": [
-                 {  # should NOT match because not confirmed
-                     "confirmed": False,
-                     "gene": "EFGRB",
-                     "oncominevariantclass": "Deleterious",
-                     "exon": "14",
-                     "function": "frameshiftinsertion",
-                     "identifier": "SNVOSN",
-                     "inclusion": True,
-                 },
-             ],
-             "unifiedGeneFusions": [],
-             "indels": [],
-             "copyNumberVariants": [],
-         },
-         {},
-         [])
-
-        )
+        (VR_WITH_NO_AMOIS, {}, [])
+    )
     @unpack
     @patch('resources.amois.find_amois')
     def test_patch(self, vr_json, exp_anno_amois, mock_find_amois_ret_val, mock_find_amois):
@@ -559,6 +514,7 @@ class TestAmoisResource(AmoisModuleTestCase):
             self.assertEqual(result, exp_result)
             self.assertEqual(response.status_code, 200)
 
+    # Test the AmoisResource.patch function with error
     @data(
         ({
             "indels": [],
@@ -596,6 +552,7 @@ class TestAmoisResource(AmoisModuleTestCase):
 @ddt
 class TestIsAmoisResource(AmoisModuleTestCase):
 
+    # Test the IsAmoisResource._get_variants function
     @data(
         # 1. Valid input of type indels
         ({'type': 'indels',
@@ -648,6 +605,7 @@ class TestIsAmoisResource(AmoisModuleTestCase):
             result = amois.IsAmoisResource._get_variants()
             self.assertEqual(result, exp_result)
 
+    # Test the IsAmoisResource.patch function
     @data(
         ({"type": "unifiedGeneFusions",
           "variants": [variant("9", "1", "1", "1", "ABCDE", True), variant("9", "1", "2", "1", "EDB", False)]
@@ -659,14 +617,14 @@ class TestIsAmoisResource(AmoisModuleTestCase):
     @unpack
     @patch('resources.amois.logging')
     @patch('resources.amois.VariantRulesMgr')
-    def test_get(self, json_arg, mock_is_amoi_results, exp_data, exp_status_code, mock_var_rules_mgr, mock_logging):
+    def test_patch(self, json_arg, mock_is_amoi_results, exp_data, exp_status_code, mock_var_rules_mgr, mock_logging):
         mock_var_rules_mgr_inst = mock_var_rules_mgr.return_value
         mock_var_rules_mgr_inst.is_amoi.side_effect = mock_is_amoi_results
 
         with APP.test_request_context(''):
-            response = self.app.get('/is_amoi',
-                                    data=json.dumps(json_arg),
-                                    content_type='application/json')
+            response = self.app.patch('/is_amoi',
+                                      data=json.dumps(json_arg),
+                                      content_type='application/json')
             result_data = json.loads(response.get_data().decode("utf-8"))
 
             self.assertEqual(result_data, exp_data)
