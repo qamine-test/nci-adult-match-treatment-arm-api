@@ -398,7 +398,7 @@ class IsAmoisResource(Resource):
         return args['type'], args['variants']
 
     @requires_auth
-    def get(self):
+    def patch(self):
         """
         Given a list of variants of a single, recognized type, returns a list of boolean values that indicates
         if each is an aMOI or not.
