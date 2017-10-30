@@ -88,7 +88,7 @@ class VariantRulesMgr:
             return True
         if not variant_item:
             return True
-        if variant_item == nhr_item:
+        if str(variant_item).lower() == str(nhr_item).lower():
             return True
         return False
 
@@ -121,7 +121,7 @@ class VariantRulesMgr:
 
     @staticmethod
     def _matches_identifier_rule(pv, r):  # pv=patient variant; r=rule
-        return pv['confirmed'] and r['identifier'] == pv['identifier']
+        return pv['confirmed'] and r['identifier'].lower() == pv['identifier'].lower()
 
     @classmethod
     def _get_matching_identifier_rules(cls, rule_list, patient_variants):
