@@ -131,9 +131,9 @@ class TestAmoisAnnotator(unittest.TestCase):
 
     # Test the AmoisAnnotator._extract_annot_data function with normal execution.
     @data(
-        (ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False),
+        (ta_nh_rule("1", "func1", "1", "1", 'EAY131-P', '2016-11-11', False),
          {'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}),
-        (ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', True),
+        (ta_nh_rule("1", "func1", "1", "1", 'EAY131-P', '2016-11-11', True),
          {'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True, 'type': 'NonHotspot'}),
         (ta_id_rule('ABCDE', 'EAY131-Q', '2016-11-11', True),
          {'treatmentArmId': 'EAY131-Q', 'version': '2016-11-11', 'inclusion': True, 'type': 'Hotspot'}),
@@ -159,18 +159,22 @@ class TestAmoisAnnotator(unittest.TestCase):
     # Test the amois.create_amois_annotation function which, in effect, also tests the add() and
     # get() functions of the AmoisAnnotator class.
     @data(
+        # 1. No variants in list
         ([], {}),
+        # 2. One variant in list
         ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN")],
          {'CURRENT':
             [{'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}]}),
-        ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', True, "OPEN"),
-          ta_nh_rule("1", "1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
-          ta_id_rule("EDBCA", 'EAY131-P', '2016-11-11', True)],
+        # 3. Three variants, two that match the same arm twice (once as hotspot, once as non-hotspot)
+        ([ta_nh_rule("1", "func2", "1", "1", 'EAY131-P', '2016-11-11', incl=True, status="OPEN"),
+          ta_nh_rule("1", "func3", "1", "1", 'EAY131-Q', '2016-12-11', incl=False, status="OPEN"),
+          ta_id_rule("EDBCA", 'EAY131-P', '2016-11-11', incl=True, status="OPEN")],
          {'CURRENT':
             [{'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': True, 'type': 'Both'},
              {'treatmentArmId': 'EAY131-Q', 'version': '2016-12-11', 'inclusion': False, 'type': 'NonHotspot'}]}),
-        ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN", True),
-          ta_nh_rule("1", "1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
+        # 3. Three variants, each matching different arms with different states
+        ([ta_nh_rule("1", "func3", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN", True),
+          ta_nh_rule("1", "func1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
           ta_id_rule('COSM6240', 'EAY131-R', '2016-12-12', False, "CLOSED")],
          {'PREVIOUS':
             [{'treatmentArmId': 'EAY131-P', 'version': '2016-11-11', 'inclusion': False, 'type': 'NonHotspot'}],
@@ -204,21 +208,29 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
     # Test the VariantRulesMgr._match_item function.
     @data(
         ('string_data', 'string_data', True),
+        ('string_data', 'STRING_DATa', True),
+        ('string_data', 'data_string', False),
+        (19, 18, False),
         (19, 19, True),
-        (19, '19', False),
+        (19, '19', True),
         ('', None, True),
         ('19', None, True),
         (19, None, True),
         ('', 19, True),
         ('', '19', True),
+        (None, 19, True),
+        (None, '19', True),
     )
     @unpack
     def test_match_item(self, vr_item, nhr_item, exp_result):
         self.assertEqual(amois.VariantRulesMgr._match_item(vr_item, nhr_item), exp_result)
 
-    # Test the VariantRulesMgr._match_var_to_nhr function.
+    # Test the VariantRulesMgr._match_var_to_nhr function, which matches a patient variant to a nonhotspot rule
     @data(  # order of params is e, f, g, o
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
+        (variant("4", 'MISSENSE', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
+        (variant("4", 'missense', 'idh1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
+        (variant("4", 'missense', 'IDH1', 'hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', None), True),
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', None, 'Hotspot'), True),
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", None, 'IDH1', 'Hotspot'), True),
@@ -278,18 +290,28 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
     #   * get_matching_gene_fusions_rules
     #   * get_matching_indel_rules
     @data(
+        # 1. No variants, no ID rules
         ([], [], []),
-        ([variant("9", '1', '1', '1', 'ABCD', True)], [], []),
+        # 2. One variant, no ID rules
+        ([variant("9", '1', '1', '1', 'ABCD', confirmed=True)], [], []),
+        # 3. No variants, one ID rule
         ([], [ta_id_rule('ABCDE')], []),
-        ([variant("9", '1', '1', '1', 'ABCDE', True)], [ta_id_rule('ABCDE')], [0]),
-        ([variant("9", '1', '1', '1', 'ABCDE', False)], [ta_id_rule('ABCDE')], []),
-        ([variant("9", '1', '1', '1', 'ABCDE', False), variant("9", '1', '1', '1', 'EDCBA', True)],
+        # 4. One variant (confirmed), one ID rule; matches
+        ([variant("9", '1', '1', '1', 'ABCDE', confirmed=True)], [ta_id_rule('ABCDE')], [0]),
+        # 5. One variant with lc identifier (confirmed), one ID rule; matches
+        ([variant("9", '1', '1', '1', 'abcde', confirmed=True)], [ta_id_rule('ABCDE')], [0]),
+        # 6. One variant (unconfirmed), one ID rule; no match
+        ([variant("9", '1', '1', '1', 'ABCDE', confirmed=False)], [ta_id_rule('ABCDE')], []),
+        # 7. Two variants (unconfirmed & confirmed), two ID rules; match on confirmed variant
+        ([variant("9", '1', '1', '1', 'ABCDE', confirmed=False), variant("9", '1', '1', '1', 'EDCBA', True)],
          [ta_id_rule('ABCDE'), ta_id_rule('EDCBA')],
          [1]),
-        ([variant("9", '1', '1', '1', 'ABCDE', True), variant("9", '1', '1', '1', 'EDCBA', False)],
+        # 8. Two variants (confirmed & unconfirmed), two ID rules; match on confirmed variant
+        ([variant("9", '1', '1', '1', 'ABCDE', confirmed=True), variant("9", '1', '1', '1', 'EDCBA', False)],
          [ta_id_rule('ABCDE'), ta_id_rule('EDCBA')],
          [0]),
-        ([variant("9", '1', '1', '1', 'ABCDE', True), variant("9", '1', '1', '1', 'EDCBA', True)],
+        # 9. Two variants (both confirmed), two ID rules; match on both variants
+        ([variant("9", '1', '1', '1', 'ABCDE', confirmed=True), variant("9", '1', '1', '1', 'EDCBA', True)],
          [ta_id_rule('ABCDE'), ta_id_rule('EDCBA')],
          [0, 1]),
     )
@@ -314,6 +336,7 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
     @data(
         (variant("9", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], [], False),
         (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], [], True),
+        (variant("9", '1', '1', '1', 'abcde', True), [ta_id_rule('ABCDE')], [], True),
         (variant("14", 'missense', 'IDH2', 'Hotspot'), [ta_id_rule('ABCDE')],
          [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')], True),
     )
@@ -325,8 +348,9 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
 
     # Test the VariantRulesMgr._is_single_nucleotide_variant_amoi function.
     @data(
-        (variant("9", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], [], False),
-        (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], [], True),
+        (variant("8", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], [], False),
+        (variant("8", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], [], True),
+        (variant("8", '1', '1', '1', 'abcde', True), [ta_id_rule('ABCDE')], [], True),
         (variant("14", 'missense', 'IDH2', 'Hotspot'), [ta_id_rule('ABCDE')],
          [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')], True),
     )
@@ -338,8 +362,9 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
 
     # Test the VariantRulesMgr._is_copy_number_variant_amoi function.
     @data(
-        (variant("9", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], False),
-        (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], True),
+        (variant("7", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], False),
+        (variant("7", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], True),
+        (variant("7", '1', '1', '1', 'abcde', True), [ta_id_rule('ABCDE')], True),
     )
     @unpack
     def test_is_copy_number_variant_amoi(self, patient_variant, cnv_id_rules, exp_result):
@@ -349,8 +374,9 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
 
     # Test the VariantRulesMgr._is_gene_fusion_amoi function.
     @data(
-        (variant("9", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], False),
-        (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], True),
+        (variant("6", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], False),
+        (variant("6", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], True),
+        (variant("6", '1', '1', '1', 'abcde', True), [ta_id_rule('ABCDE')], True),
     )
     @unpack
     def test_is_gene_fusion_amoi(self, patient_variant, gf_id_rules, exp_result):
@@ -360,8 +386,9 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
 
     # Test the VariantRulesMgr.is_amoi function with normal execution
     @data(
-        (variant("9", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], [], False),
-        (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], [], True),
+        (variant("5", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], [], False),
+        (variant("5", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], [], True),
+        (variant("5", '1', '1', '1', 'abcde', True), [ta_id_rule('ABCDE')], [], True),
     )
     @unpack
     def test_is_amoi(self, patient_variant, ta_id_rules, nhr_list, exp_result):
