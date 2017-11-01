@@ -18,12 +18,17 @@ class MongoDbAccessor(object):
         uri = env.mongodb_uri
         db_name = env.db_name
 
+        self.logger = logger
+
+        self.logger.info("Connecting to {} database on Mongo".format(db_name))
         self.mongo_client = MongoClient(uri)
         self.database = self.mongo_client[db_name]
         self.collection = self.database[collection_name]
+
+        self.logger.info("Connected to {} database on Mongo to access {}".format(db_name, collection_name))
+
         self.collection_name = collection_name
         self.db_name = db_name
-        self.logger = logger
 
     def find(self, query, projection):
         """
