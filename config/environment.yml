@@ -7,6 +7,7 @@ development:
   sqs_queue_name: 'treatment-arm-api-dev-smithmak-queue'
   patient_api_url: "http://patient-api:5000/api/v1/patients"
 #  patient_api_url: "http://localhost:5000/api/v1/patients"
+  logger_level: "DEBUG"
 
 test:
   port: 5010
@@ -16,6 +17,7 @@ test:
   polling_interval: 10
   sqs_queue_name: 'treatment-arm-api-int-queue'
   patient_api_url: "https://match-int.nci.nih.gov/api/v1/patients"
+  logger_level: "WARN"
 
 uat:
   port: 5010
@@ -25,6 +27,7 @@ uat:
   polling_interval: 60
   sqs_queue_name: 'treatment-arm-api-uat-queue'
   patient_api_url: "https://match-uat.nci.nih.gov/api/v1/patients"
+  logger_level: "WARN"
 
 production:
   port: 5010
@@ -34,3 +37,4 @@ production:
   polling_interval: 300
   sqs_queue_name: 'treatment-arm-api-queue'
   patient_api_url: "[TBD]"
+  logger_level: "WARN"
