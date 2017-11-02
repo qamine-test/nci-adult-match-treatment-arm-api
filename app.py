@@ -29,7 +29,7 @@ from resources.version import Version
 
 # Logging functionality
 log.log_config()  # set the global logging configuration
-LOGGER = logging.getLogger(__name__)
+# LOGGER = logging.getLogger(__name__)
 
 
 def _initialize_error_handlers(application):
@@ -49,13 +49,13 @@ CORS = CORS(APP, resources={r"/api/*": {"origins": "*"}})
 
 @APP.errorhandler(500)
 def internal_server_error(error):
-    LOGGER.exception(error)
+    logging.getLogger(__name__).exception(error)
     return str(error), 500
 
 
 @APP.errorhandler(Exception)
 def unhandled_exception(e):
-    LOGGER.exception(e)
+    logging.getLogger(__name__).exception(e)
     return str(e), 500
 
 
@@ -69,17 +69,19 @@ API.add_resource(Version, '/api/v1/treatment_arms/version', endpoint='get_versio
 
 
 def run_api_server():
+    log.log_config(Environment().logger_level)
     port = Environment().port
-    LOGGER.debug("server starting on port :" + str(port))
+    logging.getLogger(__name__).debug("server starting on port :" + str(port))
     HTTP_SERVER = HTTPServer(WSGIContainer(APP))
     HTTP_SERVER.listen(port=port)
     IOLoop.instance().start()
 
 
 def run_message_manager():
-    LOGGER.info("Starting the Treatment Arm API Message Queue")
+    log.log_config(Environment().logger_level)
+    logging.getLogger(__name__).info("Starting the Treatment Arm API Message Queue")
     TreatmentArmMessageManager().run()
-    LOGGER.info("Exiting the Treatment Arm API Message Queue")
+    logging.getLogger(__name__).info("Exiting the Treatment Arm API Message Queue")
 
 
 if __name__ == '__main__':

@@ -4,11 +4,10 @@ Logging configuration
 
 import logging.config
 
-# study_id = 'EAY131'
 PREFIX = 'NciAdultMatchTreatmentArmApi'
 
 
-def log_config():
+def log_config(logger_level="DEBUG"):
     """Configure logging globally."""
     logger_configuration = {
         'version': 1,
@@ -16,14 +15,13 @@ def log_config():
             'standard': {
                 'format': '%(asctime)s {prefix} %(levelname)s %(name)s.%(module)s.%(funcName)s:'
                           '%(lineno)d - %(message)s'.format(prefix=PREFIX),
-                # 'format': '%(asctime)s - %(levelname)s - {prefix} [{study_id}] - %(name)s.%(module)s.%(funcName)s:'
-                #           '%(lineno)d - %(message)s'.format(prefix=PREFIX, study_id=STUDY_ID),
             },
         },
         'handlers': {
             "console": {
                 "class": "logging.StreamHandler",
-                "level": "DEBUG",
+                "level": logger_level,
+                # "level": "DEBUG",
                 "formatter": "standard",
                 "stream": "ext://sys.stdout"
             },
@@ -31,7 +29,7 @@ def log_config():
         'loggers': {
             '': {
                 'handlers': ['console'],
-                'level': 'DEBUG',
+                'level': logger_level,
             }
         }
     }
