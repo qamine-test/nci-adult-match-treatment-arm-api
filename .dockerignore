@@ -23,8 +23,10 @@ bower_components
 .travis.yml
 
 # Docker
+.docker*
+.Docker*
+Docker*
 docker-compose.yml
-.docker
 
 # misc
 .sass-cache
