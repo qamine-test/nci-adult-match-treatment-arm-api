@@ -89,6 +89,7 @@ class TreatmentArmsOverview(Resource):
     """
     STEPS = [
         {"$unwind": "$treatmentArmStatus"},
+        {"$match": {"dateArchived": None}},
         {"$group": {"_id": "$treatmentArmStatus", "count": {"$sum": 1}}},
     ]
 
