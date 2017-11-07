@@ -106,5 +106,5 @@ class TreatmentArmsOverview(Resource):
         counts_by_status = treatment_arms_accessor.aggregate(self.STEPS)
 
         counts = dict([(cd['_id'], cd['count']) for cd in counts_by_status])
-        counts['TOTAL'] = treatment_arms_accessor.count({})
+        counts['TOTAL'] = treatment_arms_accessor.count({"dateArchived": None})
         return counts
