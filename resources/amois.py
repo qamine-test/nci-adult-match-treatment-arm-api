@@ -408,7 +408,7 @@ class IsAmoisResource(Resource):
         try:
             variant_type, variant_list = self._get_variants()
             self.logger.debug("Variant Type = {}".format(variant_type))
-            self.logger.debug("Variants =\n".format(pformat(variant_list)))
+            self.logger.debug("Variants =\n{}".format(pformat(variant_list)))
             var_rules_mgr = VariantRulesMgr()
             result_list = [var_rules_mgr.is_amoi(variant, variant_type) for variant in variant_list]
             ret_val = result_list
