@@ -102,7 +102,7 @@ class VariantRulesMgr:
         """
         item_list = ['exon', 'function', 'oncominevariantclass', 'gene']
         for item in item_list:
-            if not VariantRulesMgr._match_item(variant[item], (nhr[item] if item in nhr else None)):
+            if not VariantRulesMgr._match_item(variant.get(item, None), nhr.get(item, None)):
                 return False
         return True
 
