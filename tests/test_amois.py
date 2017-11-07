@@ -58,11 +58,11 @@ def efgo_dict(e, f, g, o):
 def variant(e, f, g, o, identifier='ABC', confirmed=True):
     # Create a patient variant data structure
     vr = efgo_dict(e, f, g, o)
-    # patient variant report must contain all four
-    if len(vr) != 4:
-        import pprint
-        pprint.pprint(vr)
-        raise Exception("bad test data: Patient Variant Report must contain all four required fields.")
+    # # patient variant report must contain all four
+    # if len(vr) != 4:
+    #     import pprint
+    #     pprint.pprint(vr)
+    #     raise Exception("bad test data: Patient Variant Report must contain all four required fields.")
     vr['identifier'] = identifier
     vr['confirmed'] = confirmed
     return vr
@@ -244,6 +244,8 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
          ta_nh_rule("4", 'nonframeshiftinsertion', 'IDH1', 'Hotspot'), False),
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'ERBB2', 'Hotspot'), False),
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Deleterious'), False),
+        (variant("4", None, 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Deleterious'), False),
+        (variant("4", None, 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
     )
     @unpack
     def test_match_var_to_nhr(self, patient_variant, nhr, exp_result):
