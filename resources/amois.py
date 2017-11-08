@@ -110,7 +110,7 @@ class VariantRulesMgr:
     def _matches_nonhotspot_rule(pv, r):
         return pv['confirmed'] and VariantRulesMgr._match_var_to_nhr(pv, r)
 
-    def get_matching_nonhotspot_rules(self, patient_variants):
+    def get_matching_nonhotspot_rules_old(self, patient_variants):
         """
         Matches each of the variants to the NonHotspotRules in self.  NotHotSpotRules are another way of identifying
         if an indel or SNV variant is an aMOI.
@@ -119,12 +119,21 @@ class VariantRulesMgr:
         """
         return [r for r in self.nhs_rules for pv in patient_variants if self._matches_nonhotspot_rule(pv, r)]
 
+    def get_matching_nonhotspot_rules(self, patient_variant):
+        """
+        Matches the patient_variant to the NonHotspotRules in self.  NotHotSpotRules are another way of identifying
+        if an indel or SNV variant is an aMOI.
+        :param patient_variant: an indel or SNV variant from the patient's variant report
+        :return: an array containing the rules that matched.
+        """
+        return [r for r in self.nhs_rules if self._matches_nonhotspot_rule(patient_variant, r)]
+
     @staticmethod
     def _matches_identifier_rule(pv, r):  # pv=patient variant; r=rule
         return pv['confirmed'] and r['identifier'].lower() == pv['identifier'].lower()
 
     @classmethod
-    def _get_matching_identifier_rules(cls, rule_list, patient_variants):
+    def _get_matching_identifier_rules_old(cls, rule_list, patient_variants):
         """
         Matches each of the variants to each of the rules in rule_list.
         :param rule_list: list of rules with an identifier field
@@ -133,37 +142,79 @@ class VariantRulesMgr:
         """
         return [r for r in rule_list for pv in patient_variants if cls._matches_identifier_rule(pv, r)]
 
-    def get_matching_copy_number_variant_rules(self, patient_cnv_variants):
+    def get_matching_copy_number_variant_rules_old(self, patient_cnv_variants):
         """
         Matches each of the variants to the CopyNumberVariant rules in self.
         :param patient_cnv_variants: list of CNV variants with an identifier field
         :return: an array containing the rules that matched.
         """
-        return VariantRulesMgr._get_matching_identifier_rules(self.cnv_rules, patient_cnv_variants)
+        return VariantRulesMgr._get_matching_identifier_rules_old(self.cnv_rules, patient_cnv_variants)
 
-    def get_matching_single_nucleotide_variants_rules(self, patient_snv_variants):
+    def get_matching_single_nucleotide_variants_rules_old(self, patient_snv_variants):
         """
         Matches each of the variants to the singleNucleotideVariants rules in self.
         :param patient_snv_variants: list of SNV variants with an identifier field
         :return: an array containing the rules that matched.
         """
-        return VariantRulesMgr._get_matching_identifier_rules(self.snv_rules, patient_snv_variants)
+        return VariantRulesMgr._get_matching_identifier_rules_old(self.snv_rules, patient_snv_variants)
 
-    def get_matching_gene_fusions_rules(self, patient_gf_variants):
+    def get_matching_gene_fusions_rules_old(self, patient_gf_variants):
         """
         Matches each of the variants to the geneFusions rules in self.
         :param patient_gf_variants: list of gene fusion variants with an identifier field
         :return: an array containing the rules that matched.
         """
-        return VariantRulesMgr._get_matching_identifier_rules(self.gf_rules, patient_gf_variants)
+        return VariantRulesMgr._get_matching_identifier_rules_old(self.gf_rules, patient_gf_variants)
 
-    def get_matching_indel_rules(self, patient_indel_variants):
+    def get_matching_indel_rules_old(self, patient_indel_variants):
         """
         Matches each of the variants to the indel rules in self.
         :param patient_indel_variants: list of indel variants with an identifier field
         :return: an array containing the rules that matched.
         """
-        return VariantRulesMgr._get_matching_identifier_rules(self.indel_rules, patient_indel_variants)
+        return VariantRulesMgr._get_matching_identifier_rules_old(self.indel_rules, patient_indel_variants)
+
+    @classmethod
+    def _get_matching_identifier_rules(cls, rule_list, patient_variant):
+        """
+        Matches the patient_variant to each of the rules in rule_list.
+        :param rule_list: list of rules with an identifier field
+        :param patient_variant: a variant with an identifier field
+        :return: an array containing the rules that matched.
+        """
+        return [r for r in rule_list if cls._matches_identifier_rule(patient_variant, r)]
+
+    def get_matching_copy_number_variant_rules(self, patient_cnv_variant):
+        """
+        Matches patient_cnv_variant to the CopyNumberVariant rules in self.
+        :param patient_cnv_variant: a CNV variant with an identifier field
+        :return: an array containing the rules that matched.
+        """
+        return VariantRulesMgr._get_matching_identifier_rules(self.cnv_rules, patient_cnv_variant)
+
+    def get_matching_single_nucleotide_variant_rules(self, patient_snv_variant):
+        """
+        Matches patient_snv_variant to the singleNucleotideVariants rules in self.
+        :param patient_snv_variant: a SNV variant with an identifier field
+        :return: an array containing the rules that matched.
+        """
+        return VariantRulesMgr._get_matching_identifier_rules(self.snv_rules, patient_snv_variant)
+
+    def get_matching_gene_fusions_rules(self, patient_gf_variant):
+        """
+        Matches patient_gf_variant to the geneFusions rules in self.
+        :param patient_gf_variant: a gene fusion variant with an identifier field
+        :return: an array containing the rules that matched.
+        """
+        return VariantRulesMgr._get_matching_identifier_rules(self.gf_rules, patient_gf_variant)
+
+    def get_matching_indel_rules(self, patient_indel_variant):
+        """
+        Matches patient_indel_variant to the indel rules in self.
+        :param patient_indel_variant: an indel variant with an identifier field
+        :return: an array containing the rules that matched.
+        """
+        return VariantRulesMgr._get_matching_identifier_rules(self.indel_rules, patient_indel_variant)
 
     def _is_indel_amoi(self, patient_variant):
         if [r for r in self.indel_rules if self._matches_identifier_rule(patient_variant, r)]:
@@ -290,11 +341,11 @@ def find_amois(vr, var_rules_mgr):
     :return: list of items from var_rules_mgr that were a match for the items in the vr
     """
     amois = list()
-    amois.extend(var_rules_mgr.get_matching_copy_number_variant_rules(vr['copyNumberVariants']))
-    amois.extend(var_rules_mgr.get_matching_gene_fusions_rules(vr['unifiedGeneFusions']))
-    amois.extend(var_rules_mgr.get_matching_single_nucleotide_variants_rules(vr['singleNucleotideVariants']))
-    amois.extend(var_rules_mgr.get_matching_indel_rules(vr['indels']))
-    amois.extend(var_rules_mgr.get_matching_nonhotspot_rules(vr['singleNucleotideVariants'] + vr['indels']))
+    amois.extend(var_rules_mgr.get_matching_copy_number_variant_rules_old(vr['copyNumberVariants']))
+    amois.extend(var_rules_mgr.get_matching_gene_fusions_rules_old(vr['unifiedGeneFusions']))
+    amois.extend(var_rules_mgr.get_matching_single_nucleotide_variants_rules_old(vr['singleNucleotideVariants']))
+    amois.extend(var_rules_mgr.get_matching_indel_rules_old(vr['indels']))
+    amois.extend(var_rules_mgr.get_matching_nonhotspot_rules_old(vr['singleNucleotideVariants'] + vr['indels']))
     return amois
 
 

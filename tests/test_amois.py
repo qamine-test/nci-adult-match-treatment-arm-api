@@ -251,7 +251,7 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
     def test_match_var_to_nhr(self, patient_variant, nhr, exp_result):
         self.assertEqual(amois.VariantRulesMgr._match_var_to_nhr(patient_variant, nhr), exp_result)
 
-    # Test the VariantRulesMgr.get_matching_nonhotspot_rules function.
+    # Test the VariantRulesMgr.get_matching_nonhotspot_rules_old function.
     @data(
         ([], [], []),
         ([variant("14", 'missense', 'IDH1', 'Hotspot')], [], []),
@@ -284,13 +284,13 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
         with APP.test_request_context(''):
             vrm = amois.VariantRulesMgr(nhr_list, {}, {}, {}, {})
             exp_amois = [nhr_list[i] for i in exp_amois_indexes]
-            self.assertEqual(vrm.get_matching_nonhotspot_rules(patient_variants), exp_amois)
+            self.assertEqual(vrm.get_matching_nonhotspot_rules_old(patient_variants), exp_amois)
 
     # Test the VariantRulesMgr functions that match by identifier:
-    #   * get_matching_copy_number_variant_rules
-    #   * get_matching_single_nucleotide_variants_rules
-    #   * get_matching_gene_fusions_rules
-    #   * get_matching_indel_rules
+    #   * get_matching_copy_number_variant_rules_old
+    #   * get_matching_single_nucleotide_variants_rules_old
+    #   * get_matching_gene_fusions_rules_old
+    #   * get_matching_indel_rules_old
     @data(
         # 1. No variants, no ID rules
         ([], [], []),
@@ -323,16 +323,16 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
             exp_amois = [ta_id_rules[i] for i in exp_amois_indexes]
 
             vrm = amois.VariantRulesMgr({}, ta_id_rules, {}, {}, {})
-            self.assertEqual(vrm.get_matching_copy_number_variant_rules(patient_variants), exp_amois, "CNV")
+            self.assertEqual(vrm.get_matching_copy_number_variant_rules_old(patient_variants), exp_amois, "CNV")
 
             vrm = amois.VariantRulesMgr({}, {}, ta_id_rules, {}, {})
-            self.assertEqual(vrm.get_matching_single_nucleotide_variants_rules(patient_variants), exp_amois, "SNV")
+            self.assertEqual(vrm.get_matching_single_nucleotide_variants_rules_old(patient_variants), exp_amois, "SNV")
 
             vrm = amois.VariantRulesMgr({}, {}, {}, ta_id_rules, {})
-            self.assertEqual(vrm.get_matching_gene_fusions_rules(patient_variants), exp_amois, "GeneFusion")
+            self.assertEqual(vrm.get_matching_gene_fusions_rules_old(patient_variants), exp_amois, "GeneFusion")
 
             vrm = amois.VariantRulesMgr({}, {}, {}, {}, ta_id_rules)
-            self.assertEqual(vrm.get_matching_indel_rules(patient_variants), exp_amois, "Indel")
+            self.assertEqual(vrm.get_matching_indel_rules_old(patient_variants), exp_amois, "Indel")
 
     # Test the VariantRulesMgr._is_indel_amoi function.
     @data(
