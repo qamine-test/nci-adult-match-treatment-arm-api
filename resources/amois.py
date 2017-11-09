@@ -110,15 +110,6 @@ class VariantRulesMgr:
     def _matches_nonhotspot_rule(pv, r):
         return pv['confirmed'] and VariantRulesMgr._match_var_to_nhr(pv, r)
 
-    def get_matching_nonhotspot_rules_old(self, patient_variants):
-        """
-        Matches each of the variants to the NonHotspotRules in self.  NotHotSpotRules are another way of identifying
-        if an indel or SNV variant is an aMOI.
-        :param patient_variants: a list of indel and/or SNV variants
-        :return: an array containing the rules that matched.
-        """
-        return [r for r in self.nhs_rules for pv in patient_variants if self._matches_nonhotspot_rule(pv, r)]
-
     def get_matching_nonhotspot_rules(self, patient_variant):
         """
         Matches the patient_variant to the NonHotspotRules in self.  NotHotSpotRules are another way of identifying
@@ -131,48 +122,6 @@ class VariantRulesMgr:
     @staticmethod
     def _matches_identifier_rule(pv, r):  # pv=patient variant; r=rule
         return pv['confirmed'] and r['identifier'].lower() == pv['identifier'].lower()
-
-    @classmethod
-    def _get_matching_identifier_rules_old(cls, rule_list, patient_variants):
-        """
-        Matches each of the variants to each of the rules in rule_list.
-        :param rule_list: list of rules with an identifier field
-        :param patient_variants: list of variants with an identifier field
-        :return: an array containing the rules that matched.
-        """
-        return [r for r in rule_list for pv in patient_variants if cls._matches_identifier_rule(pv, r)]
-
-    def get_matching_copy_number_variant_rules_old(self, patient_cnv_variants):
-        """
-        Matches each of the variants to the CopyNumberVariant rules in self.
-        :param patient_cnv_variants: list of CNV variants with an identifier field
-        :return: an array containing the rules that matched.
-        """
-        return VariantRulesMgr._get_matching_identifier_rules_old(self.cnv_rules, patient_cnv_variants)
-
-    def get_matching_single_nucleotide_variants_rules_old(self, patient_snv_variants):
-        """
-        Matches each of the variants to the singleNucleotideVariants rules in self.
-        :param patient_snv_variants: list of SNV variants with an identifier field
-        :return: an array containing the rules that matched.
-        """
-        return VariantRulesMgr._get_matching_identifier_rules_old(self.snv_rules, patient_snv_variants)
-
-    def get_matching_gene_fusions_rules_old(self, patient_gf_variants):
-        """
-        Matches each of the variants to the geneFusions rules in self.
-        :param patient_gf_variants: list of gene fusion variants with an identifier field
-        :return: an array containing the rules that matched.
-        """
-        return VariantRulesMgr._get_matching_identifier_rules_old(self.gf_rules, patient_gf_variants)
-
-    def get_matching_indel_rules_old(self, patient_indel_variants):
-        """
-        Matches each of the variants to the indel rules in self.
-        :param patient_indel_variants: list of indel variants with an identifier field
-        :return: an array containing the rules that matched.
-        """
-        return VariantRulesMgr._get_matching_identifier_rules_old(self.indel_rules, patient_indel_variants)
 
     @classmethod
     def _get_matching_identifier_rules(cls, rule_list, patient_variant):
@@ -277,11 +226,6 @@ class AmoisAnnotator:
                 state_annots[treatment_arm_id].append(annot_data)
             else:
                 state_annots[treatment_arm_id] = [annot_data]
-            # equiv_annot = next((a for a in state_annots if AmoisAnnotator._equiv_annot(a, annot_data)), None)
-            # if not equiv_annot:
-            #     state_annots.append(annot_data)
-            # elif equiv_annot['type'] != annot_data['type']:
-            #     equiv_annot['type'] = 'Both'
         else:
             self._annotation[state] = {treatment_arm_id: [annot_data]}
 
@@ -310,13 +254,6 @@ class AmoisAnnotator:
             annotations[state] = annot_list
 
         return annotations
-
-    # @staticmethod
-    # def _equiv_annot(annot1, annot2):
-    #     for fld_name in AmoisAnnotator.EQUIV_FIELDS:
-    #         if annot1[fld_name] != annot2[fld_name]:
-    #             return False
-    #     return True
 
     @staticmethod
     def _extract_annot_data(amoi):
@@ -364,6 +301,7 @@ class AmoisAnnotator:
 def find_amois(vr, var_rules_mgr):
     """
     Finds all of the aMOIs for the variants in vr by identifying which ones match the rules in var_rules_mgr.
+    Each variant that have one or more aMOIs will have an 'amois' field added to with information about each aMOI.
     :param vr: patient variantReport dict
     :param var_rules_mgr: instance of the VariantRulesMgr class
     """
@@ -388,23 +326,6 @@ def find_amois(vr, var_rules_mgr):
         amois.extend(var_rules_mgr.get_matching_nonhotspot_rules(variant))
         if amois:
             variant['amois'] = create_amois_annotation(amois)
-
-
-
-def find_amois_old(vr, var_rules_mgr):
-    """
-    Finds all of the aMOIs for the variants in vr by identifying which ones match the rules in var_rules_mgr.
-    :param vr: patient variantReport dict
-    :param var_rules_mgr: instance of the VariantRulesMgr class
-    :return: list of items from var_rules_mgr that were a match for the items in the vr
-    """
-    amois = list()
-    amois.extend(var_rules_mgr.get_matching_copy_number_variant_rules_old(vr['copyNumberVariants']))
-    amois.extend(var_rules_mgr.get_matching_gene_fusions_rules_old(vr['unifiedGeneFusions']))
-    amois.extend(var_rules_mgr.get_matching_single_nucleotide_variants_rules_old(vr['singleNucleotideVariants']))
-    amois.extend(var_rules_mgr.get_matching_indel_rules_old(vr['indels']))
-    amois.extend(var_rules_mgr.get_matching_nonhotspot_rules_old(vr['singleNucleotideVariants'] + vr['indels']))
-    return amois
 
 
 def create_amois_annotation(amois_list):
