@@ -87,7 +87,7 @@ def ta_nh_rule(e, f, g, o, trtmt_id='TMTID', ver='2016-11-11', incl=True, status
 
 def ta_id_rule(identifier, trtmt_id='TMTID', ver='2016-11-11', incl=True, status='OPEN', archived=False):
     # Create a treatmentArm Identifier Rule (matches on identifier field)
-    id_rule = {'identifier': identifier}
+    id_rule = {'identifier': identifier, "function": 'not_a_real_function', "gene": 'not_a_real_gene'}
     add_common_ta_fields(id_rule, archived, incl, status, trtmt_id, ver, "Hotspot")
     return id_rule
 
@@ -263,44 +263,32 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
 
     # Test the VariantRulesMgr.get_matching_nonhotspot_rules_old function.
     @data(
-        ([], [], []),
-        ([variant("14", 'missense', 'IDH1', 'Hotspot')], [], []),
-        ([], ta_nh_rule("12", 'missense', 'ERBB2', 'Hotspot'), []),
-        ([variant("14", 'missense', 'IDH2', 'Hotspot')],
+        # 1. Patient variant, no NHS rules
+        (variant("14", 'missense', 'IDH1', 'Hotspot'), [], []),
+        # 2. Patient variant, one matching NHS rule
+        (variant("14", 'missense', 'IDH2', 'Hotspot'),
          [ta_nh_rule("14", 'missense', None, 'Hotspot')], [0]),
-        ([variant("14", 'missense', 'IDH2', 'Hotspot')],
+        # 3. Patient variant matches second of two NHS rules
+        (variant("14", 'missense', 'IDH2', 'Hotspot'),
          [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')],
          [1]),
-        ([variant("2", 'missense', 'IDH2', 'Hotspot'), variant("14", 'missense', 'IDH2', 'Deleterious')],
-         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')],
-         [0]),
-        ([variant("14", 'missense', 'IDH2', 'Hotspot'), variant("14", 'missense', 'IDH2', 'Deleterious')],
-         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')],
-         [0, 1]),
-        ([variant("14", 'missense', 'IDH2', 'Hotspot', 'ABC', False)],
-         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')],
-         []),
-        ([variant("2", 'missense', 'IDH2', 'Hotspot', 'ABC1', True),
-          variant("14", 'missense', 'IDH2', 'Deleterious', 'ABC', False)],
-         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')],
-         []),
-        ([variant("14", 'missense', 'IDH2', 'Hotspot', 'ABC', False),
-          variant("14", 'missense', 'IDH2', 'Deleterious', 'ABC1', False)],
+        # 4. Patient variant matches neither of two NHS rules
+        (variant("14", 'missense', 'IDH2', 'Hotspot', 'ABC', False),
          [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')],
          []),
     )
     @unpack
-    def test_get_matching_nonhotspot_rules(self, patient_variants, nhr_list, exp_amois_indexes):
+    def test_get_matching_nonhotspot_rules(self, patient_variant, nhr_list, exp_amois_indexes):
         with APP.test_request_context(''):
             vrm = amois.VariantRulesMgr(nhr_list, {}, {}, {}, {})
             exp_amois = [nhr_list[i] for i in exp_amois_indexes]
-            self.assertEqual(vrm.get_matching_nonhotspot_rules_old(patient_variants), exp_amois)
+            self.assertEqual(vrm.get_matching_nonhotspot_rules(patient_variant), exp_amois)
 
     # Test the VariantRulesMgr functions that match by identifier:
-    #   * get_matching_copy_number_variant_rules_old
-    #   * get_matching_single_nucleotide_variants_rules_old
-    #   * get_matching_gene_fusions_rules_old
-    #   * get_matching_indel_rules_old
+    #   * get_matching_copy_number_variant_rules
+    #   * get_matching_single_nucleotide_variants_rules
+    #   * get_matching_gene_fusions_rules
+    #   * get_matching_indel_rules
     @data(
         # 1. One variant, no ID rules
         (variant("9", '1', '1', '1', 'ABCD', confirmed=True), [], []),
@@ -440,30 +428,60 @@ indel_rules = list(
     [ta_id_rule('INDOSM', 'INDELARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
      ])
 
+
+def create_hotpost_variant(identifier):
+    return {  # should match on identifier
+        "confirmed": True,
+        "gene": "EFGR",
+        "oncominevariantclass": "Hotspot",
+        "exon": "4",
+        "function": "missense",
+        "identifier": identifier,
+        "inclusion": True,
+    }
+
+
+def create_nonhotpost_variant():
+    return {  # should match on NonHotspot Rule
+    "confirmed": True,
+    "gene": "EGFR",
+    "oncominevariantclass": "OCV1",
+    "exon": "16",
+    "function": "func2",
+    "identifier": "IDENTIFIER_THAT_DOES_NOT_MATCH",
+    "inclusion": True,
+    }
+
+
+def create_hotspot_amoi(amoi_rule):
+    return {'PRIOR': [{'treatmentArmId': amoi_rule['treatmentArmId'],
+                           'type': "Hotspot",
+                           'inclusions': [amoi_rule['version']],
+                           'exclusions': []}]}
+
 VR_WITH_TWO_SNV_AMOIS = {
-    "singleNucleotideVariants": [
-        {  # should match on identifier
-            "confirmed": True,
-            "gene": "EFGR",
-            "oncominevariantclass": "Hotspot",
-            "exon": "4",
-            "function": "missense",
-            "identifier": "SNVOSM",
-            "inclusion": True,
-        },
-        {  # should match on NonHotspot Rule
-            "confirmed": True,
-            "gene": "EGFR",
-            "oncominevariantclass": "OCV1",
-            "exon": "16",
-            "function": "func2",
-            "identifier": "COSM28747",
-            "inclusion": True,
-        },
-    ],
+    "singleNucleotideVariants": [create_hotpost_variant('SNVOSM'), create_nonhotpost_variant()],
     "indels": [],
     "copyNumberVariants": [],
     "unifiedGeneFusions": [],
+}
+VR_WITH_TWO_INDEL_AMOIS = {
+    "singleNucleotideVariants": [],
+    "indels": [create_hotpost_variant('INDOSM'), create_nonhotpost_variant()],
+    "copyNumberVariants": [],
+    "unifiedGeneFusions": [],
+}
+VR_WITH_TWO_CNV_AMOIS = {
+    "singleNucleotideVariants": [],
+    "indels": [],
+    "copyNumberVariants": [create_hotpost_variant('CNVOSM'), create_nonhotpost_variant()],
+    "unifiedGeneFusions": [],
+}
+VR_WITH_TWO_UGF_AMOIS = {
+    "singleNucleotideVariants": [],
+    "indels": [],
+    "copyNumberVariants": [],
+    "unifiedGeneFusions": [create_hotpost_variant('GFOSM'), create_nonhotpost_variant()],
 }
 
 VR_WITH_NO_AMOIS = {
@@ -484,20 +502,48 @@ VR_WITH_NO_AMOIS = {
 }
 
 
-# ******** Test the find_amois_old function in amois.py. ******** #
+# ******** Test the find_amois function in amois.py. ******** #
 @ddt
 class TestFindAmoisFunction(AmoisModuleTestCase):
 
+    SNV_HOTSPOT_AMOI = create_hotspot_amoi(snv_rules[0])
+    INDEL_HOTSPOT_AMOI = create_hotspot_amoi(indel_rules[0])
+    CNV_HOTSPOT_AMOI = create_hotspot_amoi(cnv_rules[0])
+    GF_HOTSPOT_AMOI = create_hotspot_amoi(gf_rules[0])
+    NONHOTSPOT_AMOI = {'CURRENT': [{'treatmentArmId': nh_rules[2]['treatmentArmId'],
+                                    'type': "NonHotspot",
+                                     'inclusions': [nh_rules[2]['version']],
+                                    'exclusions': []}]}
+
+    AMOIS_FOR_TWO_MATCHING_VARIANTS = [SNV_HOTSPOT_AMOI, NONHOTSPOT_AMOI]
+
     @data(
-        (VR_WITH_TWO_SNV_AMOIS, [snv_rules[0], nh_rules[2]]),
-        (VR_WITH_NO_AMOIS, [])
-        )
+        (VR_WITH_NO_AMOIS, [], [None], [], []),
+        (VR_WITH_TWO_SNV_AMOIS, [], [SNV_HOTSPOT_AMOI, NONHOTSPOT_AMOI], [], []),
+        (VR_WITH_TWO_INDEL_AMOIS, [], [], [], [INDEL_HOTSPOT_AMOI, NONHOTSPOT_AMOI]),
+        (VR_WITH_TWO_CNV_AMOIS, [CNV_HOTSPOT_AMOI, None], [], [], []),
+        (VR_WITH_TWO_UGF_AMOIS, [], [], [GF_HOTSPOT_AMOI, None], []),
+    )
     @unpack
-    def test_old(self, var_rpt, exp_amois_list):
+    def test(self, var_rpt, exp_cnv_amois, exp_snv_amois, exp_ugf_amois, exp_indel_amois):
         self.maxDiff = None
         vrm = amois.VariantRulesMgr(nh_rules, cnv_rules, snv_rules, gf_rules, indel_rules)
-        amois_list = amois.find_amois_old(var_rpt, vrm)
-        self.assertEqual(amois_list, exp_amois_list)
+        amois.find_amois(var_rpt, vrm)
+
+        # These assertions just help ensure that the test was setup correctly
+        self.assertEqual(len(var_rpt['singleNucleotideVariants']), len(exp_snv_amois))
+        self.assertEqual(len(var_rpt['copyNumberVariants']), len(exp_cnv_amois))
+        self.assertEqual(len(var_rpt['unifiedGeneFusions']), len(exp_ugf_amois))
+        self.assertEqual(len(var_rpt['indels']), len(exp_indel_amois))
+
+        for variant, exp_amois in zip(var_rpt['singleNucleotideVariants'], exp_snv_amois):
+            self.assertEqual(variant.get('amois', None), exp_amois)
+        for variant, exp_amois in zip(var_rpt['copyNumberVariants'], exp_cnv_amois):
+            self.assertEqual(variant.get('amois', None), exp_amois)
+        for variant, exp_amois in zip(var_rpt['unifiedGeneFusions'], exp_ugf_amois):
+            self.assertEqual(variant.get('amois', None), exp_amois)
+        for variant, exp_amois in zip(var_rpt['indels'], exp_indel_amois):
+            self.assertEqual(variant.get('amois', None), exp_amois)
 
 
 # ******** Test the AmoisResource class in amois.py. ******** #
