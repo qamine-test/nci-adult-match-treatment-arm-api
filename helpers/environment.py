@@ -1,5 +1,7 @@
 import logging
 import os
+from pprint import pformat
+
 import yaml
 
 
@@ -46,6 +48,9 @@ class Environment(object):
                 err_msg = Environment.MISSING_CONFIG_FILE_MSG + ": {}".format(str(e))
                 self.logger.exception(err_msg)
                 raise FileNotFoundError(Environment.MISSING_CONFIG_FILE_MSG).with_traceback(e.__traceback__)
+
+            self.logger.info("Variables loaded from config file for {env}:\n{vars}"
+                             .format(env=self.environment, vars=pformat(self._env[self.environment])))
 
     # The private instance variable
     __instance = None
