@@ -270,25 +270,53 @@ class AmoisAnnotator:
         self._add_annot_by_state(state, annot_data)
 
     def _add_annot_by_state(self, state, annot_data):
+        treatment_arm_id = annot_data['treatmentArmId']
         if state in self._annotation:
             state_annots = self._annotation[state]
-            equiv_annot = next((a for a in state_annots if AmoisAnnotator._equiv_annot(a, annot_data)), None)
-            if not equiv_annot:
-                state_annots.append(annot_data)
-            elif equiv_annot['type'] != annot_data['type']:
-                equiv_annot['type'] = 'Both'
+            if treatment_arm_id in state_annots:
+                state_annots[treatment_arm_id].append(annot_data)
+            else:
+                state_annots[treatment_arm_id] = [annot_data]
+            # equiv_annot = next((a for a in state_annots if AmoisAnnotator._equiv_annot(a, annot_data)), None)
+            # if not equiv_annot:
+            #     state_annots.append(annot_data)
+            # elif equiv_annot['type'] != annot_data['type']:
+            #     equiv_annot['type'] = 'Both'
         else:
-            self._annotation[state] = [annot_data]
+            self._annotation[state] = {treatment_arm_id: [annot_data]}
 
     def get(self):
-        return self._annotation
+        annotations = {}
+        for state in self._annotation:
+            annot_list = []
+            for treatment_arm in self._annotation[state]:
+                ta_amoi = {'treatmentArmId': treatment_arm,
+                           'inclusions': [],
+                           'exclusions': []}
+                for amoi in self._annotation[state][treatment_arm]:
+                    if amoi['inclusion']:
+                        ta_amoi['inclusions'].append(amoi['version'])
+                    else:
+                        ta_amoi['exclusions'].append(amoi['version'])
 
-    @staticmethod
-    def _equiv_annot(annot1, annot2):
-        for fld_name in AmoisAnnotator.EQUIV_FIELDS:
-            if annot1[fld_name] != annot2[fld_name]:
-                return False
-        return True
+                    if 'type' not in ta_amoi:
+                        ta_amoi['type'] = amoi['type']
+                    elif ta_amoi['type'] != amoi['type']:
+                        ta_amoi['type'] = "Both"
+
+                ta_amoi['inclusions'] = sorted(ta_amoi['inclusions'])
+                ta_amoi['exclusions'] = sorted(ta_amoi['exclusions'])
+                annot_list.append(ta_amoi)
+            annotations[state] = annot_list
+
+        return annotations
+
+    # @staticmethod
+    # def _equiv_annot(annot1, annot2):
+    #     for fld_name in AmoisAnnotator.EQUIV_FIELDS:
+    #         if annot1[fld_name] != annot2[fld_name]:
+    #             return False
+    #     return True
 
     @staticmethod
     def _extract_annot_data(amoi):
@@ -334,6 +362,36 @@ class AmoisAnnotator:
 
 
 def find_amois(vr, var_rules_mgr):
+    """
+    Finds all of the aMOIs for the variants in vr by identifying which ones match the rules in var_rules_mgr.
+    :param vr: patient variantReport dict
+    :param var_rules_mgr: instance of the VariantRulesMgr class
+    """
+    for variant in vr['copyNumberVariants']:
+        amois = var_rules_mgr.get_matching_copy_number_variant_rules(variant)
+        if amois:
+            variant['amois'] = create_amois_annotation(amois)
+
+    for variant in vr['unifiedGeneFusions']:
+        amois = var_rules_mgr.get_matching_gene_fusions_rules(variant)
+        if amois:
+            variant['amois'] = create_amois_annotation(amois)
+
+    for variant in vr['indels']:
+        amois = var_rules_mgr.get_matching_indel_rules(variant)
+        amois.extend(var_rules_mgr.get_matching_nonhotspot_rules(variant))
+        if amois:
+            variant['amois'] = create_amois_annotation(amois)
+
+    for variant in vr['singleNucleotideVariants']:
+        amois = var_rules_mgr.get_matching_single_nucleotide_variant_rules(variant)
+        amois.extend(var_rules_mgr.get_matching_nonhotspot_rules(variant))
+        if amois:
+            variant['amois'] = create_amois_annotation(amois)
+
+
+
+def find_amois_old(vr, var_rules_mgr):
     """
     Finds all of the aMOIs for the variants in vr by identifying which ones match the rules in var_rules_mgr.
     :param vr: patient variantReport dict
@@ -408,12 +466,13 @@ class AmoisResource(Resource):
             self.logger.debug("{cnt} Indel Rules loaded from treatmentArms collection"
                               .format(cnt=var_rules_mgr.indel_rule_count()))
 
-            amois_list = find_amois(vr, var_rules_mgr)
-            if amois_list:
-                self.logger.debug("{cnt} aMOIs found".format(cnt=len(amois_list)))
-                vr['amois'] = create_amois_annotation(amois_list)
-            else:
-                self.logger.debug("No aMOIs found")
+            find_amois(vr, var_rules_mgr)
+            # amois_list = find_amois_old(vr, var_rules_mgr)
+            # if amois_list:
+            #     self.logger.debug("{cnt} aMOIs found".format(cnt=len(amois_list)))
+            #     vr['amois'] = create_amois_annotation(amois_list)
+            # else:
+            #     self.logger.debug("No aMOIs found")
 
             ret_val = vr
         except Exception as exc:
