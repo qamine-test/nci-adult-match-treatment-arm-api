@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import copy
 import datetime
 import json
 import unittest
@@ -170,7 +171,7 @@ class TestAmoisAnnotator(unittest.TestCase):
           ta_nh_rule("1", "func3", "1", "1", 'EAY131-Q', '2016-12-11', incl=False, status="OPEN"),
           ta_id_rule("EDBCA", 'EAY131-P', '2016-11-11', incl=True, status="OPEN")],
          {'CURRENT':
-            [{'treatmentArmId': 'EAY131-P', 'exclusions': [], 'inclusions': ['2016-11-11', '2016-11-11'], 'type': 'Both'},
+            [{'treatmentArmId': 'EAY131-P', 'exclusions': [], 'inclusions': ['2016-11-11'], 'type': 'Both'},
              {'treatmentArmId': 'EAY131-Q', 'exclusions': ['2016-12-11'], 'inclusions': [], 'type': 'NonHotspot'}]}),
         # 4. Three amois, each matching different arms with different states
         ([ta_nh_rule("1", "func3", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN", True),
@@ -226,40 +227,53 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
         ('', None, True),
         ('19', None, True),
         (19, None, True),
-        ('', 19, True),
-        ('', '19', True),
-        (None, 19, True),
-        (None, '19', True),
+        ('', 19, False),
+        ('', '19', False),
+        (None, 19, False),
+        (None, '19', False),
     )
     @unpack
     def test_match_item(self, vr_item, nhr_item, exp_result):
         self.assertEqual(amois.VariantRulesMgr._match_item(vr_item, nhr_item), exp_result)
 
     # Test the VariantRulesMgr._match_var_to_nhr function, which matches a patient variant to a nonhotspot rule
-    @data(  # order of params is e, f, g, o
+    @data(  # order of params is e, f, g, o  (exon, function, gene, oncominevariantclass)
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
         (variant("4", 'MISSENSE', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
         (variant("4", 'missense', 'idh1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
         (variant("4", 'missense', 'IDH1', 'hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
+        (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', ''), True),
+        (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', '', 'Hotspot'), True),
+        (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", '', 'IDH1', 'Hotspot'), True),
+        (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule('', 'missense', 'IDH1', 'Hotspot'), True),
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', None), True),
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', None, 'Hotspot'), True),
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", None, 'IDH1', 'Hotspot'), True),
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule(None, 'missense', 'IDH1', 'Hotspot'), True),
-        (variant("4", 'missense', 'IDH1', ''), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
-        (variant("4", 'missense', '', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
-        (variant("4", '', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
-        (variant('', 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
+        (variant("4", 'missense', 'IDH1', ''), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), False),
+        (variant("4", 'missense', '', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), False),
+        (variant("4", '', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), False),
+        (variant('', 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), False),
+        (variant("4", 'missense', 'IDH1', None), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), False),
+        (variant("4", 'missense', None, 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), False),
+        (variant("4", None, 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), False),
+        (variant(None, 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), False),
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("14", 'missense', 'IDH1', 'Hotspot'), False),
         (variant("4", 'missense', 'IDH1', 'Hotspot'),
          ta_nh_rule("4", 'nonframeshiftinsertion', 'IDH1', 'Hotspot'), False),
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'ERBB2', 'Hotspot'), False),
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Deleterious'), False),
         (variant("4", None, 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Deleterious'), False),
-        (variant("4", None, 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
+        (variant("4", None, 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), False),
+        (variant("4", 'missense', 'IDH1', None), ta_nh_rule("4", 'missense', None, ''), True),
+        (variant("4", 'missense', None, 'Hotspot'), ta_nh_rule("4", None, '', 'Hotspot'), True),
+        (variant("4", None, 'IDH1', 'Hotspot'), ta_nh_rule(None, '', 'IDH1', 'Hotspot'), True),
+        (variant(None, 'missense', 'IDH1', 'Hotspot'), ta_nh_rule('', 'missense', 'IDH1', None), True),
     )
     @unpack
     def test_match_var_to_nhr(self, patient_variant, nhr, exp_result):
-        self.assertEqual(amois.VariantRulesMgr._match_var_to_nhr(patient_variant, nhr), exp_result)
+        result = amois.VariantRulesMgr._match_var_to_nhr(patient_variant, nhr)
+        self.assertEqual(result, exp_result)
 
     # Test the VariantRulesMgr.get_matching_nonhotspot_rules_old function.
     @data(
@@ -405,7 +419,7 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
         self.assertEqual(str(cm.exception), "Unknown variant type: {}".format(invalid_variant_type))
 
 
-# ******** These variables contain source data for the find_amois_old and AmoisResource tests that follow. ******** #
+# ******** These variables contain source data for the find_amois and AmoisResource tests that follow. ******** #
 INCLUSION = True
 EXCLUSION = False
 
@@ -430,7 +444,7 @@ indel_rules = list(
 
 
 def create_hotpost_variant(identifier):
-    return {  # should match on identifier
+    return copy.deepcopy({  # should match on identifier
         "confirmed": True,
         "gene": "EFGR",
         "oncominevariantclass": "Hotspot",
@@ -438,11 +452,11 @@ def create_hotpost_variant(identifier):
         "function": "missense",
         "identifier": identifier,
         "inclusion": True,
-    }
+    })
 
 
 def create_nonhotpost_variant():
-    return {  # should match on NonHotspot Rule
+    return copy.deepcopy({  # should match on NonHotspot Rule
     "confirmed": True,
     "gene": "EGFR",
     "oncominevariantclass": "OCV1",
@@ -450,14 +464,15 @@ def create_nonhotpost_variant():
     "function": "func2",
     "identifier": "IDENTIFIER_THAT_DOES_NOT_MATCH",
     "inclusion": True,
-    }
+    })
 
 
 def create_hotspot_amoi(amoi_rule):
-    return {'PRIOR': [{'treatmentArmId': amoi_rule['treatmentArmId'],
+    return copy.deepcopy({'PRIOR': [{'treatmentArmId': amoi_rule['treatmentArmId'],
                            'type': "Hotspot",
                            'inclusions': [amoi_rule['version']],
-                           'exclusions': []}]}
+                           'exclusions': []}]})
+
 
 VR_WITH_TWO_SNV_AMOIS = {
     "singleNucleotideVariants": [create_hotpost_variant('SNVOSM'), create_nonhotpost_variant()],
@@ -513,7 +528,7 @@ class TestFindAmoisFunction(AmoisModuleTestCase):
     NONHOTSPOT_AMOI = {'CURRENT': [{'treatmentArmId': nh_rules[2]['treatmentArmId'],
                                     'type': "NonHotspot",
                                      'inclusions': [nh_rules[2]['version']],
-                                    'exclusions': []}]}
+                                     'exclusions': []}]}
 
     AMOIS_FOR_TWO_MATCHING_VARIANTS = [SNV_HOTSPOT_AMOI, NONHOTSPOT_AMOI]
 
@@ -545,43 +560,47 @@ class TestFindAmoisFunction(AmoisModuleTestCase):
         for variant, exp_amois in zip(var_rpt['indels'], exp_indel_amois):
             self.assertEqual(variant.get('amois', None), exp_amois)
 
-
+from pprint import pformat
 # ******** Test the AmoisResource class in amois.py. ******** #
-@unittest.skip("skipping because I'm in the middle of refactoring")
+@unittest.skip
 @ddt
 class TestAmoisResource(AmoisModuleTestCase):
+    SNV_HOTSPOT_AMOI = create_hotspot_amoi(snv_rules[0])
+    CNV_HOTSPOT_AMOI = create_hotspot_amoi(cnv_rules[0])
+    NONHOTSPOT_AMOI = {'CURRENT': [{'treatmentArmId': nh_rules[2]['treatmentArmId'],
+                                    'type': "NonHotspot",
+                                     'inclusions': [nh_rules[2]['version']],
+                                     'exclusions': []}]}
+    TEST_VR = {
+        "singleNucleotideVariants": [create_hotpost_variant('SNVOSM'), create_nonhotpost_variant()],
+        "indels": [],
+        "copyNumberVariants": [create_hotpost_variant('CNVOSM')],
+        "unifiedGeneFusions": [],
+    }
+    TEST_VR_WITH_AMOIS = copy.deepcopy(TEST_VR)
+    TEST_VR_WITH_AMOIS['copyNumberVariants'][0]['amois'] = CNV_HOTSPOT_AMOI
+    TEST_VR_WITH_AMOIS['singleNucleotideVariants'][0]['amois'] = SNV_HOTSPOT_AMOI
+    TEST_VR_WITH_AMOIS['singleNucleotideVariants'][1]['amois'] = NONHOTSPOT_AMOI
 
     # Test the AmoisResource.patch function with normal execution
     @data(
-        # 1. Test case with two matches
-        (VR_WITH_TWO_SNV_AMOIS,
-         {'PRIOR': [{'treatmentArmId': 'SNVARM-A', 'version': '2016-12-20', 'inclusion': True, 'type': 'Hotspot'}],
-          'CURRENT': [{'treatmentArmId': 'NONHOTSPOTARM-B', 'version': '2016-11-20',
-                       'inclusion': True, 'type': 'NonHotspot'}],
-          },
-         [snv_rules[0], nh_rules[2]]),
+        # 1. Test case with three matches
+        (TEST_VR, TEST_VR_WITH_AMOIS),
         # 2. Test case with no matches
-        (VR_WITH_NO_AMOIS, {}, [])
+        (VR_WITH_NO_AMOIS, VR_WITH_NO_AMOIS),
     )
     @unpack
-    @patch('resources.amois.find_amois_old')
-    def test_patch(self, vr_json, exp_anno_amois, mock_find_amois_ret_val, mock_find_amois):
+    def test_patch(self, vr_json, exp_vr_json):
         self.maxDiff = None
-
-        mock_find_amois.return_value = mock_find_amois_ret_val
-        amois.find_amois_old = mock_find_amois
-
         with APP.test_request_context(''):
-            exp_result = dict(vr_json)
-            if exp_anno_amois:
-                exp_result['amois'] = exp_anno_amois
-
+            print("\ncalling patch\n{}".format(pformat(vr_json)))
             response = self.app.patch('/amois',
                                       data=json.dumps(vr_json),
                                       content_type='application/json')
             result = json.loads(response.get_data().decode("utf-8"))
-
-            self.assertEqual(result, exp_result)
+            print("in test_patch doing assertions")
+            print(type(result))
+            self.assertEqual(result, exp_vr_json)
             self.assertEqual(response.status_code, 200)
 
     # Test the AmoisResource.patch function with error
