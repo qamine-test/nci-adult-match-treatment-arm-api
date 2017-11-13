@@ -28,6 +28,7 @@ DEFAULT_ENV_VARS = {
 OTHER_ENV_VARS = {
     'ENVIRONMENT': 'the_other_env',
     'MONGODB_URI': 'the_mongodb_uri/Match',
+    'PROPERTY1': 'override the first other property'
 }
 
 @ddt
@@ -72,7 +73,7 @@ class EnvironmentTests(unittest.TestCase):
         self.assertEqual(test_env.environment, env_vars['ENVIRONMENT'])
 
         env_type = env_vars['ENVIRONMENT']
-        self.assertEqual(test_env.property1, TEST_YAML_DATA[env_type]['property1'])
+        self.assertEqual(test_env.property1, env_vars.get('property1', TEST_YAML_DATA[env_type]['property1']))
         self.assertEqual(test_env.property2, TEST_YAML_DATA[env_type]['property2'])
         self.assertEqual(test_env.property_int, TEST_YAML_DATA[env_type]['property_int'])
 
@@ -116,6 +117,7 @@ class EnvironmentTests(unittest.TestCase):
             environment.Environment()
         self.assertIn(environment.Environment.MISSING_CONFIG_FILE_MSG, str(cm.exception))
         self.mock_logger.exception.assert_called_once()
+
 
 if __name__ == '__main__':
     unittest.main()
