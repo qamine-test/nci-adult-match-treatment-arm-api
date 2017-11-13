@@ -41,8 +41,8 @@ class Environment(object):
             self.load_overrides_from_env()
 
         def load_config_file(self):
+            """Read configuration variables from the yaml config file."""
             try:
-                # Read configuration variables from the yaml config file
                 with open(os.path.abspath(Environment.CONFIG_FILE), 'r') as yaml_file:
                     self._env = yaml.safe_load(yaml_file)
             except FileNotFoundError as e:
@@ -54,6 +54,10 @@ class Environment(object):
                              .format(env=self.environment, vars=pformat(self._env[self.environment])))
 
         def load_overrides_from_env(self):
+            """Any variable in the configuration file can be overridden by an environment variable of the same
+               name only in all caps.  For example, the environment variable SQS_QUEUE_NAME overrides the config
+               file variable sqs_queue_name.
+            """
             for var in self._env[self.environment]:
                 if var.upper() in os.environ:
                     self._env[self.environment][var] = os.environ[var.upper()]
