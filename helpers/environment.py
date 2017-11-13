@@ -63,8 +63,6 @@ class Environment(object):
                     self._env[self.environment][var] = os.environ[var.upper()]
                     self.logger.info("Environment variable {} overrides default setting for {}; new value='{}'"
                               .format(var.upper(), var, self._env[self.environment][var]))
-                else:
-                    self.logger.debug("Environment variable {} not found.".format(var.upper()))
 
     # The private instance variable
     __instance = None
