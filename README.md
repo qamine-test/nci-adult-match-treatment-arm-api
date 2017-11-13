@@ -129,6 +129,9 @@ docker-compose down && docker-compose pull
 ## Configuration
 Various configuration settings can be customized in the `config/environment.yml` file.
 
+Any configuration settings can be overridden by creating an environment variable with the same name only in all caps.
+For example, to override the **logger_level** setting, create an environment variable named **LOGGER_LEVEL**.
+
 
 ## Misc
 
