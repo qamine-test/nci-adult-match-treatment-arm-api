@@ -25,20 +25,20 @@ from resources.auth0_resource import requires_auth
 
 # NonHotspot Matching rules for 'exon', 'function', 'oncominevariantclass', 'gene':
 #    Observations:
-#    - All four are present in patient variant report (but may be empty)
-#    - At least one present in nonHotspotRules
+#    - For both patient variant and treatment arm variant, any of the four may be blank or absent altogether.
 #
-#    The rules:
-#    - Matches if not present in nonHotspotRules
-#    - Matches if empty in patient variant report
-#    - If present and non-Empty in both, then matches if an exact match
+#    The rules for matching each of fields:
+#      If the field is present and non-empty in the treatment arm variant, then its value must match (case-insensitive)
+#      the value of the field in the patient variant.  (So, if the patient variant's field is missing or blank, then
+#      the field does not match.)
 #
 #    So, for example:
-#    If the VR contains 4 in the 'exon', but there is no 'exon' in the nonHotspotRules, the exons match.
-#    If the VR's 'exon' is empty and there is no 'exon' in the nonHotspotRules, the exons match.
-#    If the VR's 'exon' is empty and 'exon' in the nonHotspotRules is 3, the exons match.
-#    If the VR contains 4 in the 'exon', and 'exon' in the nonHotspotRules is 4, the exons match.
-#    If the VR contains 4 in the 'exon', but 'exon' in the nonHotspotRules is 3, the exons DO NOT match.
+#    If the Patient Variant (PV) contains 4 in 'exon', but 'exon' is missing in the Treatment Arm Variant (TAV),
+#        the exons match.
+#    If the PV's 'exon' is empty and there is no 'exon' in the nonHotspotRules, the exons match.
+#    If the PV's 'exon' is empty and 'exon' in the nonHotspotRules is 3, the exons DO NOT match.
+#    If the PV contains 4 in the 'exon', and 'exon' in the nonHotspotRules is 4, the exons match.
+#    If the PV contains 4 in the 'exon', but 'exon' in the nonHotspotRules is 3, the exons DO NOT match.
 #
 #    Follow the same logic for all four ('exon', 'function', 'oncominevariantclass', 'gene');
 #    if all four match, it's an aMOI.
@@ -81,14 +81,12 @@ class VariantRulesMgr:
         """
         Matches a single item of a patient variant with the corresponding NonHotspotRule (nhr) item.
         :param variant_item: item from patient variant
-        :param nhr_item: item from non-hotspot rule
+        :param nhr_item: item from non-hotspot rule (that is, a treatment arm variant)
         :return: True if they match; otherwise False
         """
         if not nhr_item:
-            return True
-        if not variant_item:
-            return True
-        if str(variant_item).lower() == str(nhr_item).lower():
+            return True  # automatically matches if missing or blank
+        if variant_item and str(variant_item).lower() == str(nhr_item).lower():
             return True
         return False
 
@@ -235,8 +233,8 @@ class AmoisAnnotator:
             annot_list = []
             for treatment_arm in self._annotation[state]:
                 ta_amoi = {'treatmentArmId': treatment_arm,
-                           'inclusions': [],
-                           'exclusions': []}
+                           'inclusions': list(),
+                           'exclusions': list()}
                 for amoi in self._annotation[state][treatment_arm]:
                     if amoi['inclusion']:
                         ta_amoi['inclusions'].append(amoi['version'])
@@ -248,8 +246,8 @@ class AmoisAnnotator:
                     elif ta_amoi['type'] != amoi['type']:
                         ta_amoi['type'] = "Both"
 
-                ta_amoi['inclusions'] = sorted(ta_amoi['inclusions'])
-                ta_amoi['exclusions'] = sorted(ta_amoi['exclusions'])
+                ta_amoi['inclusions'] = sorted(set(ta_amoi['inclusions']))
+                ta_amoi['exclusions'] = sorted(set(ta_amoi['exclusions']))
                 annot_list.append(ta_amoi)
             annotations[state] = annot_list
 
@@ -388,13 +386,6 @@ class AmoisResource(Resource):
                               .format(cnt=var_rules_mgr.indel_rule_count()))
 
             find_amois(vr, var_rules_mgr)
-            # amois_list = find_amois_old(vr, var_rules_mgr)
-            # if amois_list:
-            #     self.logger.debug("{cnt} aMOIs found".format(cnt=len(amois_list)))
-            #     vr['amois'] = create_amois_annotation(amois_list)
-            # else:
-            #     self.logger.debug("No aMOIs found")
-
             ret_val = vr
         except Exception as exc:
             ret_val = str(exc)
