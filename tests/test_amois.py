@@ -3,6 +3,7 @@ import copy
 import datetime
 import json
 import unittest
+from pprint import pformat
 from unittest import TestCase
 
 import flask
@@ -59,11 +60,6 @@ def efgo_dict(e, f, g, o):
 def variant(e, f, g, o, identifier='ABC', confirmed=True):
     # Create a patient variant data structure
     vr = efgo_dict(e, f, g, o)
-    # # patient variant report must contain all four
-    # if len(vr) != 4:
-    #     import pprint
-    #     pprint.pprint(vr)
-    #     raise Exception("bad test data: Patient Variant Report must contain all four required fields.")
     vr['identifier'] = identifier
     vr['confirmed'] = confirmed
     return vr
@@ -457,21 +453,22 @@ def create_hotpost_variant(identifier):
 
 def create_nonhotpost_variant():
     return copy.deepcopy({  # should match on NonHotspot Rule
-    "confirmed": True,
-    "gene": "EGFR",
-    "oncominevariantclass": "OCV1",
-    "exon": "16",
-    "function": "func2",
-    "identifier": "IDENTIFIER_THAT_DOES_NOT_MATCH",
-    "inclusion": True,
+        "confirmed": True,
+        "gene": "EGFR",
+        "oncominevariantclass": "OCV1",
+        "exon": "16",
+        "function": "func2",
+        "identifier": "IDENTIFIER_THAT_DOES_NOT_MATCH",
+        "inclusion": True,
     })
 
 
 def create_hotspot_amoi(amoi_rule):
     return copy.deepcopy({'PRIOR': [{'treatmentArmId': amoi_rule['treatmentArmId'],
-                           'type': "Hotspot",
-                           'inclusions': [amoi_rule['version']],
-                           'exclusions': []}]})
+                                     'type': "Hotspot",
+                                     'inclusions': [amoi_rule['version']],
+                                     'exclusions': []}]
+                          })
 
 
 VR_WITH_TWO_SNV_AMOIS = {
@@ -527,8 +524,8 @@ class TestFindAmoisFunction(AmoisModuleTestCase):
     GF_HOTSPOT_AMOI = create_hotspot_amoi(gf_rules[0])
     NONHOTSPOT_AMOI = {'CURRENT': [{'treatmentArmId': nh_rules[2]['treatmentArmId'],
                                     'type': "NonHotspot",
-                                     'inclusions': [nh_rules[2]['version']],
-                                     'exclusions': []}]}
+                                    'inclusions': [nh_rules[2]['version']],
+                                    'exclusions': []}]}
 
     AMOIS_FOR_TWO_MATCHING_VARIANTS = [SNV_HOTSPOT_AMOI, NONHOTSPOT_AMOI]
 
@@ -551,26 +548,25 @@ class TestFindAmoisFunction(AmoisModuleTestCase):
         self.assertEqual(len(var_rpt['unifiedGeneFusions']), len(exp_ugf_amois))
         self.assertEqual(len(var_rpt['indels']), len(exp_indel_amois))
 
-        for variant, exp_amois in zip(var_rpt['singleNucleotideVariants'], exp_snv_amois):
-            self.assertEqual(variant.get('amois', None), exp_amois)
-        for variant, exp_amois in zip(var_rpt['copyNumberVariants'], exp_cnv_amois):
-            self.assertEqual(variant.get('amois', None), exp_amois)
-        for variant, exp_amois in zip(var_rpt['unifiedGeneFusions'], exp_ugf_amois):
-            self.assertEqual(variant.get('amois', None), exp_amois)
-        for variant, exp_amois in zip(var_rpt['indels'], exp_indel_amois):
-            self.assertEqual(variant.get('amois', None), exp_amois)
+        for patient_variant, exp_amois in zip(var_rpt['singleNucleotideVariants'], exp_snv_amois):
+            self.assertEqual(patient_variant.get('amois', None), exp_amois)
+        for patient_variant, exp_amois in zip(var_rpt['copyNumberVariants'], exp_cnv_amois):
+            self.assertEqual(patient_variant.get('amois', None), exp_amois)
+        for patient_variant, exp_amois in zip(var_rpt['unifiedGeneFusions'], exp_ugf_amois):
+            self.assertEqual(patient_variant.get('amois', None), exp_amois)
+        for patient_variant, exp_amois in zip(var_rpt['indels'], exp_indel_amois):
+            self.assertEqual(patient_variant.get('amois', None), exp_amois)
 
-from pprint import pformat
+
 # ******** Test the AmoisResource class in amois.py. ******** #
-@unittest.skip
 @ddt
 class TestAmoisResource(AmoisModuleTestCase):
     SNV_HOTSPOT_AMOI = create_hotspot_amoi(snv_rules[0])
     CNV_HOTSPOT_AMOI = create_hotspot_amoi(cnv_rules[0])
     NONHOTSPOT_AMOI = {'CURRENT': [{'treatmentArmId': nh_rules[2]['treatmentArmId'],
                                     'type': "NonHotspot",
-                                     'inclusions': [nh_rules[2]['version']],
-                                     'exclusions': []}]}
+                                    'inclusions': [nh_rules[2]['version']],
+                                    'exclusions': []}]}
     TEST_VR = {
         "singleNucleotideVariants": [create_hotpost_variant('SNVOSM'), create_nonhotpost_variant()],
         "indels": [],
@@ -582,6 +578,11 @@ class TestAmoisResource(AmoisModuleTestCase):
     TEST_VR_WITH_AMOIS['singleNucleotideVariants'][0]['amois'] = SNV_HOTSPOT_AMOI
     TEST_VR_WITH_AMOIS['singleNucleotideVariants'][1]['amois'] = NONHOTSPOT_AMOI
 
+    identifier_rules = {'copyNumberVariants': cnv_rules,
+                        'singleNucleotideVariants': snv_rules,
+                        'indels': indel_rules,
+                        'geneFusions': gf_rules}
+
     # Test the AmoisResource.patch function with normal execution
     @data(
         # 1. Test case with three matches
@@ -590,16 +591,19 @@ class TestAmoisResource(AmoisModuleTestCase):
         (VR_WITH_NO_AMOIS, VR_WITH_NO_AMOIS),
     )
     @unpack
-    def test_patch(self, vr_json, exp_vr_json):
+    @patch('resources.amois.TreatmentArmsAccessor')
+    def test_patch(self, vr_json, exp_vr_json, mock_ta_accessor):
+        instance = mock_ta_accessor.return_value
+        instance.get_ta_non_hotspot_rules.return_value = nh_rules
+        instance.get_ta_identifier_rules = lambda var_type: self.identifier_rules[var_type]
+
         self.maxDiff = None
         with APP.test_request_context(''):
-            print("\ncalling patch\n{}".format(pformat(vr_json)))
             response = self.app.patch('/amois',
                                       data=json.dumps(vr_json),
                                       content_type='application/json')
             result = json.loads(response.get_data().decode("utf-8"))
-            print("in test_patch doing assertions")
-            print(type(result))
+
             self.assertEqual(result, exp_vr_json)
             self.assertEqual(response.status_code, 200)
 
