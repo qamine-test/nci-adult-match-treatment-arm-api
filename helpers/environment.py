@@ -38,6 +38,7 @@ class Environment(object):
             self.logger.info("Environment set to: " + self.environment)
 
             self.load_config_file()
+            self.load_overrides_from_env()
 
         def load_config_file(self):
             try:
@@ -51,6 +52,15 @@ class Environment(object):
 
             self.logger.info("Variables loaded from config file for {env}:\n{vars}"
                              .format(env=self.environment, vars=pformat(self._env[self.environment])))
+
+        def load_overrides_from_env(self):
+            for var in self._env[self.environment]:
+                if var.upper() in os.environ:
+                    self._env[self.environment][var] = os.environ[var.upper()]
+                    self.logger.info("Environment variable {} overrides default setting for {}; new value='{}'"
+                              .format(var.upper(), var, self._env[self.environment][var]))
+                else:
+                    self.logger.debug("Environment variable {} not found.".format(var.upper()))
 
     # The private instance variable
     __instance = None
