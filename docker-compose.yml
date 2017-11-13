@@ -21,18 +21,6 @@ services:
       - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
     volumes:
       - ./scripts:/scripts
-#  treatment-arm-message-manager:
-#    image: "fnlcr/nci-adult-match-treatment-arm-api"
-#    command: python scripts/ta_message_manager/ta_message_manager.py
-#    depends_on:
-#      - mongo
-#    environment:
-#      - MONGODB_URI=mongodb://mongo:27017/Match
-#      - ENVIRONMENT=development
-#      - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-#      - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-#      # this SHOULDN'T be necessary, but dockerized python can't find modules for script in a directory without it
-#      - PYTHONPATH=.
   patient-api:
     image: "fnlcr/nci-adult-match-patient-api"
     command: python app.py
@@ -43,6 +31,7 @@ services:
     environment:
       - MONGODB_URI=mongodb://mongo:27017/Match
       - ENVIRONMENT=development
+      - LOGGER_LEVEL=INFO
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
@@ -51,8 +40,6 @@ services:
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
     # volumes: # this config is to override the default Patient API assay rules config. Normally commented out.
     #   - ./misc/config/nci-adult-match-patient-api-assay_activation_rules.json:/usr/app/config/assay_activation_rules.json
-#    networks:
-#      - adult-match-net
 
   mongo:
     image: fnlcr/nci-adult-match-datastore:latest
@@ -60,7 +47,3 @@ services:
       - ./data_setup/match:/backup
     ports:
       - "27018:27017"
-
-networks:
-  adult-match-net:
-    driver: bridge
