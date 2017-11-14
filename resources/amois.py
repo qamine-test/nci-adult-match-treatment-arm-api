@@ -203,20 +203,44 @@ class VariantRulesMgr:
         else:
             raise Exception("Unknown variant type: {}".format(variant_type))
 
-from datetime import datetime
+from datetime import datetime, timedelta
+
 
 class VariantRulesMgrCache:
-    def __init__(self):
-        self._reload()
+    _variant_rules_mgr = None
+    _interval = 10
+    _load_timestamp = datetime.now() - timedelta(seconds=_interval*2)
+    # logger = logging.getLogger(__name__)
 
-    def _reload(self):
-        self._variant_rules_mgr = VariantRulesMgr()
-        self._load_timestamp = datetime.now()
+    # def __init__(self):
+    #     self._reload()
+    #     self.logger = logging.getLogger(__name__)
 
-    def get_variant_rules_mgr(self):
-        if (datetime.now() - self._load_timestamp).seconds > 5:
-            self._reload()
-        return self._variant_rules_mgr
+    @classmethod
+    def _reload(cls):
+        cls._variant_rules_mgr = VariantRulesMgr()
+        cls._load_timestamp = datetime.now()
+
+        logger = logging.getLogger(__name__)
+        logger.debug("{cnt} nonHotspotRules loaded from treatmentArms collection"
+                     .format(cnt=cls._variant_rules_mgr.nonhotspot_rule_count()))
+        logger.debug("{cnt} SNV Rules loaded from treatmentArms collection"
+                     .format(cnt=cls._variant_rules_mgr.single_nucleotide_variant_rule_count()))
+        logger.debug("{cnt} CNV Rules loaded from treatmentArms collection"
+                     .format(cnt=cls._variant_rules_mgr.copy_number_variant_rule_count()))
+        logger.debug("{cnt} Gene Fusions Rules loaded from treatmentArms collection"
+                     .format(cnt=cls._variant_rules_mgr.gene_fusion_rule_count()))
+        logger.debug("{cnt} Indel Rules loaded from treatmentArms collection"
+                     .format(cnt=cls._variant_rules_mgr.indel_rule_count()))
+
+    @classmethod
+    def get_variant_rules_mgr(cls):
+        seconds_elapsed = (datetime.now() - cls._load_timestamp).seconds
+        logging.getLogger(__name__).debug("seconds_elapsed={}, interval={}".format(seconds_elapsed, cls._interval))
+        if seconds_elapsed > cls._interval:
+            cls._reload()
+        # cls._reload()
+        return cls._variant_rules_mgr
 
 # variant_rules_mgr_cache = VariantRulesMgrCache()
 
@@ -360,7 +384,7 @@ class AmoisResource(Resource):
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.variant_rules_mgr_cache = VariantRulesMgrCache()
+        # self.variant_rules_mgr_cache = VariantRulesMgrCache()
 
     @staticmethod
     def get_variant_report_arg():
@@ -390,17 +414,8 @@ class AmoisResource(Resource):
             vr = AmoisResource.get_variant_report_arg()
             self.logger.debug("amois: var_rpt on input:\n" + pformat(vr, width=140, indent=1, depth=2))
 
-            var_rules_mgr = self.variant_rules_mgr_cache.get_variant_rules_mgr()
-            self.logger.debug("{cnt} nonHotspotRules loaded from treatmentArms collection"
-                              .format(cnt=var_rules_mgr.nonhotspot_rule_count()))
-            self.logger.debug("{cnt} SNV Rules loaded from treatmentArms collection"
-                              .format(cnt=var_rules_mgr.single_nucleotide_variant_rule_count()))
-            self.logger.debug("{cnt} CNV Rules loaded from treatmentArms collection"
-                              .format(cnt=var_rules_mgr.copy_number_variant_rule_count()))
-            self.logger.debug("{cnt} Gene Fusions Rules loaded from treatmentArms collection"
-                              .format(cnt=var_rules_mgr.gene_fusion_rule_count()))
-            self.logger.debug("{cnt} Indel Rules loaded from treatmentArms collection"
-                              .format(cnt=var_rules_mgr.indel_rule_count()))
+            var_rules_mgr = VariantRulesMgrCache.get_variant_rules_mgr()
+            # var_rules_mgr = self.variant_rules_mgr_cache.get_variant_rules_mgr()
 
             find_amois(vr, var_rules_mgr)
             ret_val = vr

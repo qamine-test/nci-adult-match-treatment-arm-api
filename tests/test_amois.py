@@ -595,9 +595,11 @@ class TestAmoisResource(AmoisModuleTestCase):
     # def test_patch(self, vr_json, exp_vr_json, mock_ta_accessor):
     @patch('resources.amois.VariantRulesMgrCache')
     def test_patch(self, vr_json, exp_vr_json, mock_vrm_cache):
-        instance = mock_vrm_cache.return_value
-        instance.get_variant_rules_mgr.return_value = amois.VariantRulesMgr(nh_rules, cnv_rules, snv_rules,
-                                                                            gf_rules, indel_rules)
+        # instance = mock_vrm_cache.return_value
+        # instance.get_variant_rules_mgr.return_value = amois.VariantRulesMgr(nh_rules, cnv_rules, snv_rules,
+        #                                                                     gf_rules, indel_rules)
+        mock_vrm_cache.get_variant_rules_mgr.return_value = amois.VariantRulesMgr(nh_rules, cnv_rules, snv_rules,
+                                                                                  gf_rules, indel_rules)
         # instance = mock_ta_accessor.return_value
         # instance.get_ta_non_hotspot_rules.return_value = nh_rules
         # instance.get_ta_identifier_rules = lambda var_type: self.identifier_rules[var_type]
