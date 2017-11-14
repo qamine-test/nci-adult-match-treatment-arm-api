@@ -203,6 +203,22 @@ class VariantRulesMgr:
         else:
             raise Exception("Unknown variant type: {}".format(variant_type))
 
+from datetime import datetime
+
+class VariantRulesMgrCache:
+    def __init__(self):
+        self._reload()
+
+    def _reload(self):
+        self._variant_rules_mgr = VariantRulesMgr()
+        self._load_timestamp = datetime.now()
+
+    def get_variant_rules_mgr(self):
+        if (datetime.now() - self._load_timestamp).seconds > 5:
+            self._reload()
+        return self._variant_rules_mgr
+
+# variant_rules_mgr_cache = VariantRulesMgrCache()
 
 class AmoisAnnotator:
     EQUIV_FIELDS = ['treatmentArmId', 'version', 'inclusion']
@@ -344,6 +360,7 @@ class AmoisResource(Resource):
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        self.variant_rules_mgr_cache = VariantRulesMgrCache()
 
     @staticmethod
     def get_variant_report_arg():
@@ -373,7 +390,7 @@ class AmoisResource(Resource):
             vr = AmoisResource.get_variant_report_arg()
             self.logger.debug("amois: var_rpt on input:\n" + pformat(vr, width=140, indent=1, depth=2))
 
-            var_rules_mgr = VariantRulesMgr()
+            var_rules_mgr = self.variant_rules_mgr_cache.get_variant_rules_mgr()
             self.logger.debug("{cnt} nonHotspotRules loaded from treatmentArms collection"
                               .format(cnt=var_rules_mgr.nonhotspot_rule_count()))
             self.logger.debug("{cnt} SNV Rules loaded from treatmentArms collection"
@@ -392,6 +409,7 @@ class AmoisResource(Resource):
             self.logger.error(ret_val)
             status_code = 404
         return ret_val, status_code
+
 
 
 class IsAmoisResource(Resource):
