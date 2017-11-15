@@ -15,6 +15,7 @@ An example of how to call this service can be found in scripts/examples/call_amo
 """
 
 import logging
+from datetime import datetime, timedelta
 from pprint import pformat
 
 from flask_restful import Resource, request
@@ -165,6 +166,11 @@ class VariantRulesMgr:
         return VariantRulesMgr._get_matching_identifier_rules(self.indel_rules, patient_indel_variant)
 
     def _is_indel_amoi(self, patient_variant):
+        """
+        Determines whether or not patient_variant is an indel aMOI.
+        :param patient_variant: an indel variant from the patient's variant report
+        :return: True/False
+        """
         if [r for r in self.indel_rules if self._matches_identifier_rule(patient_variant, r)]:
             return True
         elif [r for r in self.nhs_rules if self._matches_nonhotspot_rule(patient_variant, r)]:
@@ -173,6 +179,11 @@ class VariantRulesMgr:
             return False
 
     def _is_single_nucleotide_variant_amoi(self, patient_variant):
+        """
+        Determines whether or not patient_variant is a SNV aMOI.
+        :param patient_variant: a SNV variant from the patient's variant report
+        :return: True/False
+        """
         if [r for r in self.snv_rules if self._matches_identifier_rule(patient_variant, r)]:
             return True
         elif [r for r in self.nhs_rules if self._matches_nonhotspot_rule(patient_variant, r)]:
@@ -181,18 +192,35 @@ class VariantRulesMgr:
             return False
 
     def _is_gene_fusion_amoi(self, patient_variant):
+        """
+        Determines whether or not patient_variant is a gene fusion aMOI.
+        :param patient_variant: an unified gene fusion variant from the patient's variant report
+        :return: True/False
+        """
         if [r for r in self.gf_rules if self._matches_identifier_rule(patient_variant, r)]:
             return True
         else:
             return False
 
     def _is_copy_number_variant_amoi(self, patient_variant):
+        """
+        Determines whether or not patient_variant is a CNV aMOI.
+        :param patient_variant: a CNV variant from the patient's variant report
+        :return: True/False
+        """
         if [r for r in self.cnv_rules if self._matches_identifier_rule(patient_variant, r)]:
             return True
         else:
             return False
 
     def is_amoi(self, patient_variant, variant_type):
+        """
+        Determines whether or not patient_variant is an aMOI.
+        :param patient_variant: a variant from the patient's variant report
+        :param variant_type: patient_variant's type
+        :return: True/False
+        :raises Exception if variant_type is not one of the valid types
+        """
         if variant_type == 'indels':
             return self._is_indel_amoi(patient_variant)
         elif variant_type == 'singleNucleotideVariants':
@@ -204,21 +232,21 @@ class VariantRulesMgr:
         else:
             raise Exception("Unknown variant type: {}".format(variant_type))
 
-from datetime import datetime, timedelta
-
 
 class VariantRulesMgrCache:
+    """Caches an instance of the VariantRulesMgr class for a period of time because that class's __init__ always
+       reloads the rules from the database.
+    """
     _variant_rules_mgr = None
-    _interval = 10
+    _interval = 30
     _load_timestamp = datetime.now() - timedelta(seconds=_interval*2)
-    # logger = logging.getLogger(__name__)
-
-    # def __init__(self):
-    #     self._reload()
-    #     self.logger = logging.getLogger(__name__)
 
     @classmethod
     def _reload(cls):
+        """
+        Creates a new instance of the VariantRulesMgr (which, in effects, reloads the rules from the database)
+        and saves the time that it did so.
+        """
         cls._variant_rules_mgr = VariantRulesMgr()
         cls._load_timestamp = datetime.now()
 
@@ -236,14 +264,16 @@ class VariantRulesMgrCache:
 
     @classmethod
     def get_variant_rules_mgr(cls):
+        """
+        If the current instance of VariantRulesMgr is too old, it will be recreated before returning it.
+        :return: an up-to-date reference to a VariantRulesMgr object
+        """
         seconds_elapsed = (datetime.now() - cls._load_timestamp).seconds
-        logging.getLogger(__name__).debug("seconds_elapsed={}, interval={}".format(seconds_elapsed, cls._interval))
-        if seconds_elapsed > cls._interval:
+        # logging.getLogger(__name__).debug("seconds_elapsed={}, interval={}".format(seconds_elapsed, cls._interval))
+        if seconds_elapsed >= cls._interval:
             cls._reload()
-        # cls._reload()
         return cls._variant_rules_mgr
 
-# variant_rules_mgr_cache = VariantRulesMgrCache()
 
 class AmoisAnnotator:
     EQUIV_FIELDS = ['treatmentArmId', 'version', 'inclusion']
@@ -409,7 +439,6 @@ class AmoisResource(Resource):
 
         """
         self.logger.info("Getting annotated aMOI information for Patient Variant Report")
-        ret_val = None
         status_code = 200
         try:
             vr = AmoisResource.get_variant_report_arg()
@@ -425,7 +454,6 @@ class AmoisResource(Resource):
             self.logger.error(ret_val)
             status_code = 404
         return ret_val, status_code
-
 
 
 class IsAmoisResource(Resource):
