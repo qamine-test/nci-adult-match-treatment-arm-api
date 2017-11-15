@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import copy
-import datetime
 import json
 import unittest
-from pprint import pformat
+from datetime import datetime
 from unittest import TestCase
 
 import flask
@@ -70,7 +69,7 @@ def add_common_ta_fields(ta_rule, archived, incl, status, trtmt_id, ver, rule_ty
     ta_rule['treatmentArmId'] = trtmt_id
     ta_rule['version'] = ver
     ta_rule['inclusion'] = incl
-    ta_rule['dateArchived'] = None if not archived else datetime.datetime(2016, 7, 7)
+    ta_rule['dateArchived'] = None if not archived else datetime(2016, 7, 7)
     ta_rule['treatmentArmStatus'] = status
     ta_rule["type"] = rule_type
 
@@ -104,7 +103,7 @@ class TestAmoisAnnotator(unittest.TestCase):
         ({'treatmentArmStatus': 'READY', 'dateArchived': 'not None'}, 'PREVIOUS'),
         ({'treatmentArmStatus': 'OPEN', 'dateArchived': 'not None'}, 'PREVIOUS'),
         ({'treatmentArmStatus': 'CLOSED', 'dateArchived': 'not None'}, 'PREVIOUS'),
-        ({'treatmentArmStatus': 'SUSPENDED', 'dateArchived': datetime.datetime.now()}, 'PREVIOUS'),
+        ({'treatmentArmStatus': 'SUSPENDED', 'dateArchived': datetime.now()}, 'PREVIOUS'),
     )
     @unpack
     def test_get_amoi_state(self, ta_vr_rules, exp_state):
@@ -470,6 +469,56 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
         self.assertEqual(vrm.gene_fusion_rule_count(), len(gf_rules))
         self.assertEqual(vrm.indel_rule_count(), len(indel_rules))
         self.assertEqual(vrm.nonhotspot_rule_count(), len(nh_rules))
+
+
+class FakeDateTime(datetime):
+    """
+    A fake replacement for datetime that can be mocked for testing.
+    """
+    def __new__(cls, *args, **kwargs):  # pylint: disable=arguments-differ
+        return datetime.__new__(datetime, *args, **kwargs)
+
+
+# ******** Test the VariantRulesMgrCache class in amois.py. ******** #
+@ddt
+@patch('resources.amois.datetime', FakeDateTime)
+class VariantRulesMgrCacheTests(unittest.TestCase):
+    interval = amois.VariantRulesMgrCache._interval
+    start_time = datetime(2015, 7, 31, 11, 30, 0) # start at 0 seconds
+
+    def setUp(self):
+        amois.VariantRulesMgrCache._load_timestamp = VariantRulesMgrCacheTests.start_time
+
+    # Test the VariantRulesMgrCache.get_variant_rules_mgr function.
+    @data(
+        (datetime(2015, 7, 31, 11, 30, interval-1), False),
+        (datetime(2015, 7, 31, 11, 30, interval), True),
+        (datetime(2015, 7, 31, 11, 30, interval+1), True),
+    )
+    @unpack
+    @patch('resources.amois.VariantRulesMgrCache._reload')
+    def test_get_variant_rules_mgr(self, mock_now, exp_reload_called, mock_reload):
+        """Tests that the _reload function is only called when the required amount of time has passed."""
+        FakeDateTime.now = classmethod(lambda cls: mock_now)
+
+        result = amois.VariantRulesMgrCache.get_variant_rules_mgr()
+        self.assertEqual(result, amois.VariantRulesMgrCache._variant_rules_mgr)
+        if exp_reload_called:
+            mock_reload.assert_called()
+        else:
+            mock_reload.assert_not_called()
+
+    # Test the VariantRulesMgrCache._reload function.
+    @patch('resources.amois.VariantRulesMgr')
+    def test_reload(self, mock_var_rules_mgr):
+        """Test that the class variables _variant_rules_mgr and _load_timestamp are set properly after reloading."""
+        test_date = datetime(2015, 7, 31, 11, 31, 16)
+        FakeDateTime.now = classmethod(lambda cls: test_date)
+
+        amois.VariantRulesMgrCache._reload()
+        self.assertEqual(amois.VariantRulesMgrCache._variant_rules_mgr, mock_var_rules_mgr.return_value)
+        self.assertEqual(amois.VariantRulesMgrCache._load_timestamp, test_date)
+
 
 
 def create_hotspot_variant(identifier):
