@@ -51,14 +51,15 @@ class VariantRulesMgr:
                  gene_fusion_identifier_rules=None,
                  indel_identifier_rules=None):
         ta_accessor = TreatmentArmsAccessor()
-        self.nhs_rules = non_hotspot_rules if non_hotspot_rules else ta_accessor.get_ta_non_hotspot_rules()
-        self.cnv_rules = cnv_identifier_rules if cnv_identifier_rules \
+        self.nhs_rules = non_hotspot_rules if non_hotspot_rules is not None \
+            else ta_accessor.get_ta_non_hotspot_rules()
+        self.cnv_rules = cnv_identifier_rules if cnv_identifier_rules is not None \
             else ta_accessor.get_ta_identifier_rules('copyNumberVariants')
-        self.snv_rules = snv_identifier_rules if snv_identifier_rules \
+        self.snv_rules = snv_identifier_rules if snv_identifier_rules is not None \
             else ta_accessor.get_ta_identifier_rules('singleNucleotideVariants')
-        self.gf_rules = gene_fusion_identifier_rules if gene_fusion_identifier_rules \
+        self.gf_rules = gene_fusion_identifier_rules if gene_fusion_identifier_rules is not None \
             else ta_accessor.get_ta_identifier_rules('geneFusions')
-        self.indel_rules = indel_identifier_rules if indel_identifier_rules \
+        self.indel_rules = indel_identifier_rules if indel_identifier_rules is not None \
             else ta_accessor.get_ta_identifier_rules('indels')
 
     def nonhotspot_rule_count(self):
