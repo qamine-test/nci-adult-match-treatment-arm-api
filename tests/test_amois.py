@@ -196,6 +196,35 @@ class TestAmoisAnnotator(unittest.TestCase):
         self.assertEqual(amois.create_amois_annotation(amois_list), exp_annotation)
 
 
+# **** These variables contain source data for the VariantRulesMgr, find_amois, AmoisResource tests that follow. **** #
+INCLUSION = True
+EXCLUSION = False
+
+nh_rules = list(
+    [ta_nh_rule("15", 'func1', 'EGFR', None, 'NONHOTSPOTARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+     ta_nh_rule("15", None, 'EGFR', None, 'NONHOTSPOTARM-A', '2016-12-20', INCLUSION, 'CLOSED', True),
+     ta_nh_rule("16", 'func2', 'EGFR', 'OCV1', 'NONHOTSPOTARM-B', '2016-11-20', INCLUSION, 'OPEN', False),
+     ta_nh_rule(None, 'func3', 'EGFR', 'OCV1', 'NONHOTSPOTARM-C', '2016-10-20', EXCLUSION, 'OPEN', False),
+     ])
+cnv_rules = list(
+    [ta_id_rule('CNVOSM', 'CNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+     ])
+snv_rules = list(
+    [ta_id_rule('SNVOSM', 'SNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+     ])
+gf_rules = list(
+    [ta_id_rule('GFOSM', 'GENEFUSARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+     ])
+indel_rules = list(
+    [ta_id_rule('INDOSM', 'INDELARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+     ])
+
+identifier_rules = {'copyNumberVariants': cnv_rules,
+                    'singleNucleotideVariants': snv_rules,
+                    'indels': indel_rules,
+                    'geneFusions': gf_rules}
+
+
 class AmoisModuleTestCase(TestCase):
 
     @classmethod
@@ -206,7 +235,7 @@ class AmoisModuleTestCase(TestCase):
     def setUp(self):
         ta_accessor_patcher = patch('resources.amois.TreatmentArmsAccessor')
         self.addCleanup(ta_accessor_patcher.stop)
-        self.mock_ta_accessor = ta_accessor_patcher.start().return_value
+        self.mock_ta_accessor = ta_accessor_patcher.start()
 
 
 # ******** Test the VariantRulesMgr class in amois.py. ******** #
@@ -414,32 +443,36 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
             vrm.is_amoi(variant("9", '1', '1', '1', 'ABCDE', True), invalid_variant_type)
         self.assertEqual(str(cm.exception), "Unknown variant type: {}".format(invalid_variant_type))
 
+    # Test the VariantRulesMgr.__init__ function when the rules are passed in as parameters.
+    def test_init_with_params(self):
+        taa_instance = self.mock_ta_accessor.return_value
 
-# ******** These variables contain source data for the find_amois and AmoisResource tests that follow. ******** #
-INCLUSION = True
-EXCLUSION = False
+        vrm = amois.VariantRulesMgr(nh_rules, cnv_rules, snv_rules, gf_rules, indel_rules)
 
-nh_rules = list(
-    [ta_nh_rule("15", 'func1', 'EGFR', None, 'NONHOTSPOTARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-     ta_nh_rule("15", None, 'EGFR', None, 'NONHOTSPOTARM-A', '2016-12-20', INCLUSION, 'CLOSED', True),
-     ta_nh_rule("16", 'func2', 'EGFR', 'OCV1', 'NONHOTSPOTARM-B', '2016-11-20', INCLUSION, 'OPEN', False),
-     ta_nh_rule(None, 'func3', 'EGFR', 'OCV1', 'NONHOTSPOTARM-C', '2016-10-20', EXCLUSION, 'OPEN', False),
-     ])
-cnv_rules = list(
-    [ta_id_rule('CNVOSM', 'CNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-     ])
-snv_rules = list(
-    [ta_id_rule('SNVOSM', 'SNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-     ])
-gf_rules = list(
-    [ta_id_rule('GFOSM', 'GENEFUSARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-     ])
-indel_rules = list(
-    [ta_id_rule('INDOSM', 'INDELARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
-     ])
+        taa_instance.get_ta_non_hotspot_rules.assert_not_called()
+        taa_instance.get_ta_identifier_rules.assert_not_called()
+
+        self._validate_counts_after_init(vrm)
+
+    # Test the VariantRulesMgr.__init__ function when the rules are retrieved from the TreatmentArms collection.
+    def test_init_without_params(self):
+        taa_instance = self.mock_ta_accessor.return_value
+        taa_instance.get_ta_non_hotspot_rules.return_value = nh_rules
+        taa_instance.get_ta_identifier_rules = lambda var_type: identifier_rules[var_type]
+
+        vrm = amois.VariantRulesMgr()
+
+        self._validate_counts_after_init(vrm)
+
+    def _validate_counts_after_init(self, vrm):
+        self.assertEqual(vrm.copy_number_variant_rule_count(), len(cnv_rules))
+        self.assertEqual(vrm.single_nucleotide_variant_rule_count(), len(snv_rules))
+        self.assertEqual(vrm.gene_fusion_rule_count(), len(gf_rules))
+        self.assertEqual(vrm.indel_rule_count(), len(indel_rules))
+        self.assertEqual(vrm.nonhotspot_rule_count(), len(nh_rules))
 
 
-def create_hotpost_variant(identifier):
+def create_hotspot_variant(identifier):
     return copy.deepcopy({  # should match on identifier
         "confirmed": True,
         "gene": "EFGR",
@@ -451,8 +484,8 @@ def create_hotpost_variant(identifier):
     })
 
 
-def create_nonhotpost_variant():
-    return copy.deepcopy({  # should match on NonHotspot Rule
+def create_nonhotspot_variant():
+        return copy.deepcopy({  # should match on NonHotspot Rule
         "confirmed": True,
         "gene": "EGFR",
         "oncominevariantclass": "OCV1",
@@ -472,28 +505,28 @@ def create_hotspot_amoi(amoi_rule):
 
 
 VR_WITH_TWO_SNV_AMOIS = {
-    "singleNucleotideVariants": [create_hotpost_variant('SNVOSM'), create_nonhotpost_variant()],
+    "singleNucleotideVariants": [create_hotspot_variant('SNVOSM'), create_nonhotspot_variant()],
     "indels": [],
     "copyNumberVariants": [],
     "unifiedGeneFusions": [],
 }
 VR_WITH_TWO_INDEL_AMOIS = {
     "singleNucleotideVariants": [],
-    "indels": [create_hotpost_variant('INDOSM'), create_nonhotpost_variant()],
+    "indels": [create_hotspot_variant('INDOSM'), create_nonhotspot_variant()],
     "copyNumberVariants": [],
     "unifiedGeneFusions": [],
 }
 VR_WITH_TWO_CNV_AMOIS = {
     "singleNucleotideVariants": [],
     "indels": [],
-    "copyNumberVariants": [create_hotpost_variant('CNVOSM'), create_nonhotpost_variant()],
+    "copyNumberVariants": [create_hotspot_variant('CNVOSM'), create_nonhotspot_variant()],
     "unifiedGeneFusions": [],
 }
 VR_WITH_TWO_UGF_AMOIS = {
     "singleNucleotideVariants": [],
     "indels": [],
     "copyNumberVariants": [],
-    "unifiedGeneFusions": [create_hotpost_variant('GFOSM'), create_nonhotpost_variant()],
+    "unifiedGeneFusions": [create_hotspot_variant('GFOSM'), create_nonhotspot_variant()],
 }
 
 VR_WITH_NO_AMOIS = {
@@ -568,20 +601,15 @@ class TestAmoisResource(AmoisModuleTestCase):
                                     'inclusions': [nh_rules[2]['version']],
                                     'exclusions': []}]}
     TEST_VR = {
-        "singleNucleotideVariants": [create_hotpost_variant('SNVOSM'), create_nonhotpost_variant()],
+        "singleNucleotideVariants": [create_hotspot_variant('SNVOSM'), create_nonhotspot_variant()],
         "indels": [],
-        "copyNumberVariants": [create_hotpost_variant('CNVOSM')],
+        "copyNumberVariants": [create_hotspot_variant('CNVOSM')],
         "unifiedGeneFusions": [],
     }
     TEST_VR_WITH_AMOIS = copy.deepcopy(TEST_VR)
     TEST_VR_WITH_AMOIS['copyNumberVariants'][0]['amois'] = CNV_HOTSPOT_AMOI
     TEST_VR_WITH_AMOIS['singleNucleotideVariants'][0]['amois'] = SNV_HOTSPOT_AMOI
     TEST_VR_WITH_AMOIS['singleNucleotideVariants'][1]['amois'] = NONHOTSPOT_AMOI
-
-    identifier_rules = {'copyNumberVariants': cnv_rules,
-                        'singleNucleotideVariants': snv_rules,
-                        'indels': indel_rules,
-                        'geneFusions': gf_rules}
 
     # Test the AmoisResource.patch function with normal execution
     @data(
@@ -591,8 +619,7 @@ class TestAmoisResource(AmoisModuleTestCase):
         (VR_WITH_NO_AMOIS, VR_WITH_NO_AMOIS),
     )
     @unpack
-    # @patch('resources.amois.TreatmentArmsAccessor')
-    # def test_patch(self, vr_json, exp_vr_json, mock_ta_accessor):
+    # def test_patch(self, vr_json, exp_vr_json):
     @patch('resources.amois.VariantRulesMgrCache')
     def test_patch(self, vr_json, exp_vr_json, mock_vrm_cache):
         # instance = mock_vrm_cache.return_value
@@ -600,9 +627,9 @@ class TestAmoisResource(AmoisModuleTestCase):
         #                                                                     gf_rules, indel_rules)
         mock_vrm_cache.get_variant_rules_mgr.return_value = amois.VariantRulesMgr(nh_rules, cnv_rules, snv_rules,
                                                                                   gf_rules, indel_rules)
-        # instance = mock_ta_accessor.return_value
+        # instance = self.mock_ta_accessor.return_value
         # instance.get_ta_non_hotspot_rules.return_value = nh_rules
-        # instance.get_ta_identifier_rules = lambda var_type: self.identifier_rules[var_type]
+        # instance.get_ta_identifier_rules = lambda var_type: identifier_rules[var_type]
 
         self.maxDiff = None
         with APP.test_request_context(''):
