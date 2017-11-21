@@ -237,7 +237,7 @@ environment:
     * **Handler**: send_refresh_message.lambda_handler
     * **Role**: LambdaRole
 
-    Don't worry about the code intially; run **update_refresh_lambda** (see script instructions above)
+    Don't worry about the code initially; run **update_refresh_lambda** (see script instructions above)
     after it is created.
 
 2.  Add a CloudWatch Event Trigger to run the *SendSummaryReportRefreshMessage* Lambda function every three hours.
