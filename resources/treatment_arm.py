@@ -108,3 +108,23 @@ class TreatmentArmsOverview(Resource):
         counts = dict([(cd['_id'], cd['count']) for cd in counts_by_status])
         counts['TOTAL'] = treatment_arms_accessor.count({"dateArchived": None})
         return counts
+
+
+def reformat_status_log(ta_data):
+    """
+    The statusLog field in ta_data needs to be reformatted from this:
+    "statusLog" : {
+        "1488461582089" : "READY",
+        "1488461582" : "OPEN"
+        "1488461538329" : "PENDING",
+    },
+    To this:
+    "statusLog": [{"date": "1488461538329", "status": "PENDING"},
+                  {"date": "1488461582", "status": "OPEN"},
+                  {"date": "1488461582089", "status": "READY"}],
+    In the new array, it sorted by date in ascending order.
+    :param ta_data: treatment arm data that may or may not have a statusLog field
+    """
+    if 'statusLog' in ta_data:
+        status_list = [{"date": status_date, "status": status} for status_date, status in ta_data['statusLog'].items()]
+        ta_data['statusLog'] = sorted(status_list, key=lambda item: item['date'])

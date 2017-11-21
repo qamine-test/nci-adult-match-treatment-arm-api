@@ -265,5 +265,26 @@ class TreatmentArmsOveriewTests(unittest.TestCase):
         self.assertEqual(result, exp_result)
 
 
+@ddt
+class ReformatStatusLogTests(unittest.TestCase):
+    @data(
+        ({}, {}),
+        ({'no': 'status', 'log': 'here'}, {'no': 'status', 'log': 'here'}),
+        ({'statusLog': {}, 'other': 'field'}, {'statusLog': [], 'other': 'field'}),
+        ({'statusLog': {"1488461538329": "PENDING"}, 'other': 'field'},
+         {'statusLog': [{"date": "1488461538329", "status": "PENDING"}], 'other': 'field'}),
+        ({'statusLog': {"1488461582089": "READY", "1488461538329": "PENDING", "1488461582": "OPEN", },
+          'other': 'field'},
+         {'statusLog': [{"date": "1488461538329", "status": "PENDING"},
+                        {"date": "1488461582", "status": "OPEN"},
+                        {"date": "1488461582089", "status": "READY"}],
+          'other': 'field'}),
+
+    )
+    @unpack
+    def test(self, ta_data, exp_ta_data):
+        treatment_arm.reformat_status_log(ta_data)
+        self.assertEqual(ta_data, exp_ta_data)
+
 if __name__ == '__main__':
     unittest.main()
