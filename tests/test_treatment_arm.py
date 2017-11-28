@@ -117,9 +117,10 @@ class TestTreatmentArms(unittest.TestCase):
         (503, ALL_ARMS, '?active=TRUE&projection=_id', ACTIVE_ARMS, ACTIVE_QRY, ID_PROJECTION),
     )
     @unpack
+    @patch('resources.treatment_arm.reformat_status_log')
     @patch('resources.treatment_arm.TreatmentArmsAccessor')
     def test_get(self, test_id, test_data, request_context, exp_result, exp_qry_param, exp_proj_param,
-                 mock_ta_accessor):
+                 mock_ta_accessor, mock_reformat_status_log):
         active_only = is_active_only_request(request_context)
         instance = mock_ta_accessor.return_value
         instance.find.return_value = test_data if not active_only else filter_out_inactives(test_data)
@@ -129,6 +130,8 @@ class TestTreatmentArms(unittest.TestCase):
             result = treatment_arm.TreatmentArms().get()
             self.assertEqual(result, exp_result, "TestTreatmentArms Test Case %d" % test_id)
             instance.find.assert_called_with(exp_qry_param, exp_proj_param)
+            # Test that reformat_status_log was called on every treatment arm returned from the treatment arm accessor.
+            self.assertEqual(mock_reformat_status_log.call_count, len(instance.find.return_value))
 
 
 @ddt
@@ -204,9 +207,10 @@ class TestTreatmentArmsById(unittest.TestCase):
         (603, 'EAY131-L', ALL_ARMS, '?projection=_id', EAY131L_ALL_ARMS, EAY131L_ALL_QRY, ID_PROJECTION),
     )
     @unpack
+    @patch('resources.treatment_arm.reformat_status_log')
     @patch('resources.treatment_arm.TreatmentArmsAccessor')
     def test_get(self, test_id, arm_id, test_data, request_context, exp_result, exp_qry_param,
-                 exp_proj_param, mock_ta_accessor):
+                 exp_proj_param, mock_ta_accessor, mock_reformat_status_log):
         active_only = is_active_only_request(request_context)
         instance = mock_ta_accessor.return_value
         instance.find.return_value = TestTreatmentArmsById._create_find_return(test_data, arm_id, active_only)
@@ -219,6 +223,7 @@ class TestTreatmentArmsById(unittest.TestCase):
             self.assertEqual(len(result), len(exp_result), "TestTreatmentArmsById Test Case %d" % test_id)
             self.assertEqual(TestTreatmentArmsById._sort(result), TestTreatmentArmsById._sort(exp_result),
                              "TestTreatmentArmsById Test Case %d" % test_id)
+            mock_reformat_status_log.assert_called_once_with(instance.find.return_value)
 
     @staticmethod
     def _sort(result):
@@ -267,18 +272,26 @@ class TreatmentArmsOveriewTests(unittest.TestCase):
 
 @ddt
 class ReformatStatusLogTests(unittest.TestCase):
+    TEST_STATUS_LOG3 = {"1488461582089": "READY", "1488461538329": "PENDING", "1488461582": "OPEN"}
+
+    REFORMATTED_STATUS_LOG3 = [{"date": "1488461538329", "status": "PENDING"},
+                               {"date": "1488461582", "status": "OPEN"},
+                               {"date": "1488461582089", "status": "READY"}]
+
+    TEST_STATUS_LOG1 = {"1488461538329": "PENDING"}
+    REFORMATTED_STATUS_LOG1 = [{"date": "1488461538329", "status": "PENDING"}]
+
     @data(
-        ({}, {}),
-        ({'no': 'status', 'log': 'here'}, {'no': 'status', 'log': 'here'}),
-        ({'statusLog': {}, 'other': 'field'}, {'statusLog': [], 'other': 'field'}),
-        ({'statusLog': {"1488461538329": "PENDING"}, 'other': 'field'},
-         {'statusLog': [{"date": "1488461538329", "status": "PENDING"}], 'other': 'field'}),
-        ({'statusLog': {"1488461582089": "READY", "1488461538329": "PENDING", "1488461582": "OPEN", },
-          'other': 'field'},
-         {'statusLog': [{"date": "1488461538329", "status": "PENDING"},
-                        {"date": "1488461582", "status": "OPEN"},
-                        {"date": "1488461582089", "status": "READY"}],
-          'other': 'field'}),
+        ({},
+         {}),
+        ({'no': 'status', 'log': 'here'},
+         {'no': 'status', 'log': 'here'}),
+        ({'statusLog': {}, 'other': 'field'},
+         {'statusLog': [], 'other': 'field'}),
+        ({'statusLog': TEST_STATUS_LOG1, 'other': 'field'},
+         {'statusLog': REFORMATTED_STATUS_LOG1, 'other': 'field'}),
+        ({'statusLog': TEST_STATUS_LOG3, 'other': 'field'},
+         {'statusLog': REFORMATTED_STATUS_LOG3, 'other': 'field'}),
 
     )
     @unpack
