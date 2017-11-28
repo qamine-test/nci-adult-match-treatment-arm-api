@@ -83,9 +83,10 @@ class TreatmentArmsById(Resource):
         query.update(get_query(args))
         projection = get_projection(args)
 
-        ta_data = TreatmentArmsAccessor().find(query, projection)
-        reformat_status_log(ta_data)
-        return ta_data
+        treatment_arms = TreatmentArmsAccessor().find(query, projection)
+        for ta in treatment_arms:
+            reformat_status_log(ta)
+        return treatment_arms
 
 
 class TreatmentArmsOverview(Resource):

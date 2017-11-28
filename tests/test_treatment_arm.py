@@ -223,7 +223,8 @@ class TestTreatmentArmsById(unittest.TestCase):
             self.assertEqual(len(result), len(exp_result), "TestTreatmentArmsById Test Case %d" % test_id)
             self.assertEqual(TestTreatmentArmsById._sort(result), TestTreatmentArmsById._sort(exp_result),
                              "TestTreatmentArmsById Test Case %d" % test_id)
-            mock_reformat_status_log.assert_called_once_with(instance.find.return_value)
+            # Test that reformat_status_log was called on every treatment arm returned from the treatment arm accessor.
+            self.assertEqual(mock_reformat_status_log.call_count, len(instance.find.return_value))
 
     @staticmethod
     def _sort(result):
