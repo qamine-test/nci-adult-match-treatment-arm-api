@@ -4,6 +4,7 @@
 # * Script to run curl commands for retrieving id_token.                       *
 # *******************************************************************
 
+echo "Creating token for user $AUTH0_USERNAME on $AUTH0_DATABASE"
 response= curl -H "Content-Type: application/json" -X POST -d '{"client_id":"'"$AUTH0_CLIENT_ID"'","username":"'"$AUTH0_USERNAME"'","password":"'"$AUTH0_PASSWORD"'","grant_type":"password","scope":"openid roles email","connection":"'"$AUTH0_DATABASE"'"}' https://ncimatch.auth0.com/oauth/ro
 
 # Run the following command to set an environment variable to the token id:
