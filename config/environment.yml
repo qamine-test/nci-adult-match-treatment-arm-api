@@ -6,7 +6,6 @@ development:
   polling_interval: 5
   sqs_queue_name: 'treatment-arm-api-uidev-queue'
   patient_api_url: "http://patient-api:5000/api/v1/patients"
-#  patient_api_url: "http://localhost:5000/api/v1/patients"
   logger_level: "DEBUG"
 
 test:
