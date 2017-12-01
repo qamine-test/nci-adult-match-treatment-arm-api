@@ -22,6 +22,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
     volumes:
       - ./scripts:/scripts
+      - ./config:/config
       - ./helpers:/helpers
   patient-api:
     image: "fnlcr/nci-adult-match-patient-api"
