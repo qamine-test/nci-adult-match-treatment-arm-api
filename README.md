@@ -177,7 +177,7 @@ MONGODB_URI environment variable to the desired URI.
 Merge the treatmentArm and treatmentArm collections in MongoDB Match database into single treatmentArms collection.
 
 ```bash
-python3 scripts/consolidate_treatment_arm_collections/consolidate_treatment_arm_collections.py
+PYTHONPATH=. python3 scripts/consolidate_treatment_arm_collections/consolidate_treatment_arm_collections.py
 ```
 
 #### refresh_summary_report
@@ -186,7 +186,7 @@ started via message to the TreatmentArmQueue in SQS.  Running the script manuall
 to make development and testing easier.
 
 ```bash
-python3 scripts/summary_report_refresher/refresh_summary_report.py
+PYTHONPATH=. python3 scripts/summary_report_refresher/refresh_summary_report.py
 ```
 
 #### update_refresh_lambda
@@ -194,13 +194,13 @@ Run this to update the AWS Lambda function *SendSummaryReportRefreshMessage* wit
 `send_refresh_message.py`.
 
 ```bash
-python3 scripts/ta_message_manager/update_refresh_lambda.py
+PYTHONPATH=. python3 scripts/ta_message_manager/update_refresh_lambda.py
 ```
 
 #### ta_message_manager
 FOR DEVELOPMENT ONLY:  Creates and monitors the TreatmentArmQueue in SQS.
 ```bash
-python3 scripts/ta_message_manager/ta_message_manager.py
+PYTHONPATH=. python3 scripts/ta_message_manager/ta_message_manager.py
 ```
 Currently only responds to two messages:
 * "RefreshSummaryReport":  runs the summary report refresh process.
@@ -208,8 +208,8 @@ Currently only responds to two messages:
 
 To easily send either of these messages to the message manager from the command line:
 ```bash
-python3 -c "import scripts.ta_message_manager.ta_message_manager as tmm; tmm.send_message_to_ta_queue(tmm.REFRESH_MSG)"
-python3 -c "import scripts.ta_message_manager.ta_message_manager as tmm; tmm.send_message_to_ta_queue(tmm.STOP_MSG)"
+PYTHONPATH=. python3 -c "import scripts.ta_message_manager.ta_message_manager as tmm; tmm.send_message_to_ta_queue(tmm.REFRESH_MSG)"
+PYTHONPATH=. python3 -c "import scripts.ta_message_manager.ta_message_manager as tmm; tmm.send_message_to_ta_queue(tmm.STOP_MSG)"
 ```
 
 ## Database Conversion
