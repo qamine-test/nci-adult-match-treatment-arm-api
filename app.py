@@ -61,7 +61,7 @@ def unhandled_exception(e):
 
 API.add_resource(AmoisResource, '/api/v1/treatment_arms/amois')
 API.add_resource(IsAmoisResource, '/api/v1/treatment_arms/is_amoi')
-API.add_resource(HealthCheck, '/api/v1/treatment_arms/healthcheck', endpoint='get_healthcheck')
+API.add_resource(HealthCheck, '/api/v1/treatment_arms/healthcheck', '/api/v1/treatment_arms/health_check')
 API.add_resource(TreatmentArms, '/api/v1/treatment_arms', endpoint='get_all')
 API.add_resource(TreatmentArmsById, '/api/v1/treatment_arms/<string:arm_id>', endpoint='get_by_id')
 API.add_resource(TreatmentArmsOverview, '/api/v1/treatment_arms/dashboard/overview')
