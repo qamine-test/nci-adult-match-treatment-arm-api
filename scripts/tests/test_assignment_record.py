@@ -24,6 +24,7 @@ DISEASES = [
     }
 ]
 ANALYSIS_ID = "TheAnalysisId"
+BIOPSY_SEQ_NUM = "BSN12345"
 ASSNMNT_IDX = 3
 DATE_SEL = datetime(2016, 5, 1)
 DATE_ON_ARM = datetime(2016, 5, 4)
@@ -34,12 +35,13 @@ DATE_OFF_ARM = datetime(2016, 6, 1)
 
 def create_assignment_rec_args():
     return [PAT_SEQ_NUM, TA_VERSION, ASSNMNT_STATUS, ASSNMNT_REASON, STEP_NUM,
-            DISEASES, ANALYSIS_ID, ASSNMNT_IDX, DATE_SEL, DATE_ON_ARM]
+            DISEASES, ANALYSIS_ID, ASSNMNT_IDX, BIOPSY_SEQ_NUM, DATE_SEL, DATE_ON_ARM]
 
 
 def create_expected_json(date_off_arm):
     return {
         "patientSequenceNumber": PAT_SEQ_NUM,
+        "biopsySequenceNumber": BIOPSY_SEQ_NUM,
         "treatmentArmVersion": TA_VERSION,
         "assignmentStatusOutcome": ASSNMNT_STATUS,
         "analysisId": ANALYSIS_ID,

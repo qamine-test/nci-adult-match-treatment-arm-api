@@ -5,7 +5,7 @@ class AssignmentRecord(object):
     """
 
     def __init__(self, pat_seq_num, ta_version, assnmnt_status, assnmnt_reason, step_num, diseases, analysis_id,
-                 patient_assmt_idx, date_selected, date_on_arm, date_off_arm=None):
+                 patient_assmt_idx, biopsy_seq_num, date_selected, date_on_arm, date_off_arm=None):
 
         self.patient_sequence_number = pat_seq_num
         self.treatment_arm_version = ta_version
@@ -18,6 +18,7 @@ class AssignmentRecord(object):
         self.step_number = step_num
         self.diseases = diseases
         self.assignment_reason = assnmnt_reason
+        self.biopsy_seq_num = biopsy_seq_num
 
     def get_json(self):
         """
@@ -29,6 +30,7 @@ class AssignmentRecord(object):
             "treatmentArmVersion": self.treatment_arm_version,
             "assignmentStatusOutcome": self.assignment_status_outcome,
             "analysisId": self.analysis_id,
+            "biopsySequenceNumber": self.biopsy_seq_num,
             "dateSelected": self.date_selected,
             "dateOnArm": self.date_on_arm,
             "dateOffArm": self.date_off_arm,

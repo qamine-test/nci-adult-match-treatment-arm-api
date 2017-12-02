@@ -112,23 +112,24 @@ class TestPatient(unittest.TestCase):
         assd_date = p.get_date_assigned()
         self.assertEqual(assd_date, exp_date)
 
-    # Test the Patient.get_analysis_id method.
+    # Test the Patient.get_analysis_id_and_bsn method.
     @data(
-        (None, None),
-        ([pd.MATCHING_GOOD_BIOPSY1], pd.MATCHING_ANALYSIS_ID),
-        ([pd.MATCHING_GOOD_BIOPSY2], pd.MATCHING_ANALYSIS_ID),
-        ([pd.MATCHING_GOOD_BIOPSY3], pd.MATCHING_ANALYSIS_ID),
-        ([pd.MATCHING_BAD_BIOPSY1, pd.MATCHING_GOOD_BIOPSY1], pd.MATCHING_ANALYSIS_ID),
-        ([pd.MATCHING_BAD_BIOPSY1, pd.NOMATCH_BAD_BIOPSY1, pd.MATCHING_FAILED_BIOPSY1], None),
-        ([pd.MATCHING_BAD_BIOPSY2, pd.NOMATCH_BAD_BIOPSY2, pd.MATCHING_FAILED_BIOPSY2], None),
-        ([pd.NOMATCH_GOOD_BIOPSY1, pd.NOMATCH_GOOD_BIOPSY3, pd.MATCHING_FAILED_BIOPSY3], None),
-        ([pd.NOMATCH_GOOD_BIOPSY2, pd.MATCHING_GOOD_BIOPSY2], pd.MATCHING_ANALYSIS_ID),
+        (None, None, None),
+        ([pd.MATCHING_GOOD_BIOPSY1], pd.MATCHING_ANALYSIS_ID, pd.MATCHING_BIOPSY_SEQ_NUM),
+        ([pd.MATCHING_GOOD_BIOPSY2], pd.MATCHING_ANALYSIS_ID, pd.MATCHING_BIOPSY_SEQ_NUM),
+        ([pd.MATCHING_GOOD_BIOPSY3], pd.MATCHING_ANALYSIS_ID, pd.MATCHING_BIOPSY_SEQ_NUM),
+        ([pd.MATCHING_BAD_BIOPSY1, pd.MATCHING_GOOD_BIOPSY1], pd.MATCHING_ANALYSIS_ID, pd.MATCHING_BIOPSY_SEQ_NUM),
+        ([pd.MATCHING_BAD_BIOPSY1, pd.NOMATCH_BAD_BIOPSY1, pd.MATCHING_FAILED_BIOPSY1], None, None),
+        ([pd.MATCHING_BAD_BIOPSY2, pd.NOMATCH_BAD_BIOPSY2, pd.MATCHING_FAILED_BIOPSY2], None, None),
+        ([pd.NOMATCH_GOOD_BIOPSY1, pd.NOMATCH_GOOD_BIOPSY3, pd.MATCHING_FAILED_BIOPSY3], None, None),
+        ([pd.NOMATCH_GOOD_BIOPSY2, pd.MATCHING_GOOD_BIOPSY2], pd.MATCHING_ANALYSIS_ID, pd.MATCHING_BIOPSY_SEQ_NUM),
     )
     @unpack
-    def test_get_analysis_id(self, biopsies, exp_analysis_id):
+    def test_get_analysis_id_and_bsn(self, biopsies, exp_analysis_id, exp_biopsy_seq_num):
         p = Patient(pd.create_patient(biopsies=biopsies))
-        analysis_id = p.get_analysis_id()
+        analysis_id, biopsy_seq_num = p.get_analysis_id_and_bsn()
         self.assertEqual(analysis_id, exp_analysis_id)
+        self.assertEqual(biopsy_seq_num, exp_biopsy_seq_num)
 
 class TestConvertDate(unittest.TestCase):
     def test(self):

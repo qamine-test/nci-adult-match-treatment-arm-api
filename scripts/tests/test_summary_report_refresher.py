@@ -213,6 +213,7 @@ class RefresherTest(unittest.TestCase):
           pd.PENDING_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
           pd.PENDING_PATIENT['patientAssignments']['stepNumber'], pd.PENDING_PATIENT['diseases'],
           pd.MATCHING_ANALYSIS_ID, pd.PENDING_PATIENT['patientAssignmentIdx'],
+          pd.MATCHING_GOOD_BIOPSY1['biopsySequenceNumber'],
           convert_date(pd.PENDING_PATIENT['patientAssignments']['dateAssigned']),
           None, None
           ]),
@@ -221,6 +222,7 @@ class RefresherTest(unittest.TestCase):
           pd.CURRENT_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
           pd.CURRENT_PATIENT['patientAssignments']['stepNumber'], pd.CURRENT_PATIENT['diseases'],
           pd.MATCHING_ANALYSIS_ID, pd.CURRENT_PATIENT['patientAssignmentIdx'],
+          pd.MATCHING_GOOD_BIOPSY1['biopsySequenceNumber'],
           convert_date(pd.CURRENT_PATIENT['patientAssignments']['dateAssigned']),
           pd.ON_ARM_DATE, None
           ]),
@@ -229,6 +231,7 @@ class RefresherTest(unittest.TestCase):
           pd.FORMER_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
           pd.FORMER_PATIENT['patientAssignments']['stepNumber'], pd.FORMER_PATIENT['diseases'],
           pd.MATCHING_ANALYSIS_ID, pd.FORMER_PATIENT['patientAssignmentIdx'],
+          pd.MATCHING_GOOD_BIOPSY1['biopsySequenceNumber'],
           convert_date(pd.FORMER_PATIENT['patientAssignments']['dateAssigned']),
           pd.ON_ARM_DATE, pd.OFF_ARM_DATE
           ])
@@ -242,6 +245,7 @@ class RefresherTest(unittest.TestCase):
         self.assertEqual(ar.treatment_arm_version, exp_ar.treatment_arm_version)
         self.assertEqual(ar.assignment_status_outcome, exp_ar.assignment_status_outcome)
         self.assertEqual(ar.analysis_id, exp_ar.analysis_id)
+        self.assertEqual(ar.biopsy_seq_num, exp_ar.biopsy_seq_num)
         self.assertEqual(ar.patient_assmt_idx, exp_ar.patient_assmt_idx)
         self.assertEqual(ar.date_selected, exp_ar.date_selected)
         self.assertEqual(ar.date_on_arm, exp_ar.date_on_arm)

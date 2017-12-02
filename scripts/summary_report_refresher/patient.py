@@ -156,16 +156,18 @@ class Patient(object):
         """
         if 'dateAssigned' in self._pat['patientAssignments']:
             return convert_date(self._pat['patientAssignments']['dateAssigned'])
-            # return self._pat['patientAssignments']['dateAssigned']
         else:
             return None
 
-    def get_analysis_id(self):
+    def get_analysis_id_and_bsn(self):
         """
-        Finds the biopsy that matches the Treatment Arm assignment and returns its jobName as the Analysis ID.
-        :return: a string containing the Analysis ID if one can be found; otherwise None
+        Finds the biopsy that matches the Treatment Arm assignment and returns its jobName as the Analysis ID
+        along with the corresponding biopsy sequence number.
+        :return: a string containing the Analysis ID if one can be found and a string containing the biopsy
+                 sequence number; otherwise None, None
         """
         analysis_id = None
+        biopsy_seq_num = None
         if 'patientAssignments' in self._pat and 'biopsySequenceNumber' in self._pat['patientAssignments']:
             biopsy_seq_num = self._pat['patientAssignments']['biopsySequenceNumber']
 
@@ -181,7 +183,10 @@ class Patient(object):
                     if analysis_id:
                         break
 
-        return analysis_id
+        if analysis_id is None and biopsy_seq_num is not None:
+            biopsy_seq_num = None
+
+        return analysis_id, biopsy_seq_num
 
     def get_patient_assignment_step_number(self):
         if 'patientAssignments' in self._pat and 'stepNumber' in self._pat['patientAssignments']:

@@ -104,17 +104,18 @@ class Refresher(object):
         :return: the created AssignmentRecord for patient and ta_id
         """
         ta_version = patient.treatment_arm_version()
-        (date_on_arm, date_off_arm, status) = patient.get_dates_status_from_arm ()
+        (date_on_arm, date_off_arm, status) = patient.get_dates_status_from_arm()
 
+        analysis_id, biopsy_seq_num = patient.get_analysis_id_and_bsn()
         return AssignmentRecord(patient.patientSequenceNumber,
                                 ta_version,
                                 status,
-                                # patient.currentPatientStatus,
                                 patient.get_assignment_reason(ta_id, ta_version),
                                 patient.get_patient_assignment_step_number(),
                                 patient.diseases,
-                                patient.get_analysis_id(),
+                                analysis_id,
                                 patient.patientAssignmentIdx,
+                                biopsy_seq_num,
                                 patient.get_date_assigned(),
                                 date_on_arm,
                                 date_off_arm,
