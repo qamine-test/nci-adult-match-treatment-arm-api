@@ -58,4 +58,18 @@ class SummaryReport(object):
         Returns the structure needed to update the database.
         :return: a dict containing the full summary report structure
         """
+        self.sr[SummaryReport.ASSNMNT_RECS] = self._finalize_assignment_records(self.sr[SummaryReport.ASSNMNT_RECS])
         return self.sr
+
+    @staticmethod
+    def _finalize_assignment_records(assignment_recs):
+        """
+        Sorts the assignment records by the date the patient was selected for the arm (ascending order).  Then
+        assigns a slot number to each patient that was put on the arm in the order that they were put on the arm.
+        :param assignment_recs:  JSON for assignment records that are unsorted and without slot numbers
+        :return: JSON for assignment records that are sorted and have slot numbers
+        """
+        assignment_recs = sorted(assignment_recs, key=lambda ar: ar['dateSelected'])
+        for i, ar in enumerate([ar for ar in assignment_recs if ar['dateOnArm'] is not None], start=1):
+            ar["slot"] = i
+        return assignment_recs
