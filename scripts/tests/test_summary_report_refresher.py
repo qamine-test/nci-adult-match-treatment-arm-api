@@ -136,7 +136,7 @@ class RefresherTest(unittest.TestCase):
         for patient in expected_ar_patients:
             assmt_rec = Refresher._create_assignment_record(Patient(patient), ta_data_for_sum_rpt['treatmentArmId'])
             ar_records.append(assmt_rec.get_json())
-        expected_sum_rpt_json['assignmentRecords'] = ar_records
+        expected_sum_rpt_json['assignmentRecords'] = SummaryReport._finalize_assignment_records(ar_records)
 
         # Set up the mocked PatientAccessor
         pa_instance = mock_patient_accessor.return_value
