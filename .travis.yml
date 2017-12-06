@@ -44,7 +44,7 @@ after_success:
   - curl -s -X POST -H "Content-Type:application/json" -H "Accept:application/json"
     -H "Travis-API-Version:3" -H "Authorization:token $TRAVIS_TOKEN"
     -d "{\"request\":{\"message\":\"Triggered by nci-adult-match-treatment-arm-api $TRAVIS_COMMIT\", \"branch\":\"master\", \"config\":{\"env\":{\"matrix\":[\"TRIGGER_REPO=nci-adult-match-treatment-arm-api;TRIGGER_VER=$DATE;CUC_TAG=@treatment_arm_api;AUTHOR=$AUTHOR\"]}}}}"
-    https://api.travis-ci.org/repo/CBIIT%2Fnci-adult-match-test/requests
+    https://api.travis-ci.com/repo/CBIIT%2Fnci-adult-match-test/requests
 
 notifications:
   slack: clinicalbiomed:k1HFjdqTwI4yvSyQWPulUEK4
