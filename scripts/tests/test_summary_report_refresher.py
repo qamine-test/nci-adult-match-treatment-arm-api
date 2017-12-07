@@ -209,7 +209,8 @@ class RefresherTest(unittest.TestCase):
 
     @data(
         (pd.PENDING_PATIENT, pd.MATCHING_LOGIC['treatmentArmId'],
-         [pd.PENDING_PATIENT['patientSequenceNumber'], pd.MATCHING_LOGIC['treatmentArmVersion'],
+         [pd.PENDING_PATIENT['patientSequenceNumber'], pd.PENDING_PATIENT['patientType'],
+          pd.MATCHING_LOGIC['treatmentArmVersion'],
           pd.PENDING_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
           pd.PENDING_PATIENT['patientAssignments']['stepNumber'], pd.PENDING_PATIENT['diseases'],
           pd.MATCHING_ANALYSIS_ID, pd.PENDING_PATIENT['patientAssignmentIdx'],
@@ -218,7 +219,8 @@ class RefresherTest(unittest.TestCase):
           None, None
           ]),
         (pd.CURRENT_PATIENT, pd.MATCHING_LOGIC['treatmentArmId'],
-         [pd.CURRENT_PATIENT['patientSequenceNumber'], pd.MATCHING_LOGIC['treatmentArmVersion'],
+         [pd.CURRENT_PATIENT['patientSequenceNumber'], pd.CURRENT_PATIENT['patientType'],
+          pd.MATCHING_LOGIC['treatmentArmVersion'],
           pd.CURRENT_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
           pd.CURRENT_PATIENT['patientAssignments']['stepNumber'], pd.CURRENT_PATIENT['diseases'],
           pd.MATCHING_ANALYSIS_ID, pd.CURRENT_PATIENT['patientAssignmentIdx'],
@@ -227,7 +229,8 @@ class RefresherTest(unittest.TestCase):
           pd.ON_ARM_DATE, None
           ]),
         (pd.FORMER_PATIENT, pd.MATCHING_LOGIC['treatmentArmId'],
-         [pd.FORMER_PATIENT['patientSequenceNumber'], pd.MATCHING_LOGIC['treatmentArmVersion'],
+         [pd.FORMER_PATIENT['patientSequenceNumber'], pd.FORMER_PATIENT['patientType'],
+          pd.MATCHING_LOGIC['treatmentArmVersion'],
           pd.FORMER_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
           pd.FORMER_PATIENT['patientAssignments']['stepNumber'], pd.FORMER_PATIENT['diseases'],
           pd.MATCHING_ANALYSIS_ID, pd.FORMER_PATIENT['patientAssignmentIdx'],
@@ -242,6 +245,7 @@ class RefresherTest(unittest.TestCase):
         ar = Refresher._create_assignment_record(Patient(patient), trtmt_id)
 
         self.assertEqual(ar.patient_sequence_number, exp_ar.patient_sequence_number)
+        self.assertEqual(ar.patient_type, exp_ar.patient_type)
         self.assertEqual(ar.treatment_arm_version, exp_ar.treatment_arm_version)
         self.assertEqual(ar.assignment_status_outcome, exp_ar.assignment_status_outcome)
         self.assertEqual(ar.analysis_id, exp_ar.analysis_id)

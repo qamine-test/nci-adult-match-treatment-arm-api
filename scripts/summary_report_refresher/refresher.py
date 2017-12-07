@@ -108,6 +108,7 @@ class Refresher(object):
 
         analysis_id, biopsy_seq_num = patient.get_analysis_id_and_bsn()
         return AssignmentRecord(patient.patientSequenceNumber,
+                                patient.patientType,
                                 ta_version,
                                 status,
                                 patient.get_assignment_reason(ta_id, ta_version),

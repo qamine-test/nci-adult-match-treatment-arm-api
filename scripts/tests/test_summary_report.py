@@ -20,6 +20,7 @@ ALL_FIELDS = SummaryReport._REQ_JSON_FIELDS
 
 # AssignmentRecords data constants
 PAT_SEQ_NUM = '112244'
+PATIENT_TYPE = 'STANDARD'
 TA_VERSION = '2016-04-25'
 ASSNMNT_STATUS = 'ON_TREATMENT_ARM'
 ASSNMNT_REASON = 'Because I said so'
@@ -43,7 +44,7 @@ DATE_OFF_ARM = datetime(2016, 5, 1)
 # ******** Helper functions to build data structures used in test cases ******** #
 
 def create_assignment_rec():
-    return AssignmentRecord(PAT_SEQ_NUM, TA_VERSION, ASSNMNT_STATUS, ASSNMNT_REASON, STEP_NUM,
+    return AssignmentRecord(PAT_SEQ_NUM, PATIENT_TYPE, TA_VERSION, ASSNMNT_STATUS, ASSNMNT_REASON, STEP_NUM,
                             DISEASES, ASSNMNT_IDX, ANALYSIS_ID, DATE_SEL, DATE_ON_ARM, None)
 
 

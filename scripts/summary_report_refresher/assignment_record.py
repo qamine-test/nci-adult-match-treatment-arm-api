@@ -4,10 +4,11 @@ class AssignmentRecord(object):
     subcollection of the TreatmentArms collection in the match MongoDb database.
     """
 
-    def __init__(self, pat_seq_num, ta_version, assnmnt_status, assnmnt_reason, step_num, diseases, analysis_id,
-                 patient_assmt_idx, biopsy_seq_num, date_selected, date_on_arm, date_off_arm=None):
+    def __init__(self, pat_seq_num, patient_type, ta_version, assnmnt_status, assnmnt_reason, step_num, diseases,
+                 analysis_id, patient_assmt_idx, biopsy_seq_num, date_selected, date_on_arm, date_off_arm=None):
 
         self.patient_sequence_number = pat_seq_num
+        self.patient_type = patient_type
         self.treatment_arm_version = ta_version
         self.assignment_status_outcome = assnmnt_status
         self.analysis_id = analysis_id
@@ -27,6 +28,7 @@ class AssignmentRecord(object):
         """
         return {
             "patientSequenceNumber": self.patient_sequence_number,
+            "patientType": self.patient_type,
             "treatmentArmVersion": self.treatment_arm_version,
             "assignmentStatusOutcome": self.assignment_status_outcome,
             "analysisId": self.analysis_id,

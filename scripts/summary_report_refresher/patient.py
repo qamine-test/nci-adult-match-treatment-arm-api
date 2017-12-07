@@ -26,6 +26,7 @@ class Patient(object):
             patientAssignmentIdx
             patientAssignments
             patientSequenceNumber
+            patientType
             currentStepNumber
             patientTriggers
             diseases

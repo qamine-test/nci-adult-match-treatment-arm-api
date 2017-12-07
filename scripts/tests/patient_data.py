@@ -147,11 +147,11 @@ NOMATCH_BAD_BIOPSY2 = create_biopsy(NON_MATCHING_BIOPSY_SEQ_NUM, False, [NOT_CON
 DEFAULT_ASSIGNMENT_IDX = 2
 DEFAULT_PAT_ASSNMNT_STEP_NUM = "0"
 
-def create_patient(triggers=None, assignment_logics=None,
-                   current_patient_status='ON_TREATMENT_ARM',
+
+def create_patient(triggers=None, assignment_logics=None, current_patient_status='ON_TREATMENT_ARM',
                    treatment_arm=None, biopsies=None, patient_assmnt_idx=DEFAULT_ASSIGNMENT_IDX,
-                   assignment_date=ASSIGNMENT_DATE, patient_sequence_number="14400", pat_assignment_idx=0
-                   ):
+                   patient_type="STANDARD", assignment_date=ASSIGNMENT_DATE, patient_sequence_number="14400",
+                   pat_assignment_idx=0):
     if triggers is None:
         triggers = DEFAULT_TRIGGERS
     if assignment_logics is None:
@@ -163,6 +163,7 @@ def create_patient(triggers=None, assignment_logics=None,
     patient = {
         "_id": ObjectId("55e9e33600929ab89f5499a1"),
         "patientSequenceNumber": patient_sequence_number,
+        "patientType": patient_type,
         "patientTriggers": triggers,
         "biopsies": biopsies,
         "currentStepNumber": "1",

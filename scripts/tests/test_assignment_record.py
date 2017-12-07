@@ -10,6 +10,7 @@ from scripts.summary_report_refresher.assignment_record import AssignmentRecord
 # ******** TEST DATA CONSTANTS ******** #
 
 PAT_SEQ_NUM = '112233'
+PATIENT_TYPE = 'STANDARD'
 TA_VERSION = '2016-04-24'
 ASSNMNT_STATUS = 'ON_TREATMENT_ARM'
 ASSNMNT_REASON = 'Just because'
@@ -34,13 +35,14 @@ DATE_OFF_ARM = datetime(2016, 6, 1)
 # ******** Helper functions to build data structures used in test cases ******** #
 
 def create_assignment_rec_args():
-    return [PAT_SEQ_NUM, TA_VERSION, ASSNMNT_STATUS, ASSNMNT_REASON, STEP_NUM,
+    return [PAT_SEQ_NUM, PATIENT_TYPE, TA_VERSION, ASSNMNT_STATUS, ASSNMNT_REASON, STEP_NUM,
             DISEASES, ANALYSIS_ID, ASSNMNT_IDX, BIOPSY_SEQ_NUM, DATE_SEL, DATE_ON_ARM]
 
 
 def create_expected_json(date_off_arm):
     return {
         "patientSequenceNumber": PAT_SEQ_NUM,
+        "patientType": PATIENT_TYPE,
         "biopsySequenceNumber": BIOPSY_SEQ_NUM,
         "treatmentArmVersion": TA_VERSION,
         "assignmentStatusOutcome": ASSNMNT_STATUS,
