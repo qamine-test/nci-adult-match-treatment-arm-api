@@ -219,7 +219,7 @@ There are a handful of changes to the Adult Match production database that are r
 2.  Run the **refresh_summary_report** script.  (See instructions above.)
 3.  In the **PatientAPI** project, create indexes on the **Patient** collection.  
 4.  In the **PatientAPI** project, create the Patient UI Views on the **Patient** collection. 
-5.  In the **PatientAPI** project, run the script to update the field name for the Treatment Arm ID.
+5.  In the **PatientAPI** project, run the script to update the Patient model.
 
 ## AWS SQS Setup
 A normal SQS Queue must be setup with the default settings in the AWS environment.  Its name depends on the
