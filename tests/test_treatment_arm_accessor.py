@@ -108,6 +108,7 @@ class TreatmentArmAccessorTests(unittest.TestCase):
                            "dateArchived": 1,
                            "treatmentArmStatus": 1,
                            "identifier": "$variantReport.indels.identifier",
+                           "protein": "$variantReport.indels.protein",
                            "inclusion": "$variantReport.indels.inclusion",
                            "type": "Hotspot"
                            }}
