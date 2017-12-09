@@ -48,15 +48,19 @@ class TreatmentArmsAccessor(MongoDbAccessor):
     IDENTIFIER_PROJECT_STEP = {
         'singleNucleotideVariants': dict(**IDENTIFIER_PROJECT_STATIC,
                                          **{'identifier': "$variantReport.singleNucleotideVariants.identifier",
+                                            'protein': "$variantReport.singleNucleotideVariants.protein",
                                             'inclusion': "$variantReport.singleNucleotideVariants.inclusion"}),
         'copyNumberVariants': dict(**IDENTIFIER_PROJECT_STATIC,
                                    **{'identifier': "$variantReport.copyNumberVariants.identifier",
+                                      'protein': "$variantReport.copyNumberVariants.protein",
                                       'inclusion': "$variantReport.copyNumberVariants.inclusion"}),
         'geneFusions': dict(**IDENTIFIER_PROJECT_STATIC,
                             **{'identifier': "$variantReport.geneFusions.identifier",
+                               'protein': "$variantReport.geneFusions.protein",
                                'inclusion': "$variantReport.geneFusions.inclusion"}),
         'indels': dict(**IDENTIFIER_PROJECT_STATIC,
                        **{'identifier': "$variantReport.indels.identifier",
+                          'protein': "$variantReport.indels.protein",
                           'inclusion': "$variantReport.indels.inclusion"}),
     }
 
