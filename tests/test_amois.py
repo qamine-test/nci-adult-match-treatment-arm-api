@@ -56,15 +56,17 @@ def efgo_dict(e, f, g, o):
     return efgo_fields
 
 
-def variant(e, f, g, o, identifier='ABC', confirmed=True):
+def variant(e, f, g, o, identifier='ABC', confirmed=True, protein=None):
     # Create a patient variant data structure
     vr = efgo_dict(e, f, g, o)
     vr['identifier'] = identifier
     vr['confirmed'] = confirmed
+    if protein is not None:
+        vr['protein'] = protein
     return vr
 
 
-def add_common_ta_fields(ta_rule, archived, incl, status, trtmt_id, ver, rule_type):
+def add_common_ta_fields(ta_rule, archived, incl, status, trtmt_id, ver, rule_type, protein=None):
     # Add the fields to ta_rule that are common to both types of treatment arm rules (identifier and NonHotspot).
     ta_rule['treatmentArmId'] = trtmt_id
     ta_rule['version'] = ver
@@ -72,6 +74,8 @@ def add_common_ta_fields(ta_rule, archived, incl, status, trtmt_id, ver, rule_ty
     ta_rule['dateArchived'] = None if not archived else datetime(2016, 7, 7)
     ta_rule['treatmentArmStatus'] = status
     ta_rule["type"] = rule_type
+    if protein is not None:
+        ta_rule['protein'] = protein
 
 
 def ta_nh_rule(e, f, g, o, trtmt_id='TMTID', ver='2016-11-11', incl=True, status='OPEN', archived=False):
@@ -81,10 +85,12 @@ def ta_nh_rule(e, f, g, o, trtmt_id='TMTID', ver='2016-11-11', incl=True, status
     return nh_rule
 
 
-def ta_id_rule(identifier, trtmt_id='TMTID', ver='2016-11-11', incl=True, status='OPEN', archived=False):
+def ta_id_rule(identifier, trtmt_id='TMTID', ver='2016-11-11', incl=True, status='OPEN', archived=False,
+               rule_type="Hotspot", protein=None):
     # Create a treatmentArm Identifier Rule (matches on identifier field)
     id_rule = {'identifier': identifier, "function": 'not_a_real_function', "gene": 'not_a_real_gene'}
-    add_common_ta_fields(id_rule, archived, incl, status, trtmt_id, ver, "Hotspot")
+    # rule_type = "Hotspot" if protein is None else "Protein"
+    add_common_ta_fields(id_rule, archived, incl, status, trtmt_id, ver, rule_type, protein)
     return id_rule
 
 
@@ -207,21 +213,25 @@ nh_rules = list(
      ])
 cnv_rules = list(
     [ta_id_rule('CNVOSM', 'CNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+     ta_id_rule('CNVprot', 'CNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False, protein="p.CNVprot")
      ])
 snv_rules = list(
     [ta_id_rule('SNVOSM', 'SNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+     ta_id_rule('SNVprot', 'SNVARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False, protein="p.SNVprot"),
      ])
 gf_rules = list(
     [ta_id_rule('GFOSM', 'GENEFUSARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+     ta_id_rule('GFprot', 'GENEFUSARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False, protein="p.GFprot"),
      ])
 indel_rules = list(
     [ta_id_rule('INDOSM', 'INDELARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False),
+     ta_id_rule('INDprot', 'INDELARM-A', '2016-12-20', INCLUSION, 'SUSPENDED', False, protein="p.INDprot"),
      ])
 
-identifier_rules = {'copyNumberVariants': cnv_rules,
-                    'singleNucleotideVariants': snv_rules,
-                    'indels': indel_rules,
-                    'geneFusions': gf_rules}
+id_and_protein_rules = {'copyNumberVariants': cnv_rules,
+                        'singleNucleotideVariants': snv_rules,
+                        'indels': indel_rules,
+                        'geneFusions': gf_rules}
 
 
 class AmoisModuleTestCase(TestCase):
@@ -240,7 +250,18 @@ class AmoisModuleTestCase(TestCase):
 # ******** Test the VariantRulesMgr class in amois.py. ******** #
 @ddt
 class TestVariantRulesMgr(AmoisModuleTestCase):
-    # Test the VariantRulesMgr._match_item function.
+    # Test the VariantRulesMgr._extract_protein_rules function.
+    @data(
+        ([], []),
+        ([ta_id_rule('ABCDE', protein=None)], []),
+        ([ta_id_rule('ABCDE', protein='p.A1B2')], [ta_id_rule('ABCDE', protein='p.A1B2', rule_type="Protein")]),
+    )
+    @unpack
+    def test_extract_protein_rules(self, identifier_rules, exp_result):
+        result = amois.VariantRulesMgr._extract_protein_rules(identifier_rules)
+        self.assertEqual(result, exp_result)
+
+    # Test the VariantRulesMgr._match_item function, which matches a patient variant item to a nonhotspot rule item.
     @data(
         ('string_data', 'string_data', True),
         ('string_data', 'STRING_DATa', True),
@@ -323,10 +344,10 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
             self.assertEqual(vrm.get_matching_nonhotspot_rules(patient_variant), exp_amois)
 
     # Test the VariantRulesMgr functions that match by identifier:
-    #   * get_matching_copy_number_variant_rules
+    #   * get_matching_copy_number_variant_identifier_rules
     #   * get_matching_single_nucleotide_variants_rules
-    #   * get_matching_gene_fusions_rules
-    #   * get_matching_indel_rules
+    #   * get_matching_gene_fusions_identifier_rules
+    #   * get_matching_indel_identifier_rules
     @data(
         # 1. One variant, no ID rules
         (variant("9", '1', '1', '1', 'ABCD', confirmed=True), [], []),
@@ -343,22 +364,66 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
             exp_amois = [ta_id_rules[i] for i in exp_amois_indexes]
 
             vrm = amois.VariantRulesMgr({}, ta_id_rules, {}, {}, {})
-            self.assertEqual(vrm.get_matching_copy_number_variant_rules(patient_variant), exp_amois, "CNV")
+            self.assertEqual(vrm.get_matching_copy_number_variant_identifier_rules(patient_variant), exp_amois, "CNV")
 
             vrm = amois.VariantRulesMgr({}, {}, ta_id_rules, {}, {})
-            self.assertEqual(vrm.get_matching_single_nucleotide_variant_rules(patient_variant), exp_amois, "SNV")
+            self.assertEqual(vrm.get_matching_single_nucleotide_variant_identifier_rules(patient_variant),
+                             exp_amois, "SNV")
 
             vrm = amois.VariantRulesMgr({}, {}, {}, ta_id_rules, {})
-            self.assertEqual(vrm.get_matching_gene_fusions_rules(patient_variant), exp_amois, "GeneFusion")
+            self.assertEqual(vrm.get_matching_gene_fusions_identifier_rules(patient_variant), exp_amois, "GeneFusion")
 
             vrm = amois.VariantRulesMgr({}, {}, {}, {}, ta_id_rules)
-            self.assertEqual(vrm.get_matching_indel_rules(patient_variant), exp_amois, "Indel")
+            self.assertEqual(vrm.get_matching_indel_identifier_rules(patient_variant), exp_amois, "Indel")
+
+    # Test the VariantRulesMgr functions that match by protein:
+    #   * get_matching_copy_number_variant_protein_rules
+    #   * get_matching_single_nucleotide_variants_rules
+    #   * get_matching_gene_fusions_protein_rules
+    #   * get_matching_indel_protein_rules
+    @data(
+        # 1. One variant, no protein rules
+        (variant("9", '1', '1', '1', 'ABCD', confirmed=True), [], []),
+        # 2. One variant (confirmed), one protein rule; matches
+        (variant("9", '1', '1', '1', 'ABCDE', confirmed=True, protein="p.R2D2"),
+         [ta_id_rule('ABCDE', protein="p.R2D2")],
+         [0]),
+        # 3. One variant with lc protein (confirmed), one protein rule; matches
+        (variant("9", '1', '1', '1', 'abcde', confirmed=True, protein="p.r2d2"),
+         [ta_id_rule('ABCDE', protein="p.R2D2")],
+         [0]),
+        # 4. One variant (unconfirmed), one protein rule; no match
+        (variant("9", '1', '1', '1', 'ABCDE', confirmed=False, protein="p.R2D2"),
+         [ta_id_rule('ABCDE', protein="p.C3PO")],
+         []),
+    )
+    @unpack
+    def test_get_matching_protein_rules(self, patient_variant, ta_id_rules, exp_amois_indexes):
+        with APP.test_request_context(''):
+            exp_amois = [ta_id_rules[i] for i in exp_amois_indexes]
+
+            vrm = amois.VariantRulesMgr({}, ta_id_rules, {}, {}, {})
+            self.assertEqual(vrm.get_matching_copy_number_variant_protein_rules(patient_variant), exp_amois, "CNV")
+
+            vrm = amois.VariantRulesMgr({}, {}, ta_id_rules, {}, {})
+            self.assertEqual(vrm.get_matching_single_nucleotide_variant_protein_rules(patient_variant),
+                             exp_amois, "SNV")
+
+            vrm = amois.VariantRulesMgr({}, {}, {}, ta_id_rules, {})
+            self.assertEqual(vrm.get_matching_gene_fusions_protein_rules(patient_variant), exp_amois, "GeneFusion")
+
+            vrm = amois.VariantRulesMgr({}, {}, {}, {}, ta_id_rules)
+            self.assertEqual(vrm.get_matching_indel_protein_rules(patient_variant), exp_amois, "Indel")
 
     # Test the VariantRulesMgr._is_indel_amoi function.
     @data(
         (variant("9", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], [], False),
         (variant("9", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], [], True),
         (variant("9", '1', '1', '1', 'abcde', True), [ta_id_rule('ABCDE')], [], True),
+        (variant("9", '1', '1', '1', 'ABCD', True, protein="p.CYL0N8"), [ta_id_rule('ABCDE', protein="p.CYL0N6")],
+         [], False),
+        (variant("9", '1', '1', '1', 'ABCD', True, protein="p.CYL0N6"), [ta_id_rule('ABCDE', protein="p.CYL0N6")],
+         [], True),
         (variant("14", 'missense', 'IDH2', 'Hotspot'), [ta_id_rule('ABCDE')],
          [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')], True),
     )
@@ -373,6 +438,10 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
         (variant("8", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], [], False),
         (variant("8", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], [], True),
         (variant("8", '1', '1', '1', 'abcde', True), [ta_id_rule('ABCDE')], [], True),
+        (variant("8", '1', '1', '1', 'ABCD', True, protein="p.CYL0N8"), [ta_id_rule('ABCDE', protein="p.CYL0N6")],
+         [], False),
+        (variant("8", '1', '1', '1', 'ABCD', True, protein="p.CYL0N6"), [ta_id_rule('ABCDE', protein="p.CYL0N6")],
+         [], True),
         (variant("14", 'missense', 'IDH2', 'Hotspot'), [ta_id_rule('ABCDE')],
          [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')], True),
     )
@@ -387,6 +456,10 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
         (variant("7", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], False),
         (variant("7", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], True),
         (variant("7", '1', '1', '1', 'abcde', True), [ta_id_rule('ABCDE')], True),
+        (variant("7", '1', '1', '1', 'ABCD', True, protein="p.CYL0N8"), [ta_id_rule('ABCDE', protein="p.CYL0N6")],
+         False),
+        (variant("7", '1', '1', '1', 'ABCD', True, protein="p.CYL0N6"), [ta_id_rule('ABCDE', protein="p.CYL0N6")],
+         True),
     )
     @unpack
     def test_is_copy_number_variant_amoi(self, patient_variant, cnv_id_rules, exp_result):
@@ -399,6 +472,10 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
         (variant("6", '1', '1', '1', 'ABCD', True), [ta_id_rule('ABCDE')], False),
         (variant("6", '1', '1', '1', 'ABCDE', True), [ta_id_rule('ABCDE')], True),
         (variant("6", '1', '1', '1', 'abcde', True), [ta_id_rule('ABCDE')], True),
+        (variant("6", '1', '1', '1', 'ABCD', True, protein="p.CYL0N8"), [ta_id_rule('ABCDE', protein="p.CYL0N6")],
+         False),
+        (variant("6", '1', '1', '1', 'ABCD', True, protein="p.CYL0N6"), [ta_id_rule('ABCDE', protein="p.CYL0N6")],
+         True),
     )
     @unpack
     def test_is_gene_fusion_amoi(self, patient_variant, gf_id_rules, exp_result):
@@ -457,7 +534,7 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
     def test_init_without_params(self):
         taa_instance = self.mock_ta_accessor.return_value
         taa_instance.get_ta_non_hotspot_rules.return_value = nh_rules
-        taa_instance.get_ta_identifier_rules = lambda var_type: identifier_rules[var_type]
+        taa_instance.get_ta_identifier_rules = lambda var_type: id_and_protein_rules[var_type]
 
         vrm = amois.VariantRulesMgr()
 
@@ -484,7 +561,7 @@ class FakeDateTime(datetime):
 @patch('resources.amois.datetime', FakeDateTime)
 class VariantRulesMgrCacheTests(unittest.TestCase):
     interval = amois.VariantRulesMgrCache._interval
-    start_time = datetime(2015, 7, 31, 11, 30, 0) # start at 0 seconds
+    start_time = datetime(2015, 7, 31, 11, 30, 0)  # start at 0 seconds
 
     def setUp(self):
         amois.VariantRulesMgrCache._load_timestamp = VariantRulesMgrCacheTests.start_time
@@ -520,7 +597,6 @@ class VariantRulesMgrCacheTests(unittest.TestCase):
         self.assertEqual(amois.VariantRulesMgrCache._load_timestamp, test_date)
 
 
-
 def create_hotspot_variant(identifier):
     return copy.deepcopy({  # should match on identifier
         "confirmed": True,
@@ -533,8 +609,21 @@ def create_hotspot_variant(identifier):
     })
 
 
+def create_protein_variant(protein):
+    return copy.deepcopy({  # should match on protein
+        "confirmed": True,
+        "gene": "ABCD",
+        "oncominevariantclass": "Hotspot",
+        "exon": "5",
+        "function": "missense",
+        "identifier": 'myGenericIdentifier',
+        "inclusion": False,
+        "protein": protein
+    })
+
+
 def create_nonhotspot_variant():
-        return copy.deepcopy({  # should match on NonHotspot Rule
+    return copy.deepcopy({  # should match on NonHotspot Rule
         "confirmed": True,
         "gene": "EGFR",
         "oncominevariantclass": "OCV1",
@@ -545,37 +634,45 @@ def create_nonhotspot_variant():
     })
 
 
-def create_hotspot_amoi(amoi_rule):
+def create_amoi(amoi_rule, rule_type):
     return copy.deepcopy({'PRIOR': [{'treatmentArmId': amoi_rule['treatmentArmId'],
-                                     'type': "Hotspot",
+                                     'type': rule_type,
                                      'inclusions': [amoi_rule['version']],
                                      'exclusions': []}]
                           })
 
 
-VR_WITH_TWO_SNV_AMOIS = {
-    "singleNucleotideVariants": [create_hotspot_variant('SNVOSM'), create_nonhotspot_variant()],
+VR_WITH_SNV_AMOIS = {
+    "singleNucleotideVariants": [create_hotspot_variant(snv_rules[0]['identifier']),
+                                 create_nonhotspot_variant(),
+                                 create_protein_variant(snv_rules[1]['protein'])],
     "indels": [],
     "copyNumberVariants": [],
     "unifiedGeneFusions": [],
 }
-VR_WITH_TWO_INDEL_AMOIS = {
+VR_WITH_INDEL_AMOIS = {
     "singleNucleotideVariants": [],
-    "indels": [create_hotspot_variant('INDOSM'), create_nonhotspot_variant()],
+    "indels": [create_hotspot_variant(indel_rules[0]['identifier']),
+               create_nonhotspot_variant(),
+               create_protein_variant(indel_rules[1]['protein'])],
     "copyNumberVariants": [],
     "unifiedGeneFusions": [],
 }
-VR_WITH_TWO_CNV_AMOIS = {
+VR_WITH_CNV_AMOIS = {
     "singleNucleotideVariants": [],
     "indels": [],
-    "copyNumberVariants": [create_hotspot_variant('CNVOSM'), create_nonhotspot_variant()],
+    "copyNumberVariants": [create_hotspot_variant(cnv_rules[0]['identifier']),
+                           create_nonhotspot_variant(),
+                           create_protein_variant(cnv_rules[1]['protein'])],
     "unifiedGeneFusions": [],
 }
-VR_WITH_TWO_UGF_AMOIS = {
+VR_WITH_UGF_AMOIS = {
     "singleNucleotideVariants": [],
     "indels": [],
     "copyNumberVariants": [],
-    "unifiedGeneFusions": [create_hotspot_variant('GFOSM'), create_nonhotspot_variant()],
+    "unifiedGeneFusions": [create_hotspot_variant(gf_rules[0]['identifier']),
+                           create_nonhotspot_variant(),
+                           create_protein_variant(gf_rules[1]['protein'])],
 }
 
 VR_WITH_NO_AMOIS = {
@@ -600,10 +697,16 @@ VR_WITH_NO_AMOIS = {
 @ddt
 class TestFindAmoisFunction(AmoisModuleTestCase):
 
-    SNV_HOTSPOT_AMOI = create_hotspot_amoi(snv_rules[0])
-    INDEL_HOTSPOT_AMOI = create_hotspot_amoi(indel_rules[0])
-    CNV_HOTSPOT_AMOI = create_hotspot_amoi(cnv_rules[0])
-    GF_HOTSPOT_AMOI = create_hotspot_amoi(gf_rules[0])
+    SNV_HOTSPOT_AMOI = create_amoi(snv_rules[0], "Hotspot")
+    INDEL_HOTSPOT_AMOI = create_amoi(indel_rules[0], "Hotspot")
+    CNV_HOTSPOT_AMOI = create_amoi(cnv_rules[0], "Hotspot")
+    GF_HOTSPOT_AMOI = create_amoi(gf_rules[0], "Hotspot")
+
+    SNV_PROTEIN_AMOI = create_amoi(snv_rules[1], "Protein")
+    INDEL_PROTEIN_AMOI = create_amoi(indel_rules[1], "Protein")
+    CNV_PROTEIN_AMOI = create_amoi(cnv_rules[1], "Protein")
+    GF_PROTEIN_AMOI = create_amoi(gf_rules[1], "Protein")
+
     NONHOTSPOT_AMOI = {'CURRENT': [{'treatmentArmId': nh_rules[2]['treatmentArmId'],
                                     'type': "NonHotspot",
                                     'inclusions': [nh_rules[2]['version']],
@@ -613,10 +716,10 @@ class TestFindAmoisFunction(AmoisModuleTestCase):
 
     @data(
         (VR_WITH_NO_AMOIS, [], [None], [], []),
-        (VR_WITH_TWO_SNV_AMOIS, [], [SNV_HOTSPOT_AMOI, NONHOTSPOT_AMOI], [], []),
-        (VR_WITH_TWO_INDEL_AMOIS, [], [], [], [INDEL_HOTSPOT_AMOI, NONHOTSPOT_AMOI]),
-        (VR_WITH_TWO_CNV_AMOIS, [CNV_HOTSPOT_AMOI, None], [], [], []),
-        (VR_WITH_TWO_UGF_AMOIS, [], [], [GF_HOTSPOT_AMOI, None], []),
+        (VR_WITH_SNV_AMOIS, [], [SNV_HOTSPOT_AMOI, NONHOTSPOT_AMOI, SNV_PROTEIN_AMOI], [], []),
+        (VR_WITH_INDEL_AMOIS, [], [], [], [INDEL_HOTSPOT_AMOI, NONHOTSPOT_AMOI, INDEL_PROTEIN_AMOI]),
+        (VR_WITH_CNV_AMOIS, [CNV_HOTSPOT_AMOI, None, CNV_PROTEIN_AMOI], [], [], []),
+        (VR_WITH_UGF_AMOIS, [], [], [GF_HOTSPOT_AMOI, None, GF_PROTEIN_AMOI], []),
     )
     @unpack
     def test(self, var_rpt, exp_cnv_amois, exp_snv_amois, exp_ugf_amois, exp_indel_amois):
@@ -630,6 +733,7 @@ class TestFindAmoisFunction(AmoisModuleTestCase):
         self.assertEqual(len(var_rpt['unifiedGeneFusions']), len(exp_ugf_amois))
         self.assertEqual(len(var_rpt['indels']), len(exp_indel_amois))
 
+        self.maxDiff = None
         for patient_variant, exp_amois in zip(var_rpt['singleNucleotideVariants'], exp_snv_amois):
             self.assertEqual(patient_variant.get('amois', None), exp_amois)
         for patient_variant, exp_amois in zip(var_rpt['copyNumberVariants'], exp_cnv_amois):
@@ -643,8 +747,8 @@ class TestFindAmoisFunction(AmoisModuleTestCase):
 # ******** Test the AmoisResource class in amois.py. ******** #
 @ddt
 class TestAmoisResource(AmoisModuleTestCase):
-    SNV_HOTSPOT_AMOI = create_hotspot_amoi(snv_rules[0])
-    CNV_HOTSPOT_AMOI = create_hotspot_amoi(cnv_rules[0])
+    SNV_HOTSPOT_AMOI = create_amoi(snv_rules[0], "Hotspot")
+    CNV_HOTSPOT_AMOI = create_amoi(cnv_rules[0], "Hotspot")
     NONHOTSPOT_AMOI = {'CURRENT': [{'treatmentArmId': nh_rules[2]['treatmentArmId'],
                                     'type': "NonHotspot",
                                     'inclusions': [nh_rules[2]['version']],
@@ -668,17 +772,10 @@ class TestAmoisResource(AmoisModuleTestCase):
         (VR_WITH_NO_AMOIS, VR_WITH_NO_AMOIS),
     )
     @unpack
-    # def test_patch(self, vr_json, exp_vr_json):
     @patch('resources.amois.VariantRulesMgrCache')
     def test_patch(self, vr_json, exp_vr_json, mock_vrm_cache):
-        # instance = mock_vrm_cache.return_value
-        # instance.get_variant_rules_mgr.return_value = amois.VariantRulesMgr(nh_rules, cnv_rules, snv_rules,
-        #                                                                     gf_rules, indel_rules)
         mock_vrm_cache.get_variant_rules_mgr.return_value = amois.VariantRulesMgr(nh_rules, cnv_rules, snv_rules,
                                                                                   gf_rules, indel_rules)
-        # instance = self.mock_ta_accessor.return_value
-        # instance.get_ta_non_hotspot_rules.return_value = nh_rules
-        # instance.get_ta_identifier_rules = lambda var_type: identifier_rules[var_type]
 
         self.maxDiff = None
         with APP.test_request_context(''):
