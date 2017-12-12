@@ -17,7 +17,7 @@ class Refresher(object):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.pat_accessor = PatientAccessor()  # provides access to the Patient API
-        self.ta_accessor = TreatmentArmsAccessor()  # provides access to the TreatmnetArms collection in MongoDB
+        self.ta_accessor = TreatmentArmsAccessor()  # provides access to the TreatmentArms collection in MongoDB
         self.summary_rpts = [SummaryReport(ta_data)
                              for ta_data in self.ta_accessor.get_arms_for_summary_report_refresh()]
         self.token = create_authentication_token()
