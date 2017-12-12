@@ -166,34 +166,55 @@ class TestAmoisAnnotator(unittest.TestCase):
         # 2. One amoi in list
         ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN")],
          {'CURRENT':
-            [{'treatmentArmId': 'EAY131-P', 'exclusions': ['2016-11-11'], 'inclusions': [], 'type': 'NonHotspot'}]}),
+            [{'treatmentArmId': 'EAY131-P',
+              'exclusions': [{'version': '2016-11-11', 'type': 'NonHotspot'}],
+              'inclusions': []}]
+          }),
         # 3. Three amois, two that match the same arm twice (once as hotspot, once as non-hotspot, both inclusions)
         ([ta_nh_rule("1", "func2", "1", "1", 'EAY131-P', '2016-11-11', incl=True, status="OPEN"),
           ta_nh_rule("1", "func3", "1", "1", 'EAY131-Q', '2016-12-11', incl=False, status="OPEN"),
           ta_id_rule("EDBCA", 'EAY131-P', '2016-11-11', incl=True, status="OPEN")],
          {'CURRENT':
-            [{'treatmentArmId': 'EAY131-P', 'exclusions': [], 'inclusions': ['2016-11-11'], 'type': 'Both'},
-             {'treatmentArmId': 'EAY131-Q', 'exclusions': ['2016-12-11'], 'inclusions': [], 'type': 'NonHotspot'}]}),
+            [{'treatmentArmId': 'EAY131-P',
+              'exclusions': [],
+              'inclusions': [{'version': '2016-11-11', 'type': 'Hotspot'},
+                             {'version': '2016-11-11', 'type': 'NonHotspot'}]},
+             {'treatmentArmId': 'EAY131-Q',
+              'exclusions': [{'version': '2016-12-11', 'type': 'NonHotspot'}],
+              'inclusions': []}]
+          }),
         # 4. Three amois, each matching different arms with different states
         ([ta_nh_rule("1", "func3", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN", True),
           ta_nh_rule("1", "func1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
           ta_id_rule('COSM6240', 'EAY131-R', '2016-12-12', False, "CLOSED")],
          {'PREVIOUS':
-            [{'treatmentArmId': 'EAY131-P', 'exclusions': ['2016-11-11'], 'inclusions': [], 'type': 'NonHotspot'}],
+            [{'treatmentArmId': 'EAY131-P',
+              'exclusions': [{'version': '2016-11-11', 'type': 'NonHotspot'}],
+              'inclusions': []}],
           'CURRENT':
-            [{'treatmentArmId': 'EAY131-Q', 'exclusions': ['2016-12-11'], 'inclusions': [], 'type': 'NonHotspot'}],
+            [{'treatmentArmId': 'EAY131-Q',
+              'exclusions': [{'version': '2016-12-11', 'type': 'NonHotspot'}],
+              'inclusions': []}],
           'PRIOR':
-            [{'treatmentArmId': 'EAY131-R', 'exclusions': ['2016-12-12'], 'inclusions': [], 'type': 'Hotspot'}]}),
+            [{'treatmentArmId': 'EAY131-R',
+              'exclusions': [{'version': '2016-12-12', 'type': 'Hotspot'}],
+              'inclusions': []}]
+          }),
         # 5. Four amois, each matching different versions of the same arm
         ([ta_nh_rule("1", "missense", "1", "1", 'EAY131-A', '2016-11-11', incl=False, status="CLOSED"),
           ta_nh_rule("1", "func4", "1", "1", 'EAY131-A', '2017-07-11', incl=True, status="OPEN"),
           ta_id_rule('COSM6240', 'EAY131-A', '2016-12-12', incl=False, status="CLOSED"),
           ta_id_rule('COSM6240', 'EAY131-A', '2017-01-12', incl=False, status="CLOSED")],
          {'CURRENT':
-            [{'treatmentArmId': 'EAY131-A', 'exclusions': [], 'inclusions': ['2017-07-11'], 'type': 'NonHotspot'}],
+            [{'treatmentArmId': 'EAY131-A',
+              'exclusions': [],
+              'inclusions': [{'version': '2017-07-11', 'type': 'NonHotspot'}]}],
           'PRIOR':
-            [{'treatmentArmId': 'EAY131-A', 'exclusions': ['2016-11-11', '2016-12-12', '2017-01-12'],
-              'inclusions': [], 'type': 'Both'}]}),
+            [{'treatmentArmId': 'EAY131-A',
+              'exclusions': [{'version': '2016-11-11', 'type': 'NonHotspot'},
+                             {'version': '2016-12-12', 'type': 'Hotspot'},
+                             {'version': '2017-01-12', 'type': 'Hotspot'}],
+              'inclusions': []}]}),
     )
     @unpack
     def test_create_amois_annotation(self, amois_list, exp_annotation):
@@ -634,11 +655,10 @@ def create_nonhotspot_variant():
     })
 
 
-def create_amoi(amoi_rule, rule_type):
-    return copy.deepcopy({'PRIOR': [{'treatmentArmId': amoi_rule['treatmentArmId'],
-                                     'type': rule_type,
-                                     'inclusions': [amoi_rule['version']],
-                                     'exclusions': []}]
+def create_amoi(amoi_rule, rule_type, status='PRIOR'):
+    return copy.deepcopy({status: [{'treatmentArmId': amoi_rule['treatmentArmId'],
+                                    'inclusions': [{'type': rule_type, 'version': amoi_rule['version']}],
+                                    'exclusions': []}]
                           })
 
 
@@ -707,10 +727,7 @@ class TestFindAmoisFunction(AmoisModuleTestCase):
     CNV_PROTEIN_AMOI = create_amoi(cnv_rules[1], "Protein")
     GF_PROTEIN_AMOI = create_amoi(gf_rules[1], "Protein")
 
-    NONHOTSPOT_AMOI = {'CURRENT': [{'treatmentArmId': nh_rules[2]['treatmentArmId'],
-                                    'type': "NonHotspot",
-                                    'inclusions': [nh_rules[2]['version']],
-                                    'exclusions': []}]}
+    NONHOTSPOT_AMOI = create_amoi(nh_rules[2], nh_rules[2]['type'], 'CURRENT')
 
     AMOIS_FOR_TWO_MATCHING_VARIANTS = [SNV_HOTSPOT_AMOI, NONHOTSPOT_AMOI]
 
@@ -749,10 +766,8 @@ class TestFindAmoisFunction(AmoisModuleTestCase):
 class TestAmoisResource(AmoisModuleTestCase):
     SNV_HOTSPOT_AMOI = create_amoi(snv_rules[0], "Hotspot")
     CNV_HOTSPOT_AMOI = create_amoi(cnv_rules[0], "Hotspot")
-    NONHOTSPOT_AMOI = {'CURRENT': [{'treatmentArmId': nh_rules[2]['treatmentArmId'],
-                                    'type': "NonHotspot",
-                                    'inclusions': [nh_rules[2]['version']],
-                                    'exclusions': []}]}
+    NONHOTSPOT_AMOI = create_amoi(nh_rules[2], nh_rules[2]['type'], 'CURRENT')
+
     TEST_VR = {
         "singleNucleotideVariants": [create_hotspot_variant('SNVOSM'), create_nonhotspot_variant()],
         "indels": [],
