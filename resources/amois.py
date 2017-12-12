@@ -3,13 +3,14 @@ The AMOIS REST resource
 
 Gets the AMOIS data and annotates the given Variant Report with it in the following format:
 
-"amois": { STATE: [{treatmentArmId, version, inclusion, type}, ...], ... }
+"amois": { STATE: [{treatmentArmId, inclusions, exclusions}, ...], ... }
 
-    STATE:        will be one of the following:  PRIOR, CURRENT, PREVIOUS, FUTURE
-    treatmentArmId:  this is the Treatment Arm ID directly from the treatementArms collection
-    version:      this is the version of the Treatment Arm for which the aMOI was found
-    inclusion:    boolean - if True, then it's an inclusion aMOI; if False, then it's an exclusion aMOI
-    type:         the type of aMOI; will be one of the following:  Hotspot, NonHotspot, Both
+    STATE:           will be one of the following:  PRIOR, CURRENT, PREVIOUS, FUTURE
+    treatmentArmId:  this is the Treatment Arm ID directly from the treatmentArms collection
+    inclusions:      an array of inclusion aMOIs, each one a dict containing version and type
+    exclusions:      an array of exclusion aMOIs, each one a dict containing version and type
+
+    The type of aMOI will be one or more of the following:  Hotspot, NonHotspot, Protein
 
 An example of how to call this service can be found in scripts/examples/call_amois_svc.py.
 """
@@ -67,16 +68,6 @@ class VariantRulesMgr:
         self.snv_protein_rules = self._extract_protein_rules(self.snv_identifier_rules)
         self.gf_protein_rules = self._extract_protein_rules(self.gf_identifier_rules)
         self.indel_protein_rules = self._extract_protein_rules(self.indel_identifier_rules)
-
-        # from pprint import pprint
-        # print("cnv_protein_rules:")
-        # pprint(self.cnv_protein_rules)
-        # print("snv_protein_rules:")
-        # pprint(self.snv_protein_rules)
-        # print("gf_protein_rules:")
-        # pprint(self.gf_protein_rules)
-        # print("indel_protein_rules:")
-        # pprint(self.indel_protein_rules)
 
     @staticmethod
     def _extract_protein_rules(identifier_rules):
@@ -216,11 +207,6 @@ class VariantRulesMgr:
         :param patient_snv_variant: a SNV variant with a protein field
         :return: an array containing the rules that matched.
         """
-        # from pprint import pprint
-        # print('snv_prot_rules')
-        # pprint(self.snv_protein_rules)
-        # print('patient_snv_variant')
-        # pprint(patient_snv_variant)
         return VariantRulesMgr._get_matching_protein_rules(self.snv_protein_rules, patient_snv_variant)
 
     def get_matching_gene_fusions_protein_rules(self, patient_gf_variant):
@@ -358,13 +344,18 @@ class VariantRulesMgrCache:
 
 
 class AmoisAnnotator:
-    EQUIV_FIELDS = ['treatmentArmId', 'version', 'inclusion']
+
+    # These are the fields of a treatment arm rule variant that we must have.
     REQ_FIELDS = ['treatmentArmId', 'version', 'inclusion', 'type']
 
     def __init__(self):
         self._annotation = dict()
 
     def add(self, amoi):
+        """
+        Adds the amoi to self.
+        :param amoi: a variant as it appears in the variant report in the treatmentArms collection.
+        """
         state = AmoisAnnotator._get_amoi_state(amoi)
         annot_data = AmoisAnnotator._extract_annot_data(amoi)
         self._add_annot_by_state(state, annot_data)
@@ -389,18 +380,16 @@ class AmoisAnnotator:
                            'inclusions': list(),
                            'exclusions': list()}
                 for amoi in self._annotation[state][treatment_arm]:
+
+                    amoi_info = {'version': amoi['version'],
+                                 'type': amoi['type']}
                     if amoi['inclusion']:
-                        ta_amoi['inclusions'].append(amoi['version'])
+                        ta_amoi['inclusions'].append(amoi_info)
                     else:
-                        ta_amoi['exclusions'].append(amoi['version'])
+                        ta_amoi['exclusions'].append(amoi_info)
 
-                    if 'type' not in ta_amoi:
-                        ta_amoi['type'] = amoi['type']
-                    elif ta_amoi['type'] != amoi['type']:
-                        ta_amoi['type'] = "Both"
-
-                ta_amoi['inclusions'] = sorted(set(ta_amoi['inclusions']))
-                ta_amoi['exclusions'] = sorted(set(ta_amoi['exclusions']))
+                ta_amoi['inclusions'] = sorted(ta_amoi['inclusions'], key=lambda item: item['version']+item['type'])
+                ta_amoi['exclusions'] = sorted(ta_amoi['exclusions'], key=lambda item: item['version']+item['type'])
                 annot_list.append(ta_amoi)
             annotations[state] = annot_list
 
@@ -408,6 +397,11 @@ class AmoisAnnotator:
 
     @staticmethod
     def _extract_annot_data(amoi):
+        """
+        Extracts the data required for annotation from the amoi
+        :param amoi: a variant as it appears in the variant report in the treatmentArms collection.
+        :return: a dict containing only fields required for the annotation
+        """
         missing_fields = [f for f in AmoisAnnotator.REQ_FIELDS if f not in amoi]
         if missing_fields:
             err_msg = ("The following required fields were missing from the submitted aMOI: "
@@ -486,7 +480,8 @@ def find_amois(vr, var_rules_mgr):
 def create_amois_annotation(amois_list):
     """
     Given all of the aMOIs in amois_list, assemble all of the required data into format required for annotation.
-    :param amois_list:
+    :param amois_list: a list of aMOIs; each aMOI being the variant as it is listed for the arm in the treatmentArms
+                       collection
     :return: dict in the following format: { STATE: [{treatmentArmId, version, action}, ...], ... }
     """
     annotator = AmoisAnnotator()
