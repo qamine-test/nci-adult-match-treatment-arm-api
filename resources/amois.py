@@ -107,7 +107,7 @@ class VariantRulesMgr:
         return False
 
     @staticmethod
-    def _match_var_to_nhr(variant, nhr):
+    def _matches_nonhotspot_rule(variant, nhr):
         """
         Matches the given variant with the given NonHotspotRule (nhr).
         :param variant: a patient variant
@@ -120,10 +120,6 @@ class VariantRulesMgr:
                 return False
         return True
 
-    @staticmethod
-    def _matches_nonhotspot_rule(pv, r):
-        return pv['confirmed'] and VariantRulesMgr._match_var_to_nhr(pv, r)
-
     def get_matching_nonhotspot_rules(self, patient_variant):
         """
         Matches the patient_variant to the NonHotspotRules in self.  NotHotSpotRules are another way of identifying
@@ -135,11 +131,11 @@ class VariantRulesMgr:
 
     @staticmethod
     def _matches_identifier_rule(pv, r):  # pv=patient variant; r=rule
-        return pv['confirmed'] and r['identifier'].lower() == pv['identifier'].lower()
+        return r['identifier'].lower() == pv['identifier'].lower()
 
     @staticmethod
     def _matches_protein_rule(pv, r):  # pv=patient variant; r=rule
-        return pv['confirmed'] and 'protein' in pv and r['protein'].lower() == pv['protein'].lower()
+        return 'protein' in pv and r['protein'].lower() == pv['protein'].lower()
 
     @classmethod
     def _get_matching_identifier_rules(cls, rule_list, patient_variant):

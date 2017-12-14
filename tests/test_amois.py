@@ -302,7 +302,7 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
     def test_match_item(self, vr_item, nhr_item, exp_result):
         self.assertEqual(amois.VariantRulesMgr._match_item(vr_item, nhr_item), exp_result)
 
-    # Test the VariantRulesMgr._match_var_to_nhr function, which matches a patient variant to a nonhotspot rule
+    # Test the VariantRulesMgr._matches_nonhotspot_rule function, which matches a patient variant to a nonhotspot rule
     @data(  # order of params is e, f, g, o  (exon, function, gene, oncominevariantclass)
         (variant("4", 'missense', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
         (variant("4", 'MISSENSE', 'IDH1', 'Hotspot'), ta_nh_rule("4", 'missense', 'IDH1', 'Hotspot'), True),
@@ -338,23 +338,23 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
     )
     @unpack
     def test_match_var_to_nhr(self, patient_variant, nhr, exp_result):
-        result = amois.VariantRulesMgr._match_var_to_nhr(patient_variant, nhr)
+        result = amois.VariantRulesMgr._matches_nonhotspot_rule(patient_variant, nhr)
         self.assertEqual(result, exp_result)
 
-    # Test the VariantRulesMgr.get_matching_nonhotspot_rules_old function.
+    # Test the VariantRulesMgr.get_matching_nonhotspot_rules function.
     @data(
         # 1. Patient variant, no NHS rules
-        (variant("14", 'missense', 'IDH1', 'Hotspot'), [], []),
-        # 2. Patient variant, one matching NHS rule
-        (variant("14", 'missense', 'IDH2', 'Hotspot'),
+        (variant("14", 'missense', 'IDH1', 'Hotspot', confirmed=True), [], []),
+        # 2. Patient variant (confirmed), matches NHS rule
+        (variant("14", 'missense', 'IDH2', 'Hotspot', confirmed=True),
          [ta_nh_rule("14", 'missense', None, 'Hotspot')], [0]),
-        # 3. Patient variant matches second of two NHS rules
-        (variant("14", 'missense', 'IDH2', 'Hotspot'),
+        # 3. Patient variant (unconfirmed) matches second of two NHS rules
+        (variant("14", 'missense', 'IDH2', 'Hotspot', confirmed=False),
          [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')],
          [1]),
         # 4. Patient variant matches neither of two NHS rules
-        (variant("14", 'missense', 'IDH2', 'Hotspot', 'ABC', False),
-         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', None, 'Hotspot')],
+        (variant("13", 'missense', 'IDH2', 'Hotspot', 'ABC', confirmed=False),
+         [ta_nh_rule("14", 'missense', None, 'Deleterious'), ta_nh_rule("14", 'missense', 'IDH2', 'Hotspot')],
          []),
     )
     @unpack
@@ -376,8 +376,10 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
         (variant("9", '1', '1', '1', 'ABCDE', confirmed=True), [ta_id_rule('ABCDE')], [0]),
         # 3. One variant with lc identifier (confirmed), one ID rule; matches
         (variant("9", '1', '1', '1', 'abcde', confirmed=True), [ta_id_rule('ABCDE')], [0]),
-        # 4. One variant (unconfirmed), one ID rule; no match
-        (variant("9", '1', '1', '1', 'ABCDE', confirmed=False), [ta_id_rule('ABCDE')], []),
+        # 4. One variant (unconfirmed), one ID rule; matches
+        (variant("9", '1', '1', '1', 'ABCDE', confirmed=False), [ta_id_rule('ABCDE')], [0]),
+        # 5. One variant (unconfirmed), one ID rule; does not match
+        (variant("9", '1', '1', '1', 'ABCDE', confirmed=False), [ta_id_rule('ABCD')], []),
     )
     @unpack
     def test_get_matching_identifier_rules(self, patient_variant, ta_id_rules, exp_amois_indexes):
@@ -413,7 +415,11 @@ class TestVariantRulesMgr(AmoisModuleTestCase):
         (variant("9", '1', '1', '1', 'abcde', confirmed=True, protein="p.r2d2"),
          [ta_id_rule('ABCDE', protein="p.R2D2")],
          [0]),
-        # 4. One variant (unconfirmed), one protein rule; no match
+        # 4. One variant (unconfirmed), one protein rule; matches
+        (variant("9", '1', '1', '1', 'ABCDE', confirmed=False, protein="p.R2D2"),
+         [ta_id_rule('ABCDE', protein="p.R2D2")],
+         [0]),
+        # 5. One variant (unconfirmed), one protein rule; does not match
         (variant("9", '1', '1', '1', 'ABCDE', confirmed=False, protein="p.R2D2"),
          [ta_id_rule('ABCDE', protein="p.C3PO")],
          []),
@@ -697,13 +703,13 @@ VR_WITH_UGF_AMOIS = {
 
 VR_WITH_NO_AMOIS = {
     "singleNucleotideVariants": [
-        {  # should NOT match because not confirmed
+        {  # should NOT match because will not match on identifier, protein, or nonhotspot rules
             "confirmed": False,
-            "gene": "EFGR",
+            "gene": "this-is-not-a-real-gene",
             "oncominevariantclass": "Deleterious",
             "exon": "4",
             "function": "func3",
-            "identifier": "SNVOSM",
+            "identifier": "my-fake-id-won't-match",
             "inclusion": True,
         },
     ],
