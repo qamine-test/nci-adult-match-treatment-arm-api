@@ -9,6 +9,7 @@ services:
     depends_on:
       - mongo
     environment:
+      - UNITTEST=1  # disables auth0 authentication in the local environment
       - MONGODB_URI=mongodb://mongo:27017/Match
       - ENVIRONMENT=development
       - SQS_QUEUE_NAME=treatment-arm-api-dev-smithmak-queue
@@ -32,6 +33,7 @@ services:
     depends_on:
       - mongo
     environment:
+      - UNITTEST=1  # disables auth0 authentication in the local environment
       - MONGODB_URI=mongodb://mongo:27017/Match
       - ENVIRONMENT=development
       - LOGGER_LEVEL=INFO
