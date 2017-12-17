@@ -30,7 +30,7 @@ def requires_auth(function):
 class AuthenticationError(Exception):
     def __init__(self, code, description):
         self.code = code
-        self.description = description
+        self.description = description + " (AuthenticationError)"
 
 
 def error_response(code, description):
