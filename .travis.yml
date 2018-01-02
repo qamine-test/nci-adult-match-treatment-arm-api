@@ -33,7 +33,7 @@ script:
 after_script:
 
 after_success:
-  # - docker images
+  - docker images
   - docker push $DOCKER_IMAGE # Pushes both date and latest
   #Deploy both services to AWS IntTest
   - docker run -it --rm -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
