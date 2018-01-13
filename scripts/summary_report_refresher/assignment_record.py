@@ -13,7 +13,7 @@ class AssignmentRecord(object):
         self.assignment_status_outcome = assnmnt_status
         self.analysis_id = analysis_id
         self.patient_assmt_idx = patient_assmt_idx
-        self.date_selected = date_selected
+        self.date_selected = date_selected  # date selected for the arm; equivalent to date assigned
         self.date_on_arm = date_on_arm
         self.date_off_arm = date_off_arm
         self.step_number = step_num
