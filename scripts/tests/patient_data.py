@@ -300,7 +300,7 @@ PENDING_CONF_APPR_CONF_PATIENT = create_patient(
     triggers=[REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER,
               # I don't think that in the real world a PENDING_CONFIRMATION trigger would follow a PENDING_APPROVAL
               # trigger, but it is a case that the code handles and therefore it must be tested.
-              # UPDATE (1/13/2018):  No, this is not realistic at all.  
+              # UPDATE (1/13/2018):  No, this is not realistic at all.
               create_patient_trigger('PENDING_CONFIRMATION',
                                      date_created=PENDING_APPR_DATE + timedelta(minutes=2)),
               ],
