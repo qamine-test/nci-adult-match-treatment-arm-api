@@ -35,8 +35,8 @@ class TestPatient(unittest.TestCase):
 
     # Test the Patient.find_trigger_by_status method.
     @data(
-        ('PENDING_APPROVAL', pd.TEST_PATIENT['patientTriggers'][3]),
-        ('ON_TREATMENT_ARM', pd.TEST_PATIENT['patientTriggers'][4]),
+        ('PENDING_APPROVAL', pd.TEST_PATIENT['patientTriggers'][2]),
+        ('ON_TREATMENT_ARM', pd.TEST_PATIENT['patientTriggers'][3]),
         ('STATUS_NOT_FOUND', None),
     )
     @unpack
@@ -57,18 +57,18 @@ class TestPatient(unittest.TestCase):
         p = Patient(pd.TEST_PATIENT)
         self.assertEqual(p.get_assignment_reason(treatment_id, treatment_version), exp_reason)
 
-    # Test the Patient.get_dates_on_off_arm method.
-    @data(
-        (pd.PENDING_PATIENT, None, None),
-        (pd.CURRENT_PATIENT, pd.ON_ARM_DATE, None),
-        (pd.FORMER_PATIENT, pd.ON_ARM_DATE, pd.OFF_ARM_DATE),
-    )
-    @unpack
-    def test_get_dates_on_off_arm(self, patient_data, exp_date_on, exp_date_off):
-        p = Patient(patient_data)
-        (date_on, date_off) = p.get_dates_on_off_arm()
-        self.assertEqual(date_on, exp_date_on)
-        self.assertEqual(date_off, exp_date_off)
+    # # Test the Patient.get_dates_on_off_arm method.
+    # @data(
+    #     (pd.PENDING_PATIENT, None, None),
+    #     (pd.CURRENT_PATIENT, pd.ON_ARM_DATE, None),
+    #     (pd.FORMER_PATIENT, pd.ON_ARM_DATE, pd.OFF_ARM_DATE),
+    # )
+    # @unpack
+    # def test_get_dates_on_off_arm(self, patient_data, exp_date_on, exp_date_off):
+    #     p = Patient(patient_data)
+    #     (date_on, date_off) = p.get_dates_on_off_arm()
+    #     self.assertEqual(date_on, exp_date_on)
+    #     self.assertEqual(date_off, exp_date_off)
 
     # Test the Patient.get_dates_status_from_arm method.
     @data(
@@ -77,8 +77,10 @@ class TestPatient(unittest.TestCase):
         (pd.CURRENT_PATIENT, pd.ON_ARM_DATE, None, 'ON_TREATMENT_ARM'),
         (pd.FORMER_PATIENT, pd.ON_ARM_DATE, pd.OFF_ARM_DATE, 'OFF_TRIAL_DECEASED'),
         (pd.OFF_STUDY_REJOIN_PATIENT, None, None, 'PENDING_CONFIRMATION'),
-        (pd.PENDING_CONF_APPR_CONF_PATIENT, None, None, 'PENDING_APPROVAL'),
-        (pd.PENDING_ON_PENDING_PATIENT, pd.ON_ARM_DATE, pd.NEW_PENDING_CONF_DATE, 'ON_TREATMENT_ARM'),
+        # (pd.PENDING_CONF_APPR_CONF_PATIENT, None, None, 'PENDING_CONFIRMATION'),  # not a realistic scenario
+        # (pd.PENDING_ON_PENDING_PATIENT, pd.ON_ARM_DATE, pd.NEW_PENDING_CONF_DATE, 'PENDING_CONFIRMATION'),  # not a realistic scenario
+        (pd.NOT_ENROLLED_PATIENT, None, None, 'OFF_TRIAL_DECEASED'),
+        (pd.NOT_ELIGIBLE_PATIENT, None, None, 'NOT_ELIGIBLE'),
     )
     @unpack
     def test_get_dates_status_from_arm(self, patient_data, exp_date_on, exp_date_off, exp_status):
@@ -97,8 +99,9 @@ class TestPatient(unittest.TestCase):
     )
     @unpack
     def test_trigger_belongs_to_assignment(self, trigger, assignment_date, exp_result):
-        assignment_date_ts = pd.datetime_to_timestamp(assignment_date)
-        result = Patient._trigger_belongs_to_assignment(trigger, assignment_date_ts)
+        # assignment_date_ts = pd.datetime_to_timestamp(assignment_date)
+        # result = Patient._trigger_belongs_to_assignment(trigger, assignment_date_ts)
+        result = Patient._trigger_belongs_to_assignment(trigger, assignment_date)
         self.assertEqual(result, exp_result)
 
     # Test the Patient.get_date_assigned method.
