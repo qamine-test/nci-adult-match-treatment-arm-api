@@ -48,6 +48,7 @@ REGISTRATION_TRIGGER = create_patient_trigger("REGISTRATION", message="Patient r
 PENDING_CONF_TRIGGER = create_patient_trigger("PENDING_CONFIRMATION", date_created=PENDING_CONF_DATE)
 PENDING_OFF_STUDY_TRIGGER = create_patient_trigger("PENDING_OFF_STUDY", date_created=PENDING_OFF_STUDY_DATE)
 PENDING_APPR_TRIGGER = create_patient_trigger("PENDING_APPROVAL", date_created=PENDING_APPR_DATE)
+NOT_ELIGIBLE_TRIGGER = create_patient_trigger("NOT_ELIGIBLE", date_created=OFF_ARM_DATE)
 DECEASED_TRIGGER = create_patient_trigger("OFF_TRIAL_DECEASED", date_created=OFF_ARM_DATE)
 ON_ARM_TRIGGER = create_patient_trigger("ON_TREATMENT_ARM",
                                         message="Patient registration to assigned treatment arm EAY131-B",
@@ -56,7 +57,7 @@ DEFAULT_TRIGGERS = [
         REGISTRATION_TRIGGER,
         PENDING_CONF_TRIGGER,
         PENDING_APPR_TRIGGER,
-        create_patient_trigger("PENDING_APPROVAL", date_created=PENDING_APPR_DATE2),
+        # create_patient_trigger("PENDING_APPROVAL", date_created=PENDING_APPR_DATE2),
         ON_ARM_TRIGGER,
     ]
 
@@ -161,7 +162,6 @@ def create_patient(triggers=None, assignment_logics=None, current_patient_status
     # NOTE:  No default value for treatment_arm because it is sometimes missing from Patient records.
 
     patient = {
-        "_id": ObjectId("55e9e33600929ab89f5499a1"),
         "patientSequenceNumber": patient_sequence_number,
         "patientType": patient_type,
         "patientTriggers": triggers,
@@ -172,7 +172,6 @@ def create_patient(triggers=None, assignment_logics=None, current_patient_status
         "patientAssignments": {},
         "diseases": [
             {
-                "_id": "10006190",
                 "ctepCategory": "Breast Neoplasm",
                 "ctepSubCategory": "Breast Cancer - Invasive",
                 "ctepTerm": "Invasive breast carcinoma",
@@ -301,6 +300,7 @@ PENDING_CONF_APPR_CONF_PATIENT = create_patient(
     triggers=[REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER,
               # I don't think that in the real world a PENDING_CONFIRMATION trigger would follow a PENDING_APPROVAL
               # trigger, but it is a case that the code handles and therefore it must be tested.
+              # UPDATE (1/13/2018):  No, this is not realistic at all.  
               create_patient_trigger('PENDING_CONFIRMATION',
                                      date_created=PENDING_APPR_DATE + timedelta(minutes=2)),
               ],
@@ -321,6 +321,8 @@ PENDING_ON_PENDING_PATIENT = create_patient(
     triggers=[REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, ON_ARM_TRIGGER,
               # I don't think that in the real world a PENDING_CONFIRMATION trigger would follow a ON_TREATMENT_ARM
               # trigger, but it is a case that the code handles and therefore it must be tested.
+              # UPDATE (1/13/2018):  No, this is not realistic at all.  ON_TREATMENT_ARM would be followed by
+              # PROGRESSION, OFF_TRIAL, or maybe a rebiopsy
               NEW_PENDING_CONF_TRIGGER,
               ],
     assignment_logics = [
@@ -336,10 +338,26 @@ PENDING_ON_PENDING_PATIENT = create_patient(
     patient_sequence_number = "14449"
 )
 
+NOT_ELIGIBLE_PATIENT = create_patient(
+    [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, NOT_ELIGIBLE_TRIGGER, NEW_PENDING_CONF_TRIGGER],
+    [
+        create_patient_assignment_logic("EAY131-E"),
+        MATCHING_LOGIC,
+        create_patient_assignment_logic("EAY131-R"),
+        create_patient_assignment_logic("EAY131-U"),
+    ],
+    'NOT_ELIGIBLE',
+    PATIENT_TREATMENT_ARM,
+    biopsies=[MATCHING_GOOD_BIOPSY1],
+    patient_sequence_number="14450"
+)
+
 # The data below is here to mimic an usual situation found in testing where a patient was assigned to the
 # same arm twice.  It resulted in the patient erroneously being counted twice in the summary report refresh.
 # This data reflects the fact that the way the data is returned from the database, everything will be the
 # same except for the assignment records and patientAssignmentIdx.
+# UPDATE (1/13/2018):  This must've been bad data in the test database because the matching rules will always exclude
+# previously assigned arms.  Therefore, a patient will never be assigned the same arm twice.
 PATIENT_TWICE_SEQ_NUM = "10385"
 PATIENT_TWICE_TRTMT_ARM_ID = "EAY131-U"
 PATIENT_TWICE_TREATMENT_ARM = {
