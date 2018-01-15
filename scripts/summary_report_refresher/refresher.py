@@ -105,7 +105,6 @@ class Refresher(object):
         """
         ta_version = patient.treatment_arm_version()
         (date_assigned, date_on_arm, date_off_arm, status) = patient.get_dates_status_from_arm()
-        # (date_on_arm, date_off_arm, status) = patient.get_dates_status_from_arm()
 
         analysis_id, biopsy_seq_num = patient.get_analysis_id_and_bsn()
         return AssignmentRecord(patient.patientSequenceNumber,
@@ -119,7 +118,6 @@ class Refresher(object):
                                 patient.patientAssignmentIdx,
                                 biopsy_seq_num,
                                 date_assigned,
-                                # patient.get_date_assigned(),
                                 date_on_arm,
                                 date_off_arm,
                                 )
