@@ -204,7 +204,7 @@ def create_patient(triggers=None, assignment_logics=None, current_patient_status
     if treatment_arm is not None:
         patient['treatmentArm'] = treatment_arm
         if current_patient_status == 'ON_TREATMENT_ARM':
-            patient['patientAssignments']['treatmentArm'] = PATIENT_TREATMENT_ARM
+            patient['patientAssignments']['treatmentArm'] = treatment_arm
 
     return patient
 
