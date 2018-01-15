@@ -53,7 +53,12 @@ class Patient(object):
         Get the treatment arm version for the treatment arm in self.
         :return: a string containing the treatmentArm's version if a treatmentArm is available; otherwise None
         """
-        return self._pat['treatmentArm']['version'] if 'treatmentArm' in self._pat else None
+        # return self._pat['treatmentArm']['version'] if 'treatmentArm' in self._pat else None
+        if 'treatmentArm' in self._pat['patientAssignments']:
+            return self._pat['patientAssignments']['treatmentArm']['version']
+        else:
+            return None
+
 
     def get_assignment_reason(self, trtmtId, trtmtVersion):
         """
@@ -99,37 +104,10 @@ class Patient(object):
                         date_off_arm = convert_date(trigger['dateCreated'])
                     break
             elif trigger['patientStatus'] == "PENDING_CONFIRMATION":
-                # if assignment_flag:
-                #     if date_on_arm:
-                #         date_off_arm = convert_date(trigger['dateCreated'])
-                #     break
-
                 if self._trigger_belongs_to_assignment(trigger, date_assigned):
                     assignment_flag = True
                     last_status = trigger['patientStatus']
 
-
-        # for trigger in self._pat['patientTriggers']:
-        #     if trigger['patientStatus'] == "PENDING_CONFIRMATION":
-        #         if assignment_flag:
-        #             if date_on_arm:
-        #                 date_off_arm = convert_date(trigger['dateCreated'])
-        #             break
-        #
-        #         if self._trigger_belongs_to_assignment(trigger, self._pat['patientAssignments']['dateAssigned']):
-        #             assignment_flag = True
-        #             last_status = trigger['patientStatus']
-        #
-        #     elif assignment_flag:
-        #         last_status = trigger['patientStatus']
-        #         if last_status == "ON_TREATMENT_ARM":
-        #             date_on_arm = convert_date(trigger['dateCreated'])
-        #         elif last_status != "PENDING_APPROVAL":
-        #             if date_on_arm:
-        #                 date_off_arm = convert_date(trigger['dateCreated'])
-        #             break
-        #
-        # return date_on_arm, date_off_arm, last_status
         return date_assigned, date_on_arm, date_off_arm, last_status
 
     @staticmethod
@@ -142,13 +120,8 @@ class Patient(object):
         :return: True/False
         """
         belongs = False
-        # print("assignment_date ({}), type = {}".format(assignment_date, type(assignment_date)))
-        # print("trigger['dateCreated'] ({}), type = {}".format(trigger['dateCreated'], type(trigger['dateCreated'])))
 
-        # delta = convert_date(trigger['dateCreated']) - convert_date(assignment_date)
         delta = convert_date(trigger['dateCreated']) - assignment_date
-        # print('Trigger: (' + repr(trigger['dateCreated']) + ') vs (' +
-        #       repr(self._pat['patientAssignments']['dateAssigned']) +') delta (' + repr(delta.total_seconds()) + ')')
 
         # let's give ourselves a 5 min window - is a bit large but ....
         if delta.total_seconds() >= 0 and delta.total_seconds() < 300:
@@ -156,27 +129,6 @@ class Patient(object):
 
         return belongs
 
-    # Commented out on 1/13/2018 because not being used.
-    # def get_dates_on_off_arm(self):
-    #     """
-    #     Determines the date the patient went on the arm and the date the patient went off the arm.
-    #     If the patient is still on the arm, the date the patient went off the arm will be None.
-    #     If the patient never went on the arm, both dates will be None.
-    #     :return: a two-item tuple: (date on arm, date off arm)
-    #     """
-    #     date_on_arm = None
-    #     date_off_arm = None
-    #     for i, trigger in reversed([(i, trigger) for i, trigger in enumerate(self._pat['patientTriggers'])]):
-    #         if trigger['patientStatus'] == "ON_TREATMENT_ARM":
-    #             # date_on_arm = trigger['dateCreated']
-    #             date_on_arm = convert_date(trigger['dateCreated'])
-    #             if i + 1 < len(self._pat['patientTriggers']):
-    #                 # date_off_arm = self._pat['patientTriggers'][i+1]['dateCreated']
-    #                 date_off_arm = convert_date(self._pat['patientTriggers'][i+1]['dateCreated'])
-    #             break
-    #
-    #     return date_on_arm, date_off_arm
-    #
     def get_date_assigned(self):
         """
         Determines the date that the patient was assigned to the arm.
@@ -184,7 +136,7 @@ class Patient(object):
         """
         if 'dateAssigned' in self._pat['patientAssignments']:
             return convert_date(self._pat['patientAssignments']['dateAssigned'])
-        else:
+        else:  # wouldn't expect this to ever happen
             return None
 
     def get_analysis_id_and_bsn(self):
@@ -219,5 +171,5 @@ class Patient(object):
     def get_patient_assignment_step_number(self):
         if 'patientAssignments' in self._pat and 'stepNumber' in self._pat['patientAssignments']:
             return self._pat['patientAssignments']['stepNumber']
-        else:
+        else:  # wouldn't expect this to ever happen
             return None
