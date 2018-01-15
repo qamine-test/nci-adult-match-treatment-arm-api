@@ -72,10 +72,16 @@ class Patient(object):
 
     def get_dates_status_from_arm(self):
         """
-        Determines the date the patient went on/off the arm along with the last status that is associated with the arm.
-        If the patient is still on the arm, the date the patient went off the arm will be None.
-        If the patient never went on the arm, both dates will be None.
-        :return: a three-item tuple: (date on arm, date off arm, last status associated with the arm)
+        Determines the date the patient was selected for the arm, went on the arm, west off the arm, and the last
+        status that is associated with the arm.  (The last status will be one of the following: PENDING_CONFIRMATION,
+        PENDING_APPROVAL, ON_TREATMENT_ARM, or the next status after one of these three.)
+        - If the patient has been assigned, but not yet put on the arm (in PENDING_* status), then the dates on/off
+          the arm will both be None.
+        - If the patient is currently on the arm (that is, in ON_TREATMENT_ARM status), the date the patient went off
+          the arm will be None.
+        - If the patient never went on the arm but was excluded from the study (because of patient refusal, being deemed
+          ineligible, or death), then date on arm will be None while the other two dates will have values.
+        :return: a four-item tuple: (date assigned to arm, date on arm, date off arm, last status associated with arm)
         """
         date_assigned = self.get_date_assigned()
         date_on_arm = None
@@ -123,7 +129,8 @@ class Patient(object):
         #                 date_off_arm = convert_date(trigger['dateCreated'])
         #             break
         #
-        return date_on_arm, date_off_arm, last_status
+        # return date_on_arm, date_off_arm, last_status
+        return date_assigned, date_on_arm, date_off_arm, last_status
 
     @staticmethod
     def _trigger_belongs_to_assignment(trigger, assignment_date):
