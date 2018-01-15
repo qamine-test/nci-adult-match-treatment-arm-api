@@ -18,6 +18,7 @@ class PatientAccessor(object):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.url = "{}/{}".format(Environment().patient_api_url, 'by_treatment_arm')
+        self.logger.debug("Connecting to Patient API at {}".format(self.url))
         # self.lock = Lock()
         # self.client = LegacyApplicationClient(client_id='')
         # self.oauth = OAuth2Session(client=self.client)
