@@ -146,7 +146,7 @@ NOMATCH_BAD_BIOPSY1 = create_biopsy(NON_MATCHING_BIOPSY_SEQ_NUM, False, [])
 NOMATCH_BAD_BIOPSY2 = create_biopsy(NON_MATCHING_BIOPSY_SEQ_NUM, False, [NOT_CONFIRMED_NEXT_GEN_SEQ])
 
 DEFAULT_ASSIGNMENT_IDX = 2
-DEFAULT_PAT_ASSNMNT_STEP_NUM = "0"
+DEFAULT_PAT_ASSNMNT_STEP_NUM = 0
 
 
 def create_patient(triggers=None, assignment_logics=None, current_patient_status='ON_TREATMENT_ARM',
