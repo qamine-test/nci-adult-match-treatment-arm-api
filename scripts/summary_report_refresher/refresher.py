@@ -107,12 +107,20 @@ class Refresher(object):
         (date_assigned, date_on_arm, date_off_arm, status) = patient.get_dates_status_from_arm()
 
         analysis_id, biopsy_seq_num = patient.get_analysis_id_and_bsn()
+
+        # The step number from the assignment is the step number that the patient was on at the time of the
+        # assignment.  If the patient has been put on the treatment arm, then the step number needs to reflect
+        # the step number the patient is at while on the arm.
+        step_number = patient.get_patient_assignment_step_number()
+        if step_number % 2 == 0 and date_on_arm is not None:
+            step_number = step_number + 1
+
         return AssignmentRecord(patient.patientSequenceNumber,
                                 patient.patientType,
                                 ta_version,
                                 status,
                                 patient.get_assignment_reason(ta_id, ta_version),
-                                patient.get_patient_assignment_step_number(),
+                                step_number,
                                 patient.diseases,
                                 analysis_id,
                                 patient.patientAssignmentIdx,
