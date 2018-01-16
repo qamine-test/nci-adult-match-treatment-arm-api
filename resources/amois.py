@@ -414,7 +414,7 @@ class AmoisAnnotator:
     def _get_amoi_state(amoi):
         """
          STATE        treatmentArmStatus        dateArchived
-         "CURRENT"    "OPEN"                    None
+         "CURRENT"    "OPEN" or "REACTIVATED"   None
          "PRIOR"      "SUSPENDED" or "CLOSED"   None
          "FUTURE"     "READY" or "PENDING"      None
          "PREVIOUS"   <doesn't matter>          not None
@@ -426,7 +426,7 @@ class AmoisAnnotator:
             state = "PREVIOUS"
         else:
             ta_status = amoi['treatmentArmStatus']
-            if ta_status == "OPEN":
+            if ta_status == in ["OPEN", "REACTIVATED"]:
                 state = "CURRENT"
             elif ta_status in ["SUSPENDED", "CLOSED"]:
                 state = "PRIOR"
