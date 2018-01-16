@@ -1,12 +1,11 @@
 from datetime import datetime, timedelta, timezone
 
-from bson import ObjectId
 
-def create_patient_assignment_logic(trtmt_id, ver="2015-08-06", reason="The patient contains no matching variant.",
+def create_patient_assignment_logic(trtmt_id, version="2015-08-06", reason="The patient contains no matching variant.",
                                     category="NO_VARIANT_MATCH"):
     return {
         "treatmentArmId": trtmt_id,
-        "treatmentArmVersion": ver,
+        "treatmentArmVersion": version,
         "reason": reason,
         "patientAssignmentReasonCategory": category
     }
@@ -61,8 +60,20 @@ DEFAULT_TRIGGERS = [
         ON_ARM_TRIGGER,
     ]
 
+PATIENT_TREATMENT_ARM = {
+    "treatmentArmId": "EAY131-B",
+    "name": "Afatinib-Her2 activating mutation",
+    "version": "2015-08-06",
+    "description": "Afatinib in HER2 activating mutation",
+    "targetId": "750691.0",
+    "targetName": "Afatinib",
+    "numPatientsAssigned": 0,
+    "maxPatientsAllowed": 35,
+    "treatmentArmStatus": "OPEN",
+}
 MATCHING_LOGIC = \
-    create_patient_assignment_logic("EAY131-B",
+    create_patient_assignment_logic(PATIENT_TREATMENT_ARM["treatmentArmId"],
+                                    version=PATIENT_TREATMENT_ARM["version"],
                                     reason="The patient and treatment arm match on variant identifier "
                                            "[COSM94225,COSM14062].",
                                     category="SELECTED")
@@ -82,18 +93,6 @@ DEFAULT_ASSIGNMENT_LOGICS = [
     MATCHING_LOGIC,
     create_patient_assignment_logic("EAY131-V"),
 ]
-
-PATIENT_TREATMENT_ARM = {
-    "_id": "EAY131-B",  # NOTE: This identifier is in the treatmentId field in the treatmentArms collection.
-    "name": "Afatinib-Her2 activating mutation",
-    "version": "2015-08-06",
-    "description": "Afatinib in HER2 activating mutation",
-    "targetId": "750691.0",
-    "targetName": "Afatinib",
-    "numPatientsAssigned": 0,
-    "maxPatientsAllowed": 35,
-    "treatmentArmStatus": "OPEN",
-}
 
 
 def create_next_generation_sequence(status, job_name):
@@ -169,7 +168,7 @@ def create_patient(triggers=None, assignment_logics=None, current_patient_status
         "currentStepNumber": "1",
         "currentPatientStatus": current_patient_status,
         "patientAssignmentIdx": pat_assignment_idx,
-        "patientAssignments": {},
+        "patientAssignments": {},  # is an array in the patient data model, but the query unwinds on that field
         "diseases": [
             {
                 "ctepCategory": "Breast Neoplasm",
@@ -202,9 +201,9 @@ def create_patient(triggers=None, assignment_logics=None, current_patient_status
             "dateConfirmed": datetime_to_timestamp(datetime(2015, 9, 30, 12, 34, 55))
         }
     if treatment_arm is not None:
-        patient['treatmentArm'] = treatment_arm
         if current_patient_status == 'ON_TREATMENT_ARM':
-            patient['patientAssignments']['treatmentArm'] = treatment_arm
+            patient['currentTreatmentArm'] = treatment_arm
+        patient['patientAssignments']['treatmentArm'] = treatment_arm
 
     return patient
 
@@ -220,8 +219,8 @@ NOT_ENROLLED_PATIENT = create_patient(
         create_patient_assignment_logic("EAY131-R"),
         create_patient_assignment_logic("EAY131-U"),
     ],
-    'OFF_TRIAL_DECEASED',
-    PATIENT_TREATMENT_ARM,
+    current_patient_status='OFF_TRIAL_DECEASED',
+    treatment_arm=PATIENT_TREATMENT_ARM,
     biopsies=[MATCHING_GOOD_BIOPSY1],
     patient_sequence_number="14441"
 )
@@ -233,8 +232,8 @@ FORMER_PATIENT = create_patient(
         create_patient_assignment_logic("EAY131-R"),
         create_patient_assignment_logic("EAY131-E"),
     ],
-    'OFF_TRIAL_DECEASED',
-    PATIENT_TREATMENT_ARM,
+    current_patient_status='OFF_TRIAL_DECEASED',
+    treatment_arm=PATIENT_TREATMENT_ARM,
     biopsies=[MATCHING_GOOD_BIOPSY1],
     patient_sequence_number = "14442"
 )
@@ -246,8 +245,8 @@ PENDING_PATIENT = create_patient(
         create_patient_assignment_logic("EAY131-E"),
         create_patient_assignment_logic("EAY131-U"),
     ],
-    'PENDING_APPROVAL',
-    PATIENT_TREATMENT_ARM,
+    current_patient_status='PENDING_APPROVAL',
+    treatment_arm=PATIENT_TREATMENT_ARM,
     biopsies=[MATCHING_GOOD_BIOPSY1],
     patient_sequence_number = "14443"
 )
@@ -273,8 +272,8 @@ REGISTERED_PATIENT = create_patient(
         REGISTRATION_TRIGGER,
     ],
     [],  # No assignments yet
-    'REGISTERED',
-    None,
+    current_patient_status='REGISTERED',
+    treatment_arm=None,
     patient_sequence_number = "14446"
 )
 REJOIN_DATE = PENDING_OFF_STUDY_DATE + timedelta(days=2)
