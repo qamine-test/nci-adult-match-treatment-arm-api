@@ -15,7 +15,7 @@ class TestPatient(unittest.TestCase):
     def test_constructor_and_get(self):
         p = Patient(pd.TEST_PATIENT)
         self.assertEqual(p.diseases, pd.TEST_PATIENT['diseases'])
-        self.assertEqual(p.treatmentArm, pd.TEST_PATIENT['treatmentArm'])
+        self.assertEqual(p.currentTreatmentArm, pd.TEST_PATIENT['currentTreatmentArm'])
         self.assertEqual(p.currentPatientStatus, pd.TEST_PATIENT['currentPatientStatus'])
         self.assertEqual(p.currentStepNumber, pd.TEST_PATIENT['currentStepNumber'])
         self.assertEqual(p.patientTriggers, pd.TEST_PATIENT['patientTriggers'])
