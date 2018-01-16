@@ -25,7 +25,7 @@ TA_VERSION = '2016-04-25'
 BIOPSY_SEQ_NUM = 'BSN-112244'
 ASSNMNT_STATUS = 'ON_TREATMENT_ARM'
 ASSNMNT_REASON = 'Because I said so'
-STEP_NUM = 1
+STEP_NUM = 0
 DISEASES = [
     {
         "_id": "10044409",
@@ -181,5 +181,4 @@ class TestSummaryReport(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    print(str(DEFAULT_SR))
     unittest.main()
