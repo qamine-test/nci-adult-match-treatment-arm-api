@@ -49,6 +49,7 @@ PENDING_OFF_STUDY_TRIGGER = create_patient_trigger("PENDING_OFF_STUDY", date_cre
 PENDING_APPR_TRIGGER = create_patient_trigger("PENDING_APPROVAL", date_created=PENDING_APPR_DATE)
 NOT_ELIGIBLE_TRIGGER = create_patient_trigger("NOT_ELIGIBLE", date_created=OFF_ARM_DATE)
 DECEASED_TRIGGER = create_patient_trigger("OFF_TRIAL_DECEASED", date_created=OFF_ARM_DATE)
+COMPASSIONATE_CARE_TRIGGER = create_patient_trigger("COMPASSIONATE_CARE", date_created=OFF_ARM_DATE)
 ON_ARM_TRIGGER = create_patient_trigger("ON_TREATMENT_ARM",
                                         message="Patient registration to assigned treatment arm EAY131-B",
                                         date_created=ON_ARM_DATE)
@@ -349,6 +350,20 @@ NOT_ELIGIBLE_PATIENT = create_patient(
     PATIENT_TREATMENT_ARM,
     biopsies=[MATCHING_GOOD_BIOPSY1],
     patient_sequence_number="14450"
+)
+
+COMPASSIONATE_CARE_PATIENT = create_patient(
+    [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, COMPASSIONATE_CARE_TRIGGER],
+    [
+        create_patient_assignment_logic("EAY131-E"),
+        MATCHING_LOGIC,
+        create_patient_assignment_logic("EAY131-R"),
+        create_patient_assignment_logic("EAY131-U"),
+    ],
+    'COMPASSIONATE_CARE',
+    PATIENT_TREATMENT_ARM,
+    biopsies=[MATCHING_GOOD_BIOPSY2],
+    patient_sequence_number="14451"
 )
 
 # The data below is here to mimic an usual situation found in testing where a patient was assigned to the
