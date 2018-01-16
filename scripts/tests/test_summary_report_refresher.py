@@ -94,27 +94,28 @@ class RefresherTest(unittest.TestCase):
     @data(
         # 1. no patients associated with treatmentArm
         ([], DEFAULT_TA, create_sr_json(), []),
-        # 2. only patients with no treatmentArm
-        ([pd.REGISTERED_PATIENT], DEFAULT_TA, create_sr_json(), []),
-        # 3. a matching patient that was considered but not enrolled
+        # 2. a matching patient that was considered but not enrolled
         ([pd.NOT_ENROLLED_PATIENT], DEFAULT_TA, create_sr_json(numNotEnrolledPatient=1), [pd.NOT_ENROLLED_PATIENT]),
-        # 4. a matching former patient
+        # 3. a matching former patient
         ([pd.FORMER_PATIENT], DEFAULT_TA, create_sr_json(numFormerPatients=1), [pd.FORMER_PATIENT]),
-        # 5. a matching pending patient
+        # 4. a matching pending patient
         ([pd.PENDING_PATIENT], DEFAULT_TA, create_sr_json(numPendingArmApproval=1), [pd.PENDING_PATIENT]),
-        # 6. a matching current patient
+        # 5. a matching current patient
         ([pd.CURRENT_PATIENT], DEFAULT_TA, create_sr_json(numCurrentPatientsOnArm=1), [pd.CURRENT_PATIENT]),
-        # 7. a matching current and former patient, plus one non-matching patient
-        ([pd.CURRENT_PATIENT, pd.REGISTERED_PATIENT, pd.FORMER_PATIENT],
+        # 6. a matching current and former patient
+        ([pd.CURRENT_PATIENT, pd.FORMER_PATIENT],
          DEFAULT_TA,
          create_sr_json(numCurrentPatientsOnArm=1, numFormerPatients=1),
          [pd.CURRENT_PATIENT, pd.FORMER_PATIENT]),
-        # 8. two matching current patients (same patient), one pending patient, plus two non-matching patients
-        ([pd.REGISTERED_PATIENT, pd.CURRENT_PATIENT, pd.PENDING_PATIENT, pd.CURRENT_PATIENT, pd.REGISTERED_PATIENT],
+        # 7. one not enrolled patient, two current patients (same patient), one pending patient,
+        # one former patients
+        ([pd.COMPASSIONATE_CARE_PATIENT, pd.CURRENT_PATIENT, pd.PENDING_PATIENT, pd.CURRENT_PATIENT, pd.FORMER_PATIENT],
          DEFAULT_TA,
-         create_sr_json(numCurrentPatientsOnArm=1, numPendingArmApproval=1),
-         [pd.CURRENT_PATIENT, pd.PENDING_PATIENT]),
-        # 9.
+         create_sr_json(numCurrentPatientsOnArm=1, numPendingArmApproval=1, numFormerPatients=1,
+                        numNotEnrolledPatient=1),
+         [pd.COMPASSIONATE_CARE_PATIENT, pd.CURRENT_PATIENT, pd.PENDING_PATIENT, pd.FORMER_PATIENT]),
+        # 7. two not enrolled patients (same patient), one current patients, one pending patient,
+        # one former patients
         ([pd.PATIENT_ON_ARM_TWICE2, pd.PATIENT_ON_ARM_TWICE1, pd.CURRENT_PATIENT,
           pd.PENDING_PATIENT, pd.FORMER_PATIENT],
          DEFAULT_TA,
@@ -222,7 +223,7 @@ class RefresherTest(unittest.TestCase):
          [pd.CURRENT_PATIENT['patientSequenceNumber'], pd.CURRENT_PATIENT['patientType'],
           pd.CURRENT_PATIENT['patientAssignments']['treatmentArm']['version'],
           pd.CURRENT_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
-          pd.CURRENT_PATIENT['patientAssignments']['stepNumber'], pd.CURRENT_PATIENT['diseases'],
+          pd.CURRENT_PATIENT['patientAssignments']['stepNumber'] + 1, pd.CURRENT_PATIENT['diseases'],
           pd.MATCHING_ANALYSIS_ID, pd.CURRENT_PATIENT['patientAssignmentIdx'],
           pd.MATCHING_GOOD_BIOPSY1['biopsySequenceNumber'],
           convert_date(pd.CURRENT_PATIENT['patientAssignments']['dateAssigned']),
@@ -232,7 +233,7 @@ class RefresherTest(unittest.TestCase):
          [pd.FORMER_PATIENT['patientSequenceNumber'], pd.FORMER_PATIENT['patientType'],
           pd.FORMER_PATIENT['patientAssignments']['treatmentArm']['version'],
           pd.FORMER_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
-          pd.FORMER_PATIENT['patientAssignments']['stepNumber'], pd.FORMER_PATIENT['diseases'],
+          pd.FORMER_PATIENT['patientAssignments']['stepNumber'] + 1, pd.FORMER_PATIENT['diseases'],
           pd.MATCHING_ANALYSIS_ID, pd.FORMER_PATIENT['patientAssignmentIdx'],
           pd.MATCHING_GOOD_BIOPSY1['biopsySequenceNumber'],
           convert_date(pd.FORMER_PATIENT['patientAssignments']['dateAssigned']),
