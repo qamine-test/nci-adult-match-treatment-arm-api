@@ -103,11 +103,13 @@ class TestAmoisAnnotator(unittest.TestCase):
         ({'treatmentArmStatus': 'PENDING', 'dateArchived': None}, 'FUTURE'),
         ({'treatmentArmStatus': 'READY', 'dateArchived': None}, 'FUTURE'),
         ({'treatmentArmStatus': 'OPEN', 'dateArchived': None}, 'CURRENT'),
+        ({'treatmentArmStatus': 'REACTIVATED', 'dateArchived': None}, 'CURRENT'),
         ({'treatmentArmStatus': 'CLOSED', 'dateArchived': None}, 'PRIOR'),
         ({'treatmentArmStatus': 'SUSPENDED', 'dateArchived': None}, 'PRIOR'),
         ({'treatmentArmStatus': 'PENDING', 'dateArchived': 'not None'}, 'PREVIOUS'),
         ({'treatmentArmStatus': 'READY', 'dateArchived': 'not None'}, 'PREVIOUS'),
         ({'treatmentArmStatus': 'OPEN', 'dateArchived': 'not None'}, 'PREVIOUS'),
+        ({'treatmentArmStatus': 'REACTIVATED', 'dateArchived': 'not None'}, 'PREVIOUS'),
         ({'treatmentArmStatus': 'CLOSED', 'dateArchived': 'not None'}, 'PREVIOUS'),
         ({'treatmentArmStatus': 'SUSPENDED', 'dateArchived': datetime.now()}, 'PREVIOUS'),
     )
