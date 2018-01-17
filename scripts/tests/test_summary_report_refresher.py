@@ -208,6 +208,7 @@ class RefresherTest(unittest.TestCase):
         patient_type = Refresher._determine_patient_classification_by_dates(mock_ar_inst)
         self.assertEqual(patient_type, expected_patient_type)
 
+    # Test the Refresher._create_assignment_record method.
     @data(
         (pd.PENDING_PATIENT, pd.MATCHING_LOGIC['treatmentArmId'],
          [pd.PENDING_PATIENT['patientSequenceNumber'], pd.PENDING_PATIENT['patientType'],
@@ -232,13 +233,23 @@ class RefresherTest(unittest.TestCase):
         (pd.FORMER_PATIENT, pd.MATCHING_LOGIC['treatmentArmId'],
          [pd.FORMER_PATIENT['patientSequenceNumber'], pd.FORMER_PATIENT['patientType'],
           pd.FORMER_PATIENT['patientAssignments']['treatmentArm']['version'],
-          pd.FORMER_PATIENT['currentPatientStatus'], pd.MATCHING_LOGIC['reason'],
+          'FORMERLY_ON_ARM_OFF_TRIAL', pd.MATCHING_LOGIC['reason'],
           str(int(pd.FORMER_PATIENT['patientAssignments']['stepNumber']) + 1), pd.FORMER_PATIENT['diseases'],
           pd.MATCHING_ANALYSIS_ID, pd.FORMER_PATIENT['patientAssignmentIdx'],
           pd.MATCHING_GOOD_BIOPSY1['biopsySequenceNumber'],
           convert_date(pd.FORMER_PATIENT['patientAssignments']['dateAssigned']),
           pd.ON_ARM_DATE, pd.OFF_ARM_DATE
-          ])
+          ]),
+        (pd.DECEASED_PATIENT, pd.MATCHING_LOGIC['treatmentArmId'],
+         [pd.DECEASED_PATIENT['patientSequenceNumber'], pd.DECEASED_PATIENT['patientType'],
+          pd.DECEASED_PATIENT['patientAssignments']['treatmentArm']['version'],
+          'FORMERLY_ON_ARM_DECEASED', pd.MATCHING_LOGIC['reason'],
+          str(int(pd.DECEASED_PATIENT['patientAssignments']['stepNumber']) + 1), pd.DECEASED_PATIENT['diseases'],
+          pd.MATCHING_ANALYSIS_ID, pd.DECEASED_PATIENT['patientAssignmentIdx'],
+          pd.MATCHING_GOOD_BIOPSY1['biopsySequenceNumber'],
+          convert_date(pd.DECEASED_PATIENT['patientAssignments']['dateAssigned']),
+          pd.ON_ARM_DATE, pd.OFF_ARM_DATE
+          ]),
     )
     @unpack
     def test_create_assignment_record(self, patient, trtmt_id, ar_constructor_args):
