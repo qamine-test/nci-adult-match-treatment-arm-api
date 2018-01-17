@@ -121,6 +121,17 @@ class TestPatient(unittest.TestCase):
         self.assertEqual(analysis_id, exp_analysis_id)
         self.assertEqual(biopsy_seq_num, exp_biopsy_seq_num)
 
+    @data(
+        ({}, None),
+        ({'patientAssignments': {}}, None),
+        ({'patientAssignments': {'stepNumber': 1}}, 1),
+    )
+    @unpack
+    def test_get_patient_assignment_step_number(self, patient_json, exp_step_number):
+        p = Patient(patient_json)
+        step_number = p.get_patient_assignment_step_number()
+        self.assertEqual(step_number, exp_step_number)
+
 
 class TestConvertDate(unittest.TestCase):
     def test(self):
