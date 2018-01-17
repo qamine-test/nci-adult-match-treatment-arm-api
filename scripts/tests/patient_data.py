@@ -25,11 +25,11 @@ ON_ARM_DATE = datetime(2015, 10, 1)
 OFF_ARM_DATE = datetime(2016, 3, 1)
 
 
-def create_patient_trigger(patient_status, message=None, date_created=None, patient_seq_num="10065"):
+def create_patient_trigger(patient_status, message=None, date_created=None, patient_seq_num="10065", step_number="0"):
     trigger = {
         "studyId": "EAY131",
         "patientSequenceNumber": patient_seq_num,
-        "stepNumber": "0",
+        "stepNumber": step_number,
         "patientStatus": patient_status,
         "dateCreated": datetime_to_timestamp(datetime(2015, 9, 4, 18, 22, 0)),
         "auditDate": datetime_to_timestamp(datetime(2015, 9, 4, 18, 30, 14))
@@ -48,11 +48,14 @@ PENDING_CONF_TRIGGER = create_patient_trigger("PENDING_CONFIRMATION", date_creat
 PENDING_OFF_STUDY_TRIGGER = create_patient_trigger("PENDING_OFF_STUDY", date_created=PENDING_OFF_STUDY_DATE)
 PENDING_APPR_TRIGGER = create_patient_trigger("PENDING_APPROVAL", date_created=PENDING_APPR_DATE)
 NOT_ELIGIBLE_TRIGGER = create_patient_trigger("NOT_ELIGIBLE", date_created=OFF_ARM_DATE)
+OFF_TRIAL_TRIGGER = create_patient_trigger("OFF_TRIAL", date_created=OFF_ARM_DATE)
 DECEASED_TRIGGER = create_patient_trigger("OFF_TRIAL_DECEASED", date_created=OFF_ARM_DATE)
 COMPASSIONATE_CARE_TRIGGER = create_patient_trigger("COMPASSIONATE_CARE", date_created=OFF_ARM_DATE)
+PROGRESSION_REBIOPSY_TRIGGER = create_patient_trigger("PROGRESSION_REBIOPSY", date_created=OFF_ARM_DATE,
+                                                      step_number="2")
 ON_ARM_TRIGGER = create_patient_trigger("ON_TREATMENT_ARM",
                                         message="Patient registration to assigned treatment arm EAY131-B",
-                                        date_created=ON_ARM_DATE)
+                                        date_created=ON_ARM_DATE, step_number="1")
 DEFAULT_TRIGGERS = [
         REGISTRATION_TRIGGER,
         PENDING_CONF_TRIGGER,
@@ -152,7 +155,7 @@ DEFAULT_PAT_ASSNMNT_STEP_NUM ="0"
 def create_patient(triggers=None, assignment_logics=None, current_patient_status='ON_TREATMENT_ARM',
                    treatment_arm=None, biopsies=None, patient_assmnt_idx=DEFAULT_ASSIGNMENT_IDX,
                    patient_type="STANDARD", assignment_date=ASSIGNMENT_DATE, patient_sequence_number="14400",
-                   pat_assignment_idx=0):
+                   pat_assignment_idx=0, current_step_number="0"):
     if triggers is None:
         triggers = DEFAULT_TRIGGERS
     if assignment_logics is None:
@@ -166,7 +169,7 @@ def create_patient(triggers=None, assignment_logics=None, current_patient_status
         "patientType": patient_type,
         "patientTriggers": triggers,
         "biopsies": biopsies,
-        "currentStepNumber": "1",
+        "currentStepNumber": current_step_number,
         "currentPatientStatus": current_patient_status,
         "patientAssignmentIdx": pat_assignment_idx,
         "patientAssignments": {},  # is an array in the patient data model, but the query unwinds on that field
@@ -226,14 +229,14 @@ NOT_ENROLLED_PATIENT = create_patient(
     patient_sequence_number="14441"
 )
 FORMER_PATIENT = create_patient(
-    [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, ON_ARM_TRIGGER, DECEASED_TRIGGER],
+    [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, ON_ARM_TRIGGER, OFF_TRIAL_TRIGGER],
     [
         create_patient_assignment_logic("EAY131-A"),
         MATCHING_LOGIC,
         create_patient_assignment_logic("EAY131-R"),
         create_patient_assignment_logic("EAY131-E"),
     ],
-    current_patient_status='OFF_TRIAL_DECEASED',
+    current_patient_status='OFF_TRIAL',
     treatment_arm=PATIENT_TREATMENT_ARM,
     biopsies=[MATCHING_GOOD_BIOPSY1],
     patient_sequence_number = "14442"
@@ -296,6 +299,7 @@ OFF_STUDY_REJOIN_PATIENT = create_patient(
     assignment_date=NEW_PENDING_CONF_DATE,
     patient_sequence_number = "14447"
 )
+
 PENDING_CONF_APPR_CONF_PATIENT = create_patient(
     triggers=[REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER,
               # I don't think that in the real world a PENDING_CONFIRMATION trigger would follow a PENDING_APPROVAL
@@ -357,14 +361,45 @@ COMPASSIONATE_CARE_PATIENT = create_patient(
     [
         create_patient_assignment_logic("EAY131-E"),
         MATCHING_LOGIC,
-        create_patient_assignment_logic("EAY131-R"),
         create_patient_assignment_logic("EAY131-U"),
+        create_patient_assignment_logic("EAY131-G"),
     ],
     'COMPASSIONATE_CARE',
     PATIENT_TREATMENT_ARM,
     biopsies=[MATCHING_GOOD_BIOPSY2],
     patient_sequence_number="14451"
 )
+
+PROGRESSION_REBIOPSY_PATIENT = create_patient(
+    [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, ON_ARM_TRIGGER, PROGRESSION_REBIOPSY_TRIGGER],
+    [
+        create_patient_assignment_logic("EAY131-G"),
+        MATCHING_LOGIC,
+        create_patient_assignment_logic("EAY131-R"),
+        create_patient_assignment_logic("EAY131-A"),
+    ],
+    'PROGRESSION_REBIOPSY',
+    PATIENT_TREATMENT_ARM,
+    current_step_number="2",
+    biopsies=[MATCHING_GOOD_BIOPSY3],
+    patient_sequence_number="14452"
+)
+
+DECEASED_PATIENT = create_patient(
+    [REGISTRATION_TRIGGER, PENDING_CONF_TRIGGER, PENDING_APPR_TRIGGER, ON_ARM_TRIGGER, DECEASED_TRIGGER],
+    [
+        create_patient_assignment_logic("EAY131-Q"),
+        MATCHING_LOGIC,
+        create_patient_assignment_logic("EAY131-A"),
+        create_patient_assignment_logic("EAY131-U"),
+    ],
+    current_patient_status='OFF_TRIAL_DECEASED',
+    current_step_number="1",
+    treatment_arm=PATIENT_TREATMENT_ARM,
+    biopsies=[MATCHING_GOOD_BIOPSY1],
+    patient_sequence_number = "14453"
+)
+
 
 # The data below is here to mimic an usual situation found in testing where a patient was assigned to the
 # same arm twice.  It resulted in the patient erroneously being counted twice in the summary report refresh.
