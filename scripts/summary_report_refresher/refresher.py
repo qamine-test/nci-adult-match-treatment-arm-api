@@ -112,8 +112,8 @@ class Refresher(object):
         # assignment.  If the patient has been put on the treatment arm, then the step number needs to reflect
         # the step number the patient is at while on the arm.
         step_number = patient.get_patient_assignment_step_number()
-        if step_number % 2 == 0 and date_on_arm is not None:
-            step_number = step_number + 1
+        if int(step_number) % 2 == 0 and date_on_arm is not None:
+            step_number = str(int(step_number) + 1)
 
         return AssignmentRecord(patient.patientSequenceNumber,
                                 patient.patientType,
