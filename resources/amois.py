@@ -426,7 +426,7 @@ class AmoisAnnotator:
             state = "PREVIOUS"
         else:
             ta_status = amoi['treatmentArmStatus']
-            if ta_status == in ["OPEN", "REACTIVATED"]:
+            if ta_status in ["OPEN", "REACTIVATED"]:
                 state = "CURRENT"
             elif ta_status in ["SUSPENDED", "CLOSED"]:
                 state = "PRIOR"
