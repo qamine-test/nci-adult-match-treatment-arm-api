@@ -14,6 +14,12 @@ PENDING_STATUSES = ['PENDING_APPROVAL', 'PENDING_CONFIRMATION']
 
 class Refresher(object):
 
+    FORMATTED_STATUS_CONVERTER = {
+        'PROGRESSION_REBIOPSY': 'FORMERLY_ON_ARM_PROGRESSION',
+        'OFF_TRIAL': 'FORMERLY_ON_ARM_OFF_TRIAL',
+        'OFF_TRIAL_DECEASED': 'FORMERLY_ON_ARM_DECEASED',
+    }
+
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.pat_accessor = PatientAccessor()  # provides access to the Patient API
@@ -114,6 +120,9 @@ class Refresher(object):
         step_number = patient.get_patient_assignment_step_number()
         if int(step_number) % 2 == 0 and date_on_arm is not None:
             step_number = str(int(step_number) + 1)
+
+        if date_on_arm is not None and status in Refresher.FORMATTED_STATUS_CONVERTER:
+            status = Refresher.FORMATTED_STATUS_CONVERTER[status]
 
         return AssignmentRecord(patient.patientSequenceNumber,
                                 patient.patientType,
