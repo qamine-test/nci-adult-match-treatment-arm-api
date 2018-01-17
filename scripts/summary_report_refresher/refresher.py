@@ -35,7 +35,7 @@ class Refresher(object):
                                   .format(trtmtId=sr.treatmentArmId, version=sr.version))
 
         if upd_cnt != sum_rpt_cnt:
-            self.logger.exception("Only {cnt}/{total} summary reports updated".format(cnt=upd_cnt, total=sum_rpt_cnt))
+            self.logger.error("Only {cnt}/{total} summary reports updated".format(cnt=upd_cnt, total=sum_rpt_cnt))
         else:
             self.logger.info("All {cnt} summary reports were updated.".format(cnt=sum_rpt_cnt))
 
@@ -49,8 +49,8 @@ class Refresher(object):
         # patients = [Patient(p) for p in self.pat_accessor.get_patients_by_treatment_arm_id(sum_rpt.treatmentArmId)]
         patients = [Patient(p) for p in self.pat_accessor.get_patients_by_treatment_arm_id(sum_rpt.treatmentArmId,
                                                                                            self.token)]
-        self.logger.debug("{cnt} patients returned for '{trtmt_id}"
-                          .format(cnt=len(patients), trtmt_id=sum_rpt.treatmentArmId))
+        self.logger.info("{cnt} patients returned for '{trtmt_id}"
+                         .format(cnt=len(patients), trtmt_id=sum_rpt.treatmentArmId))
 
         # Update the summary report object for any patients that meet the criteria.
         pat_id = []
