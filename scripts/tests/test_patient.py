@@ -64,9 +64,9 @@ class TestPatient(unittest.TestCase):
         (pd.CURRENT_PATIENT, pd.ASSIGNMENT_DATE, pd.ON_ARM_DATE, None, 'ON_TREATMENT_ARM'),
         (pd.FORMER_PATIENT, pd.ASSIGNMENT_DATE, pd.ON_ARM_DATE, pd.OFF_ARM_DATE, 'OFF_TRIAL'),
         (pd.OFF_STUDY_REJOIN_PATIENT, pd.NEW_PENDING_CONF_DATE, None, None, 'PENDING_CONFIRMATION'),
-        (pd.NOT_ENROLLED_PATIENT, pd.ASSIGNMENT_DATE, None, pd.OFF_ARM_DATE, 'OFF_TRIAL_DECEASED'),
-        (pd.NOT_ELIGIBLE_PATIENT, pd.ASSIGNMENT_DATE, None, pd.OFF_ARM_DATE, 'NOT_ELIGIBLE'),
-        (pd.COMPASSIONATE_CARE_PATIENT, pd.ASSIGNMENT_DATE, None, pd.OFF_ARM_DATE, 'COMPASSIONATE_CARE'),
+        (pd.NOT_ENROLLED_PATIENT, pd.ASSIGNMENT_DATE, None, None, 'OFF_TRIAL_DECEASED'),
+        (pd.NOT_ELIGIBLE_PATIENT, pd.ASSIGNMENT_DATE, None, None, 'NOT_ELIGIBLE'),
+        (pd.COMPASSIONATE_CARE_PATIENT, pd.ASSIGNMENT_DATE, None, None, 'COMPASSIONATE_CARE'),
     )
     @unpack
     def test_get_dates_status_from_arm(self, patient_data, exp_date_assigned, exp_date_on, exp_date_off, exp_status):

@@ -100,7 +100,8 @@ class Patient(object):
                 if last_status == "ON_TREATMENT_ARM":
                     date_on_arm = convert_date(trigger['dateCreated'])
                 elif last_status != "PENDING_APPROVAL":
-                    date_off_arm = convert_date(trigger['dateCreated'])
+                    if date_on_arm is not None:
+                        date_off_arm = convert_date(trigger['dateCreated'])
                     break
             elif trigger['patientStatus'] == "PENDING_CONFIRMATION":
                 if self._trigger_belongs_to_assignment(trigger, date_assigned):
