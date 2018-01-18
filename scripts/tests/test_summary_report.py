@@ -44,15 +44,19 @@ DATE_OFF_ARM = datetime(2016, 5, 1)
 
 # ******** Helper functions to build data structures used in test cases ******** #
 
-def create_assignment_rec(date_selected=None, date_on_arm=None, date_off_arm=None):
-    return AssignmentRecord(PAT_SEQ_NUM, PATIENT_TYPE, TA_VERSION, ASSNMNT_STATUS, ASSNMNT_REASON, STEP_NUM,
+def create_assignment_rec(date_selected=None, date_on_arm=None, date_off_arm=None, assignment_status=ASSNMNT_STATUS):
+    return AssignmentRecord(PAT_SEQ_NUM, PATIENT_TYPE, TA_VERSION, assignment_status, ASSNMNT_REASON, STEP_NUM,
                             DISEASES, ASSNMNT_IDX, ANALYSIS_ID, BIOPSY_SEQ_NUM,
                             date_selected, date_on_arm, date_off_arm)
 
-PENDING_ASSMT_REC = create_assignment_rec(date_selected=DATE_SEL, date_on_arm=None, date_off_arm=None)
-NOT_ENROLLED_ASSMT_REC = create_assignment_rec(date_selected=DATE_SEL, date_on_arm=None, date_off_arm=DATE_OFF_ARM)
-CURRENTLY_ON_TA_ASSMT_REC = create_assignment_rec(date_selected=DATE_SEL, date_on_arm=DATE_ON_ARM, date_off_arm=None)
-FORMERLY_ON_TA_AR = create_assignment_rec(date_selected=DATE_SEL, date_on_arm=DATE_ON_ARM, date_off_arm=DATE_OFF_ARM)
+PENDING_ASSMT_REC = create_assignment_rec(date_selected=DATE_SEL, date_on_arm=None, date_off_arm=None,
+                                          assignment_status="PENDING_CONFIRMATION")
+NOT_ENROLLED_ASSMT_REC = create_assignment_rec(date_selected=DATE_SEL, date_on_arm=None, date_off_arm=DATE_OFF_ARM,
+                                               assignment_status="COMPASSIONATE_CARE")
+CURRENTLY_ON_TA_ASSMT_REC = create_assignment_rec(date_selected=DATE_SEL, date_on_arm=DATE_ON_ARM, date_off_arm=None,
+                                                  assignment_status="ON_TREATMENT_ARM")
+FORMERLY_ON_TA_AR = create_assignment_rec(date_selected=DATE_SEL, date_on_arm=DATE_ON_ARM, date_off_arm=DATE_OFF_ARM,
+                                          assignment_status="FORMERLY_ON_ARM_OFF_TRIAL")
 
 
 def create_ta_json(omit_flds=None):

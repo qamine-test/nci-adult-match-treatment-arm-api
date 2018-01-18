@@ -1,5 +1,3 @@
-
-
 class SummaryReport(object):
     # Patient Type Constants
     NOT_ENROLLED = 'numNotEnrolledPatient'
@@ -17,8 +15,6 @@ class SummaryReport(object):
         if ta_json_doc is None:
             ta_json_doc = dict()
         missing_fields = [f for f in SummaryReport._REQ_JSON_FIELDS if f not in ta_json_doc]
-        # sr = ta_json_doc['summaryReport'] if 'summaryReport' in ta_json_doc else dict()
-        # missing_fields += ['summaryReport.'+f for f in SummaryReport._REQ_SR_FIELDS if f not in sr]
 
         if missing_fields:
             err_msg = ("The following required fields were missing from the submitted summary report JSON document: "
@@ -46,7 +42,7 @@ class SummaryReport(object):
         """
 
         :param pat_type: patient type (must be one of the patient type constants defined above)
-        :return:
+        :param assignment_rec an AssignmentRecord object
         """
         if pat_type not in SummaryReport._SR_COUNT_FIELDS:
             raise Exception("Invalid patient type '{t}'".format(t=pat_type))
@@ -68,16 +64,10 @@ class SummaryReport(object):
         Sorts the assignment records by the date the patient was selected for the arm (ascending order).  Then
         assigns a slot number to each patient that was put on the arm in the order that they were put on the arm.
 
-
-        A patient in PENDING_CONFIRMATION has 'dateAssigned'
-        A patient in PENDING_APPROVAL has 'dateAssigned', 'dateConfirmed', 'dateSentToECOG'
-        A patient in ON_TREATMENT_ARM has 'dateAssigned', 'dateConfirmed', 'dateSentToECOG'
-
         :param assignment_recs:  JSON for assignment records that are unsorted and without slot numbers
         :return: JSON for assignment records that are sorted and have slot numbers
         """
-        assignment_recs = sorted(assignment_recs, key=lambda ar: ar['dateSelected'])
-        # for i, ar in enumerate([ar for ar in assignment_recs if ar['dateOnArm'] is not None], start=1):
+        assignment_recs = sorted(assignment_recs, key=lambda assmnt_rec: assmnt_rec['dateSelected'])
         for i, ar in enumerate([ar for ar in assignment_recs if cls._assignment_occupies_slot(ar)], start=1):
             ar["slot"] = i
         return assignment_recs
@@ -90,4 +80,5 @@ class SummaryReport(object):
         :return: True/False
         """
         return assignment_rec_json["dateOnArm"] is not None or \
-               (assignment_rec_json["dateSelected"] is not None and assignment_rec_json["dateOffArm"] is None)
+               (assignment_rec_json["dateSelected"] is not None and
+                assignment_rec_json["assignmentStatusOutcome"] in ['PENDING_CONFIRMATION', 'PENDING_APPROVAL'])
