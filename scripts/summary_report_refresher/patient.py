@@ -1,9 +1,18 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+
 
 def convert_date(json_date_dict):
+    """Converts the date as it is stored in the Match MongoDB database into a python datetime object."""
     if not isinstance(json_date_dict, dict) or '$date' not in json_date_dict:
         raise TypeError("parameter must be a dict with a '$date' key")
-    return datetime.utcfromtimestamp(int(json_date_dict['$date']/1000))
+    # return datetime.utcfromtimestamp(int(json_date_dict['$date']/1000))
+
+    # datetime.utcfromtimestamp can't handle a timestamp with milliseconds, so we have to remove them before
+    # conversion and then add them back before returning.
+    timestamp = json_date_dict['$date']
+    ms_from_timestamp = int(timestamp%1000)
+
+    return datetime.utcfromtimestamp(int(timestamp/1000)) + timedelta(milliseconds=ms_from_timestamp)
 
 
 class Patient(object):
