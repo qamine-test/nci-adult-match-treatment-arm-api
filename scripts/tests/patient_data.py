@@ -13,7 +13,7 @@ def create_patient_assignment_logic(trtmt_id, version="2015-08-06", reason="The 
 
 def datetime_to_timestamp(dt):
     # Multiply by 1000 because MongoDB timestamps include milliseconds.
-    return {"$date": int(dt.replace(tzinfo=timezone.utc).timestamp()) * 1000}
+    return {"$date": int(dt.replace(tzinfo=timezone.utc).timestamp() * 1000)}
 
 
 ASSIGNMENT_DATE = datetime(2015, 9, 29)
