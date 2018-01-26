@@ -50,7 +50,7 @@ class Environment(object):
                 self.logger.exception(err_msg)
                 raise FileNotFoundError(Environment.MISSING_CONFIG_FILE_MSG).with_traceback(e.__traceback__)
 
-            self.logger.info("Variables loaded from config file for {env}:\n{vars}"
+            self.logger.debug("Variables loaded from config file for {env}:\n{vars}"
                              .format(env=self.environment, vars=pformat(self._env[self.environment])))
 
         def load_overrides_from_env(self):
