@@ -23,7 +23,7 @@ uat:
   region: "us-east-1"
   bucket: "adultmatch-uat"
   tmp_file_dir: "/tmp"
-  polling_interval: 60
+  polling_interval: 1
   sqs_queue_name: 'treatment-arm-api-uat-queue'
   patient_api_url: "https://match-uat.nci.nih.gov/api/v1/patients"
   logger_level: "INFO"
