@@ -300,5 +300,21 @@ class ReformatStatusLogTests(unittest.TestCase):
         treatment_arm.reformat_status_log(ta_data)
         self.assertEqual(ta_data, exp_ta_data)
 
+
+class TreatmentArmsPTENTests(unittest.TestCase):
+    @patch('resources.treatment_arm.TreatmentArmsAccessor')
+    def test_get(self, mock_ta_accessor):
+        mock_return_data = [{'treatmentArmId': 'blahblah', 'version': '1'},
+                            {'treatmentArmId': 'blahblahblah', 'version': '2'}]
+
+        instance = mock_ta_accessor.return_value
+        instance.find.return_value = mock_return_data
+
+        result = treatment_arm.TreatmentArmsPTEN().get()
+        self.assertEqual(result, mock_return_data)
+        instance.find.assert_called_once_with(treatment_arm.TreatmentArmsPTEN.QUERY,
+                                              treatment_arm.TreatmentArmsPTEN.PROJECTION)
+
+
 if __name__ == '__main__':
     unittest.main()
