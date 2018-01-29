@@ -25,6 +25,7 @@ from resources.healthcheck import HealthCheck
 from resources.treatment_arm import TreatmentArms
 from resources.treatment_arm import TreatmentArmsById
 from resources.treatment_arm import TreatmentArmsOverview
+from resources.treatment_arm import TreatmentArmsPTEN
 from resources.version import Version
 
 # Logging functionality
@@ -65,6 +66,7 @@ API.add_resource(HealthCheck, '/api/v1/treatment_arms/healthcheck', '/api/v1/tre
 API.add_resource(TreatmentArms, '/api/v1/treatment_arms', endpoint='get_all')
 API.add_resource(TreatmentArmsById, '/api/v1/treatment_arms/<string:arm_id>', endpoint='get_by_id')
 API.add_resource(TreatmentArmsOverview, '/api/v1/treatment_arms/dashboard/overview')
+API.add_resource(TreatmentArmsPTEN, '/api/v1/treatment_arms/pten')
 API.add_resource(Version, '/api/v1/treatment_arms/version', endpoint='get_version')
 
 
