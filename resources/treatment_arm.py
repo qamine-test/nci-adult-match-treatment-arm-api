@@ -116,6 +116,22 @@ class TreatmentArmsOverview(Resource):
         return counts
 
 
+class TreatmentArmsPTEN(Resource):
+    QUERY = {'assayResults.gene': 'PTEN', 'dateArchived': None}
+    PROJECTION = {'treatmentArmId': 1, 'version': 1, 'assayResults': 1, 'dateArchived': 1, "_id": 0}
+
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+
+    @requires_auth
+    def get(self):
+        """
+        Gets the TreatmentArms with PTEN Assay.
+        """
+        self.logger.debug("Getting TreatmentArms with PTEN assay results")
+        return TreatmentArmsAccessor().find(self.QUERY, self.PROJECTION)
+
+
 def reformat_status_log(ta_data):
     """
     The statusLog field in ta_data needs to be reformatted from this:
