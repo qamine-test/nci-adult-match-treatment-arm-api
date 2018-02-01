@@ -160,6 +160,35 @@ class TestAmoisAnnotator(unittest.TestCase):
             amois.AmoisAnnotator._extract_annot_data(amois_dict)
         self.assertEqual(str(cm.exception), exp_exp_msg)
 
+    # Test the AmoisAnnotator._choose_amois_annot function with exception.
+    @data(
+        ([{'state': 'CURRENT', 'version': '2017-12-01', 'type': 'Hotspot'},
+          {'state': 'PRIOR', 'version': '2017-12-01', 'type': 'Hotspot'}],
+         {'state': 'CURRENT', 'version': '2017-12-01', 'type': 'Hotspot'}),
+        ([{'state': 'CURRENT', 'version': '2017-12-01', 'type': 'Hotspot'},
+          {'state': 'PREVIOUS', 'version': '2017-12-01', 'type': 'Hotspot'}],
+         {'state': 'CURRENT', 'version': '2017-12-01', 'type': 'Hotspot'}),
+        ([{'state': 'CURRENT', 'version': '2017-12-01', 'type': 'Hotspot'},
+          {'state': 'FUTURE', 'version': '2018-01-01', 'type': 'Hotspot'}],
+         {'state': 'CURRENT', 'version': '2017-12-01', 'type': 'Hotspot'}),
+        ([{'state': 'PREVIOUS', 'version': '2017-12-01', 'type': 'Hotspot'},
+          {'state': 'FUTURE', 'version': '2018-01-01', 'type': 'Hotspot'}],
+         {'state': 'FUTURE', 'version': '2018-01-01', 'type': 'Hotspot'}),
+        ([{'state': 'PRIOR', 'version': '2017-12-01', 'type': 'Hotspot'},
+          {'state': 'FUTURE', 'version': '2018-01-01', 'type': 'Hotspot'}],
+         {'state': 'FUTURE', 'version': '2018-01-01', 'type': 'Hotspot'}),
+        ([{'state': 'PREVIOUS', 'version': '2017-12-01', 'type': 'Hotspot'},
+          {'state': 'PRIOR', 'version': '2018-01-01', 'type': 'Hotspot'}],
+         {'state': 'PRIOR', 'version': '2018-01-01', 'type': 'Hotspot'}),
+        ([{'state': 'PREVIOUS', 'version': '2017-12-01', 'type': 'Hotspot'},
+          {'state': 'PREVIOUS', 'version': '2017-12-01', 'type': 'Nonhotspot'}],
+         {'state': 'PREVIOUS', 'version': '2017-12-01', 'type': 'Nonhotspot'}),
+    )
+    @unpack
+    def test_choose_arm(self, ta_list, exp_chosen_annot):
+        chosen_annot = amois.AmoisAnnotator._choose_amois_annot(ta_list)
+        self.assertEqual(chosen_annot, exp_chosen_annot)
+
     # Test the amois.create_amois_annotation function which, in effect, also tests the add() and
     # get() functions of the AmoisAnnotator class.
     @data(
@@ -179,50 +208,114 @@ class TestAmoisAnnotator(unittest.TestCase):
          {'CURRENT':
             [{'treatmentArmId': 'EAY131-P',
               'exclusions': [],
-              'inclusions': [{'version': '2016-11-11', 'type': 'Hotspot'},
-                             {'version': '2016-11-11', 'type': 'NonHotspot'}]},
+              'inclusions': [{'version': '2016-11-11', 'type': 'NonHotspot'}]},
              {'treatmentArmId': 'EAY131-Q',
               'exclusions': [{'version': '2016-12-11', 'type': 'NonHotspot'}],
               'inclusions': []}]
           }),
-        # 4. Three amois, each matching different arms with different states
-        ([ta_nh_rule("1", "func3", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN", True),
-          ta_nh_rule("1", "func1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
-          ta_id_rule('COSM6240', 'EAY131-R', '2016-12-12', False, "CLOSED")],
-         {'PREVIOUS':
-            [{'treatmentArmId': 'EAY131-P',
-              'exclusions': [{'version': '2016-11-11', 'type': 'NonHotspot'}],
-              'inclusions': []}],
-          'CURRENT':
-            [{'treatmentArmId': 'EAY131-Q',
-              'exclusions': [{'version': '2016-12-11', 'type': 'NonHotspot'}],
-              'inclusions': []}],
-          'PRIOR':
-            [{'treatmentArmId': 'EAY131-R',
-              'exclusions': [{'version': '2016-12-12', 'type': 'Hotspot'}],
-              'inclusions': []}]
-          }),
-        # 5. Four amois, each matching different versions of the same arm
-        ([ta_nh_rule("1", "missense", "1", "1", 'EAY131-A', '2016-11-11', incl=False, status="CLOSED"),
-          ta_nh_rule("1", "func4", "1", "1", 'EAY131-A', '2017-07-11', incl=True, status="OPEN"),
-          ta_id_rule('COSM6240', 'EAY131-A', '2016-12-12', incl=False, status="CLOSED"),
-          ta_id_rule('COSM6240', 'EAY131-A', '2017-01-12', incl=False, status="CLOSED")],
-         {'CURRENT':
-            [{'treatmentArmId': 'EAY131-A',
-              'exclusions': [],
-              'inclusions': [{'version': '2017-07-11', 'type': 'NonHotspot'}]}],
-          'PRIOR':
-            [{'treatmentArmId': 'EAY131-A',
-              'exclusions': [{'version': '2016-11-11', 'type': 'NonHotspot'},
-                             {'version': '2016-12-12', 'type': 'Hotspot'},
-                             {'version': '2017-01-12', 'type': 'Hotspot'}],
-              'inclusions': []}]}),
-    )
+        # # 4. Three amois, each matching different arms with different states
+        # ([ta_nh_rule("1", "func3", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN", True),
+        #   ta_nh_rule("1", "func1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
+        #   ta_id_rule('COSM6240', 'EAY131-R', '2016-12-12', False, "CLOSED")],
+        #  {'PREVIOUS':
+        #     [{'treatmentArmId': 'EAY131-P',
+        #       'exclusions': [{'version': '2016-11-11', 'type': 'NonHotspot'}],
+        #       'inclusions': []}],
+        #   'CURRENT':
+        #     [{'treatmentArmId': 'EAY131-Q',
+        #       'exclusions': [{'version': '2016-12-11', 'type': 'NonHotspot'}],
+        #       'inclusions': []}],
+        #   'PRIOR':
+        #     [{'treatmentArmId': 'EAY131-R',
+        #       'exclusions': [{'version': '2016-12-12', 'type': 'Hotspot'}],
+        #       'inclusions': []}]
+        #   }),
+        # # 5. Four amois, each matching different versions of the same arm
+        # ([ta_nh_rule("1", "missense", "1", "1", 'EAY131-A', '2016-11-11', incl=False, status="CLOSED"),
+        #   ta_nh_rule("1", "func4", "1", "1", 'EAY131-A', '2017-07-11', incl=True, status="OPEN"),
+        #   ta_id_rule('COSM6240', 'EAY131-A', '2016-12-12', incl=False, status="CLOSED"),
+        #   ta_id_rule('COSM6240', 'EAY131-A', '2017-01-12', incl=False, status="CLOSED")],
+        #  {'CURRENT':
+        #     [{'treatmentArmId': 'EAY131-A',
+        #       'exclusions': [],
+        #       'inclusions': [{'version': '2017-07-11', 'type': 'NonHotspot'}]}],
+        #   'PRIOR':
+        #     [{'treatmentArmId': 'EAY131-A',
+        #       'exclusions': [{'version': '2017-01-12', 'type': 'Hotspot'}],
+        #       'inclusions': []}]}),
+         )
     @unpack
     def test_create_amois_annotation(self, amois_list, exp_annotation):
         self.maxDiff = None
-        self.assertEqual(amois.create_amois_annotation(amois_list), exp_annotation)
+        # print("######################################################")
+        annotation = amois.create_amois_annotation(amois_list)
+        # import pprint
+        # pprint.pprint(annotation)
+        self.assertEqual(annotation, exp_annotation)
 
+    # # Test the amois.create_amois_annotation function which, in effect, also tests the add() and
+    # # get() functions of the AmoisAnnotator class.
+    # @data(
+    #     # 1. No amoi in list
+    #     ([], {}),
+    #     # 2. One amoi in list
+    #     ([ta_nh_rule("1", "1", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN")],
+    #      {'CURRENT':
+    #         [{'treatmentArmId': 'EAY131-P',
+    #           'exclusions': [{'version': '2016-11-11', 'type': 'NonHotspot'}],
+    #           'inclusions': []}]
+    #       }),
+    #     # 3. Three amois, two that match the same arm twice (once as hotspot, once as non-hotspot, both inclusions)
+    #     ([ta_nh_rule("1", "func2", "1", "1", 'EAY131-P', '2016-11-11', incl=True, status="OPEN"),
+    #       ta_nh_rule("1", "func3", "1", "1", 'EAY131-Q', '2016-12-11', incl=False, status="OPEN"),
+    #       ta_id_rule("EDBCA", 'EAY131-P', '2016-11-11', incl=True, status="OPEN")],
+    #      {'CURRENT':
+    #         [{'treatmentArmId': 'EAY131-P',
+    #           'exclusions': [],
+    #           'inclusions': [{'version': '2016-11-11', 'type': 'Hotspot'},
+    #                          {'version': '2016-11-11', 'type': 'NonHotspot'}]},
+    #          {'treatmentArmId': 'EAY131-Q',
+    #           'exclusions': [{'version': '2016-12-11', 'type': 'NonHotspot'}],
+    #           'inclusions': []}]
+    #       }),
+    #     # 4. Three amois, each matching different arms with different states
+    #     ([ta_nh_rule("1", "func3", "1", "1", 'EAY131-P', '2016-11-11', False, "OPEN", True),
+    #       ta_nh_rule("1", "func1", "1", "1", 'EAY131-Q', '2016-12-11', False, "OPEN"),
+    #       ta_id_rule('COSM6240', 'EAY131-R', '2016-12-12', False, "CLOSED")],
+    #      {'PREVIOUS':
+    #         [{'treatmentArmId': 'EAY131-P',
+    #           'exclusions': [{'version': '2016-11-11', 'type': 'NonHotspot'}],
+    #           'inclusions': []}],
+    #       'CURRENT':
+    #         [{'treatmentArmId': 'EAY131-Q',
+    #           'exclusions': [{'version': '2016-12-11', 'type': 'NonHotspot'}],
+    #           'inclusions': []}],
+    #       'PRIOR':
+    #         [{'treatmentArmId': 'EAY131-R',
+    #           'exclusions': [{'version': '2016-12-12', 'type': 'Hotspot'}],
+    #           'inclusions': []}]
+    #       }),
+    #     # 5. Four amois, each matching different versions of the same arm
+    #     ([ta_nh_rule("1", "missense", "1", "1", 'EAY131-A', '2016-11-11', incl=False, status="CLOSED"),
+    #       ta_nh_rule("1", "func4", "1", "1", 'EAY131-A', '2017-07-11', incl=True, status="OPEN"),
+    #       ta_id_rule('COSM6240', 'EAY131-A', '2016-12-12', incl=False, status="CLOSED"),
+    #       ta_id_rule('COSM6240', 'EAY131-A', '2017-01-12', incl=False, status="CLOSED")],
+    #      {'CURRENT':
+    #         [{'treatmentArmId': 'EAY131-A',
+    #           'exclusions': [],
+    #           'inclusions': [{'version': '2017-07-11', 'type': 'NonHotspot'}]}],
+    #       'PRIOR':
+    #         [{'treatmentArmId': 'EAY131-A',
+    #           'exclusions': [{'version': '2016-11-11', 'type': 'NonHotspot'},
+    #                          {'version': '2016-12-12', 'type': 'Hotspot'},
+    #                          {'version': '2017-01-12', 'type': 'Hotspot'}],
+    #           'inclusions': []}]}),
+    # )
+    # @unpack
+    # def test_create_amois_annotation(self, amois_list, exp_annotation):
+    #     self.maxDiff = None
+    #     self.assertEqual(amois.create_amois_annotation(amois_list), exp_annotation)
+    #
 
 # **** These variables contain source data for the VariantRulesMgr, find_amois, AmoisResource tests that follow. **** #
 INCLUSION = True

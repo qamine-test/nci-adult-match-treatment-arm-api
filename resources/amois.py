@@ -16,6 +16,7 @@ An example of how to call this service can be found in scripts/examples/call_amo
 """
 
 import logging
+import traceback
 from datetime import datetime, timedelta
 from pprint import pformat
 
@@ -354,43 +355,112 @@ class AmoisAnnotator:
         """
         state = AmoisAnnotator._get_amoi_state(amoi)
         annot_data = AmoisAnnotator._extract_annot_data(amoi)
-        self._add_annot_by_state(state, annot_data)
+        annot_data['state'] = state
+        self._add_annot(annot_data)
 
-    def _add_annot_by_state(self, state, annot_data):
-        treatment_arm_id = annot_data['treatmentArmId']
-        if state in self._annotation:
-            state_annots = self._annotation[state]
-            if treatment_arm_id in state_annots:
-                state_annots[treatment_arm_id].append(annot_data)
-            else:
-                state_annots[treatment_arm_id] = [annot_data]
+    def _add_annot(self, annot_data):
+        treatment_arm_key = annot_data['treatmentArmId'] + ("Incl" if annot_data['inclusion'] else "Excl")
+
+        if treatment_arm_key in self._annotation:
+            self._annotation[treatment_arm_key].append(annot_data)
         else:
-            self._annotation[state] = {treatment_arm_id: [annot_data]}
+            self._annotation[treatment_arm_key] = [annot_data]
+
+    # @staticmethod
+    # def _add_annot_by_state(self, state, annot_data):
+    #     treatment_arm_id = annot_data['treatmentArmId']
+    #     if state in self._annotation:
+    #         state_annots = self._annotation[state]
+    #         if treatment_arm_id in state_annots:
+    #             state_annots[treatment_arm_id].append(annot_data)
+    #         else:
+    #             state_annots[treatment_arm_id] = [annot_data]
+    #     else:
+    #         self._annotation[state] = {treatment_arm_id: [annot_data]}
 
     def get(self):
         annotations = {}
-        for state in self._annotation:
-            annot_list = []
-            for treatment_arm in self._annotation[state]:
-                ta_amoi = {'treatmentArmId': treatment_arm,
-                           'inclusions': list(),
-                           'exclusions': list()}
-                for amoi in self._annotation[state][treatment_arm]:
+        for ta_list in list(self._annotation.values()):
+            chosen_amoi_annot = self._choose_amois_annot(ta_list)
 
-                    amoi_info = {'version': amoi['version'],
-                                 'type': amoi['type']}
-                    if amoi['inclusion']:
-                        ta_amoi['inclusions'].append(amoi_info)
-                    else:
-                        ta_amoi['exclusions'].append(amoi_info)
+            ta_amoi = {'treatmentArmId': chosen_amoi_annot['treatmentArmId'],
+                       'inclusions': list(),
+                       'exclusions': list()}
 
-                ta_amoi['inclusions'] = sorted(ta_amoi['inclusions'], key=lambda item: item['version']+item['type'])
-                ta_amoi['exclusions'] = sorted(ta_amoi['exclusions'], key=lambda item: item['version']+item['type'])
-                annot_list.append(ta_amoi)
-            annotations[state] = annot_list
+            amoi_info = {'version': chosen_amoi_annot['version'],
+                         'type': chosen_amoi_annot['type']}
+
+            if chosen_amoi_annot['inclusion']:
+                ta_amoi['inclusions'].append(amoi_info)
+            else:
+                ta_amoi['exclusions'].append(amoi_info)
+
+            state = chosen_amoi_annot['state']
+            if state not in annotations:
+                annotations[state] = [ta_amoi]
+            else:
+                annotations[state].append(ta_amoi)
 
         return annotations
 
+    @staticmethod
+    def _choose_amois_annot(ta_list):
+        """
+        Given a list of aMOI data objects for a single arm and inclusion/exclusion property (that is, all objects
+        will be exclusion aMOIs or all will be inclusion aMOIs), find the one most desirable for display on the UI.
+        That is, choose the one on an open arm or, if none open, choose the one with the most recent version.
+        :param ta_list:
+        :return: the chosen aMOI arm object
+        """
+        chosen_arms = [annot_data for annot_data in ta_list if annot_data['state'] == 'CURRENT']
+        if not chosen_arms:
+            chosen_arms = sorted(ta_list, key=lambda ad: ad['version'] + ad['type'], reverse=True)
+        return chosen_arms[0]
+
+    # def add(self, amoi):
+    #     """
+    #     Adds the amoi to self.
+    #     :param amoi: a variant as it appears in the variant report in the treatmentArms collection.
+    #     """
+    #     state = AmoisAnnotator._get_amoi_state(amoi)
+    #     annot_data = AmoisAnnotator._extract_annot_data(amoi)
+    #     self._add_annot_by_state(state, annot_data)
+    #
+    # def _add_annot_by_state(self, state, annot_data):
+    #     treatment_arm_id = annot_data['treatmentArmId']
+    #     if state in self._annotation:
+    #         state_annots = self._annotation[state]
+    #         if treatment_arm_id in state_annots:
+    #             state_annots[treatment_arm_id].append(annot_data)
+    #         else:
+    #             state_annots[treatment_arm_id] = [annot_data]
+    #     else:
+    #         self._annotation[state] = {treatment_arm_id: [annot_data]}
+    #
+    # def get(self):
+    #     annotations = {}
+    #     for state in self._annotation:
+    #         annot_list = []
+    #         for treatment_arm in self._annotation[state]:
+    #             ta_amoi = {'treatmentArmId': treatment_arm,
+    #                        'inclusions': list(),
+    #                        'exclusions': list()}
+    #             for amoi in self._annotation[state][treatment_arm]:
+    #
+    #                 amoi_info = {'version': amoi['version'],
+    #                              'type': amoi['type']}
+    #                 if amoi['inclusion']:
+    #                     ta_amoi['inclusions'].append(amoi_info)
+    #                 else:
+    #                     ta_amoi['exclusions'].append(amoi_info)
+    #
+    #             ta_amoi['inclusions'] = sorted(ta_amoi['inclusions'], key=lambda item: item['version']+item['type'])
+    #             ta_amoi['exclusions'] = sorted(ta_amoi['exclusions'], key=lambda item: item['version']+item['type'])
+    #             annot_list.append(ta_amoi)
+    #         annotations[state] = annot_list
+    #
+    #     return annotations
+    #
     @staticmethod
     def _extract_annot_data(amoi):
         """
@@ -403,11 +473,13 @@ class AmoisAnnotator:
             err_msg = ("The following required fields were missing from the submitted aMOI: "
                        + ", ".join(missing_fields))
             raise Exception(err_msg)
+
         error_fields = [f for f in AmoisAnnotator.REQ_FIELDS if amoi[f] is None]
         if error_fields:
             err_msg = ("The following required fields were empty in the submitted aMOI: "
                        + ", ".join(error_fields))
             raise Exception(err_msg)
+
         return dict([(k, v) for k, v in amoi.items() if k in AmoisAnnotator.REQ_FIELDS])
 
     @staticmethod
@@ -446,16 +518,19 @@ def find_amois(vr, var_rules_mgr):
     :param vr: patient variantReport dict
     :param var_rules_mgr: instance of the VariantRulesMgr class
     """
+    logger = logging.getLogger(__name__)
     for variant in vr['copyNumberVariants']:
         amois = var_rules_mgr.get_matching_copy_number_variant_identifier_rules(variant)
         amois.extend(var_rules_mgr.get_matching_copy_number_variant_protein_rules(variant))
         if amois:
+            logger.debug("CNV aMOIs:\n{}".format(pformat(amois)))
             variant['amois'] = create_amois_annotation(amois)
 
     for variant in vr['unifiedGeneFusions']:
         amois = var_rules_mgr.get_matching_gene_fusions_identifier_rules(variant)
         amois.extend(var_rules_mgr.get_matching_gene_fusions_protein_rules(variant))
         if amois:
+            logger.debug("UGF aMOIs:\n{}".format(pformat(amois)))
             variant['amois'] = create_amois_annotation(amois)
 
     for variant in vr['indels']:
@@ -463,6 +538,7 @@ def find_amois(vr, var_rules_mgr):
         amois.extend(var_rules_mgr.get_matching_indel_protein_rules(variant))
         amois.extend(var_rules_mgr.get_matching_nonhotspot_rules(variant))
         if amois:
+            logger.debug("Indel aMOIs:\n{}".format(pformat(amois)))
             variant['amois'] = create_amois_annotation(amois)
 
     for variant in vr['singleNucleotideVariants']:
@@ -470,9 +546,24 @@ def find_amois(vr, var_rules_mgr):
         amois.extend(var_rules_mgr.get_matching_single_nucleotide_variant_protein_rules(variant))
         amois.extend(var_rules_mgr.get_matching_nonhotspot_rules(variant))
         if amois:
+            logger.debug("SNV aMOIs:\n{}".format(pformat(amois)))
             variant['amois'] = create_amois_annotation(amois)
 
 
+# def dedup_amois(amois_list):
+#     amois_by_arms = dict()
+#     for amoi in amois_list:
+#         amoi_id = amoi['treatmentArmId'] + ("Incl" if amoi['inclusion'] else "Excl")
+#         if amoi_id in amois_by_arms:
+#             amois_by_arms[amoi_id].append(amoi)
+#         else:
+#             amois_by_arms[amoi_id] = [amoi]
+#
+#     for amoi_id in amois_by_arms:
+#
+#
+#     return amois_list
+#
 def create_amois_annotation(amois_list):
     """
     Given all of the aMOIs in amois_list, assemble all of the required data into format required for annotation.
@@ -492,7 +583,6 @@ class AmoisResource(Resource):
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        # self.variant_rules_mgr_cache = VariantRulesMgrCache()
 
     @staticmethod
     def get_variant_report_arg():
@@ -522,14 +612,16 @@ class AmoisResource(Resource):
             self.logger.debug("amois: var_rpt on input:\n" + pformat(vr, width=140, indent=1, depth=2))
 
             var_rules_mgr = VariantRulesMgrCache.get_variant_rules_mgr()
-            # var_rules_mgr = self.variant_rules_mgr_cache.get_variant_rules_mgr()
 
             find_amois(vr, var_rules_mgr)
+            self.logger.debug("amois:\n{}".format(pformat(vr, width=140, indent=1, depth=2)))
             ret_val = vr
+
         except Exception as exc:
             ret_val = str(exc)
-            self.logger.error(ret_val)
+            self.logger.error("{err_msg}\n{tb}".format(err_msg=ret_val, tb=traceback.format_exc()))
             status_code = 404
+
         return ret_val, status_code
 
 
@@ -542,7 +634,6 @@ class IsAmoisResource(Resource):
 
     @staticmethod
     def _get_variants():
-        # print("request is %s" % type(request))
         args = request.get_json()
 
         # self.logger.debug("ARGS:\n"+pformat(args, width=140, indent=2))
@@ -568,13 +659,17 @@ class IsAmoisResource(Resource):
         status_code = 200
         try:
             variant_type, variant_list = self._get_variants()
+
             self.logger.debug("Variant Type = {}".format(variant_type))
             self.logger.debug("Variants =\n{}".format(pformat(variant_list)))
+
             var_rules_mgr = VariantRulesMgr()
             result_list = [var_rules_mgr.is_amoi(variant, variant_type) for variant in variant_list]
             ret_val = result_list
+
         except Exception as exc:
             ret_val = str(exc)
             self.logger.error(ret_val)
             status_code = 404
+
         return ret_val, status_code
