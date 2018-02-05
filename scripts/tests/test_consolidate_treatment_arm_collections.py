@@ -28,6 +28,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
           'dateCreated': datetime.datetime(2016, 6, 2, 14, 56, 52, 704000),
           'name': 'TDM1 in HER2 Amplification',
           'version': '2016-03-31',
+          'studyType': ['STANDARD'],
           'summaryReport': ctac.TAConverter.EMPTY_SUMMARY_REPORT,
           'dateArchived': None}),
         # successful conversion when input record has incorrect _class
@@ -42,6 +43,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
           'dateCreated': datetime.datetime(2016, 6, 7, 14, 56, 52, 704000),
           'name': 'TDM1 in HER2 Amplification',
           'version': '2016-05-31',
+          'studyType': ['STANDARD', 'OUTSIDE_ASSAY'],
           'summaryReport': ctac.TAConverter.EMPTY_SUMMARY_REPORT,
           'dateArchived': None}),
         # 1. exception for missing _id
@@ -146,6 +148,7 @@ class TestConsolidateTreatmentArmCollections(unittest.TestCase):
           'dateArchived': datetime.datetime(2016, 1, 15, 21, 36, 20, 602000),
           'dateCreated': datetime.datetime(2016, 1, 13, 21, 8, 22, 83000),
           'name': 'Trametinib in NF1 mutation',
+          'studyType': ['STANDARD'],
           'treatmentArmDrugs': DEFAULT_TA_DRUGS,
           'version': '09-14-2015'}
          ),

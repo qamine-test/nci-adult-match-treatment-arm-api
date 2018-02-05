@@ -42,6 +42,16 @@ from scripts.consolidate_treatment_arm_collections.consolidate_ta_mongo_db_acces
 log.log_config()
 LOGGER = logging.getLogger(__name__)
 
+OA_ARMS = ['EAY131-A', 'EAY131-C1', 'EAY131-C2', 'EAY131-E', 'EAY131-F', 'EAY131-G', 'EAY131-H', 'EAY131-L',
+           'EAY131-M', 'EAY131-R', 'EAY131-S2', 'EAY131-T', 'EAY131-U', 'EAY131-V', 'EAY131-X', 'EAY131-Y',
+           'EAY131-Z1B', 'EAY131-Z1C', 'EAY131-Z1E']
+
+def get_study_type(treatmentArmId):
+    if treatmentArmId in OA_ARMS:
+        return ['STANDARD', 'OUTSIDE_ASSAY']
+    else:
+        return ['STANDARD']
+
 
 class ConverterBase(object):
     """Base class for conversion objects.  Couples together the source
@@ -59,6 +69,7 @@ class ConverterBase(object):
 
     @staticmethod
     def _apply_common_changes(new_ta_doc):
+        new_ta_doc['studyType'] = get_study_type(new_ta_doc['_id'])
         del new_ta_doc['_id']
         if 'exclusionCriterias' in new_ta_doc:
             del new_ta_doc['exclusionCriterias']
