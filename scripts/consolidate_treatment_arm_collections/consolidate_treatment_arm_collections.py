@@ -46,11 +46,11 @@ OA_ARMS = ['EAY131-A', 'EAY131-C1', 'EAY131-C2', 'EAY131-E', 'EAY131-F', 'EAY131
            'EAY131-M', 'EAY131-R', 'EAY131-S2', 'EAY131-T', 'EAY131-U', 'EAY131-V', 'EAY131-X', 'EAY131-Y',
            'EAY131-Z1B', 'EAY131-Z1C', 'EAY131-Z1E']
 
-def get_study_type(treatmentArmId):
-    if treatmentArmId in OA_ARMS:
-        return ['STANDARD', 'OUTSIDE_ASSAY']
-    else:
+def get_study_types(treatmentArmId):
+    if treatmentArmId not in OA_ARMS:
         return ['STANDARD']
+    else:
+        return ['STANDARD', 'OUTSIDE_ASSAY']
 
 
 class ConverterBase(object):
@@ -69,7 +69,7 @@ class ConverterBase(object):
 
     @staticmethod
     def _apply_common_changes(new_ta_doc):
-        new_ta_doc['studyType'] = get_study_type(new_ta_doc['_id'])
+        new_ta_doc['studyTypes'] = get_study_types(new_ta_doc['_id'])
         del new_ta_doc['_id']
         if 'exclusionCriterias' in new_ta_doc:
             del new_ta_doc['exclusionCriterias']
