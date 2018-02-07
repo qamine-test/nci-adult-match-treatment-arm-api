@@ -304,14 +304,14 @@ class ReformatStatusLogTests(unittest.TestCase):
 class TreatmentArmsPTENTests(unittest.TestCase):
     @patch('resources.treatment_arm.TreatmentArmsAccessor')
     def test_get(self, mock_ta_accessor):
-        mock_return_data = [{'treatmentArmId': 'blahblah', 'version': '1'},
-                            {'treatmentArmId': 'blahblahblah', 'version': '2'}]
+        mock_return_data = [{'treatmentArmId': 'blahblah', 'version': '1', 'studyTypes': ['STANDARD', 'OUTSIDE_ASSAY']},
+                            {'treatmentArmId': 'blahblahblah', 'version': '2', 'studyTypes': ['STANDARD']}]
 
         instance = mock_ta_accessor.return_value
         instance.find.return_value = mock_return_data
 
         result = treatment_arm.TreatmentArmsPTEN().get()
-        self.assertEqual(result, mock_return_data)
+        self.assertEqual(result, [mock_return_data[0]])
         instance.find.assert_called_once_with(treatment_arm.TreatmentArmsPTEN.QUERY,
                                               treatment_arm.TreatmentArmsPTEN.PROJECTION)
 

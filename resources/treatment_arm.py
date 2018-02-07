@@ -118,7 +118,8 @@ class TreatmentArmsOverview(Resource):
 
 class TreatmentArmsPTEN(Resource):
     QUERY = {'assayResults.gene': 'PTEN', 'dateArchived': None}
-    PROJECTION = {'treatmentArmId': 1, 'version': 1, 'assayResults': 1, 'dateArchived': 1, "_id": 0}
+    PROJECTION = {'treatmentArmId': 1, 'version': 1, 'assayResults': 1,
+                  'studyTypes': 1, 'dateArchived': 1, "_id": 0}
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
@@ -129,7 +130,8 @@ class TreatmentArmsPTEN(Resource):
         Gets the TreatmentArms with PTEN Assay.
         """
         self.logger.debug("Getting TreatmentArms with PTEN assay results")
-        return TreatmentArmsAccessor().find(self.QUERY, self.PROJECTION)
+        arms = TreatmentArmsAccessor().find(self.QUERY, self.PROJECTION)
+        return [arm for arm in arms if 'OUTSIDE_ASSAY' in arm['studyTypes']]
 
 
 def reformat_status_log(ta_data):
