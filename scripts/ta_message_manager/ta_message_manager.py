@@ -98,7 +98,7 @@ def send_message_to_ta_queue(msg):
     :return: the response dict returned from SQS
     """
     response = SqsAccessor(Environment().sqs_queue_name).send_message(msg)
-    # print(str(response))
+    print(str(response))
     return response
 
 

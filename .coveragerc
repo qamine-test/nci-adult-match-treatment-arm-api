@@ -1,12 +1,11 @@
 [run]
 omit =
     */tests/*
-    */accessors/*
     */data_setup/match/*
-    *accessor.py
     */boto3/*
 
 include =
+    */accessors/*
     */common/*
     */helpers/*
     */resources/*
