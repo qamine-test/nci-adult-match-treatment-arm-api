@@ -16,7 +16,7 @@ test:
   polling_interval: 10
   sqs_queue_name: 'treatment-arm-api-int-queue'
   patient_api_url: "https://match-int.nci.nih.gov/api/v1/patients"
-  logger_level: "INFO"
+  logger_level: "WARN"
 
 uat:
   port: 5010
