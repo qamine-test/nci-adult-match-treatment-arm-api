@@ -33,7 +33,7 @@ production:
   region: "us-east-1"
   bucket: "adultmatch"
   tmp_file_dir: "/tmp"
-  polling_interval: 300
+  polling_interval: 1
   sqs_queue_name: 'treatment-arm-api-queue'
   patient_api_url: "https://match.nci.nih.gov/api/v1/patients"
   logger_level: "WARN"
