@@ -69,6 +69,8 @@ class TreatmentArmsById(Resource):
     """
     Treatment Arm REST resource to get Arm by ID
     """
+    SORT_KEY = 'version'
+
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
@@ -86,7 +88,7 @@ class TreatmentArmsById(Resource):
         treatment_arms = TreatmentArmsAccessor().find(query, projection)
         for ta in treatment_arms:
             reformat_status_log(ta)
-        return treatment_arms
+        return sorted(treatment_arms, key=lambda ta: ta[self.SORT_KEY], reverse=True)
 
 
 class TreatmentArmsOverview(Resource):

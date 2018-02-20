@@ -215,14 +215,19 @@ class TestTreatmentArmsById(unittest.TestCase):
         instance = mock_ta_accessor.return_value
         instance.find.return_value = TestTreatmentArmsById._create_find_return(test_data, arm_id, active_only)
 
+        sorted_exp_result = sorted(exp_result,
+                                   key=lambda ta: ta[treatment_arm.TreatmentArmsById.SORT_KEY],
+                                   reverse=True)
+
         self.maxDiff = None
         app = flask.Flask(__name__)
         with app.test_request_context(request_context):
             result = treatment_arm.TreatmentArmsById().get(arm_id)
             instance.find.assert_called_with(exp_qry_param, exp_proj_param)
             self.assertEqual(len(result), len(exp_result), "TestTreatmentArmsById Test Case %d" % test_id)
-            self.assertEqual(TestTreatmentArmsById._sort(result), TestTreatmentArmsById._sort(exp_result),
-                             "TestTreatmentArmsById Test Case %d" % test_id)
+            self.assertEqual(result, sorted_exp_result, "TestTreatmentArmsById Test Case %d" % test_id)
+            # self.assertEqual(TestTreatmentArmsById._sort(result), TestTreatmentArmsById._sort(exp_result),
+            #                  "TestTreatmentArmsById Test Case %d" % test_id)
             # Test that reformat_status_log was called on every treatment arm returned from the treatment arm accessor.
             self.assertEqual(mock_reformat_status_log.call_count, len(instance.find.return_value))
 
