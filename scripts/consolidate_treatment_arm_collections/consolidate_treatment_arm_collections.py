@@ -11,11 +11,12 @@ with the following changes/additions:
    - For documents from treatmentArmHistory, treatmentArmId will originate from _id of
      the treatmentArm subcollection.
 *  mongoDB will auto-generate a new unique _id
-*  add 'dateArchived' key; active arm will be identified by dateArchived IS NULL and archived
+*  add 'dateArchived' key; the active arm will be identified by dateArchived IS NULL and archived
    arms will get this value from treatmentArmHistory.
+*  add 'studyTypes' list; will contain or both of these:  'STANDARD', 'OUTSIDE_ASSAY'
 *  add 'stateToken' key with UUID.
-*  _class will be 'gov.match.model.TreatmentArm' for all documents.
-*  item 'exclusionCriterias' is obsolete and will be excluded from treatmentArms
+*  '_class' will be 'gov.match.model.TreatmentArm' for all documents.
+*  remove 'exclusionCriterias' because it is obsolete and will be excluded from treatmentArms
 *  for active arms only (that is, documents with dateArchived == null), add 'summaryReport' key, which
    will contain a subcollection with the following items with default values:
         - 'numCurrentPatientsOnArm': 0,
