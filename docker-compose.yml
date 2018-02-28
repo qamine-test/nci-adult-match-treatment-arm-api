@@ -12,7 +12,7 @@ services:
       - UNITTEST=1  # disables auth0 authentication in the local environment
       - MONGODB_URI=mongodb://mongo:27017/Match
       - ENVIRONMENT=development
-      - SQS_QUEUE_NAME=treatment-arm-api-dev-smithmak-queue
+      - SQS_QUEUE_NAME=treatment-arm-api-dev-${USER}-queue
       - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
       - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
       - AUTH0_DATABASE=${AUTH0_DATABASE}
