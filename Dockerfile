@@ -14,7 +14,7 @@ RUN pip install -r requirements.txt
 
 # Add the app code
 COPY . .
-RUN sed -i.bak "s/license_key = /license_key = ${NEW_RELIC_KEY}/g" /usr/app/custom-newrelic.ini
+RUN sed -i.bak "s/license_key =/license_key = ${NEW_RELIC_KEY}/g" /usr/app/custom-newrelic.ini
 
 EXPOSE 5000
 
