@@ -1,7 +1,7 @@
 #!/bin/bash
 gem install travis
 pip install 'requests[security]'
-pip install --user awscli
+pip install awscli --upgrade
 export BUCKETNAME="publictoprivate"
 export ENVFILENAME=`echo $TRAVIS_REPO_SLUG|sed -e 's/BIAD\///'`
 travis login --github-token $GITHUB_TOKEN --org
